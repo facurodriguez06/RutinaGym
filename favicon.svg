@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Mancuerna rosada con fondo transparente -->
+  <!-- Barra central -->
+  <rect x="30" y="42" width="40" height="16" rx="4" fill="#EC4899"/>
+  <!-- Pesa izquierda exterior -->
+  <rect x="8" y="30" width="12" height="40" rx="4" fill="#EC4899"/>
+  <!-- Pesa izquierda interior -->
+  <rect x="20" y="35" width="10" height="30" rx="3" fill="#EC4899"/>
+  <!-- Pesa derecha interior -->
+  <rect x="70" y="35" width="10" height="30" rx="3" fill="#EC4899"/>
+  <!-- Pesa derecha exterior -->
+  <rect x="80" y="30" width="12" height="40" rx="4" fill="#EC4899"/>
+</svg>
