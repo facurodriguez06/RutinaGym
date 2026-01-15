@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rutina de Alma y Facu</title>
+    <title>GymRutina</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -77,6 +77,120 @@
 
         body.light ::-webkit-scrollbar-thumb {
             background: #cbd5e1;
+        }
+
+        /* Light Theme Blocks Overrides */
+        body.light .warmup-block {
+            background: #fffbeb !important;
+            /* amber-50 */
+            border-color: #fcd34d !important;
+            /* amber-300 */
+        }
+
+        body.light .warmup-block i,
+        body.light .warmup-block h3 {
+            color: #d97706 !important;
+            /* amber-600 */
+        }
+
+        body.light .core-block {
+            background: #eef2ff !important;
+            /* indigo-50 */
+            border-color: #a5b4fc !important;
+            /* indigo-300 */
+        }
+
+        body.light .core-block i,
+        body.light .core-block h3 {
+            color: #4f46e5 !important;
+            /* indigo-600 */
+        }
+
+        /* Light Theme Active Tabs Overrides */
+        body.light .active-tab-pink {
+            background: #fdf2f8 !important;
+            border-color: #f9a8d4 !important;
+        }
+
+        body.light .active-tab-pink .active-tab-label {
+            color: #db2777 !important;
+        }
+
+        body.light .active-tab-pink .active-tab-icon {
+            color: #db2777 !important;
+        }
+
+        body.light .active-tab-blue {
+            background: #eff6ff !important;
+            border-color: #93c5fd !important;
+        }
+
+        body.light .active-tab-blue .active-tab-label {
+            color: #2563eb !important;
+        }
+
+        body.light .active-tab-blue .active-tab-icon {
+            color: #2563eb !important;
+        }
+
+        body.light .active-tab-emerald {
+            background: #ecfdf5 !important;
+            border-color: #6ee7b7 !important;
+        }
+
+        body.light .active-tab-emerald .active-tab-label {
+            color: #059669 !important;
+        }
+
+        body.light .active-tab-emerald .active-tab-icon {
+            color: #059669 !important;
+        }
+
+        /* New Day Colors Overrides */
+        body.light .active-tab-violet {
+            background: #f5f3ff !important;
+            border-color: #c4b5fd !important;
+        }
+
+        body.light .active-tab-violet .active-tab-label,
+        body.light .active-tab-violet .active-tab-icon {
+            color: #7c3aed !important;
+        }
+
+        body.light .active-tab-cyan {
+            background: #ecfeff !important;
+            border-color: #67e8f9 !important;
+        }
+
+        body.light .active-tab-cyan .active-tab-label,
+        body.light .active-tab-cyan .active-tab-icon {
+            color: #0891b2 !important;
+        }
+
+        body.light .active-tab-rose {
+            background: #fff1f2 !important;
+            border-color: #fda4af !important;
+        }
+
+        body.light .active-tab-rose .active-tab-label,
+        body.light .active-tab-rose .active-tab-icon {
+            color: #e11d48 !important;
+        }
+
+
+        body.light .active-tab-emerald .active-tab-label {
+            color: #059669 !important;
+        }
+
+        body.light .active-tab-emerald .active-tab-icon {
+            color: #059669 !important;
+        }
+
+
+        body.light .core-block li,
+        body.light .warmup-block li {
+            color: #334155 !important;
+            /* slate-700 */
         }
 
         /* Scrollbar Personalizado */
@@ -476,6 +590,28 @@
 
     <div class="h-6 md:h-0"></div>
 
+    <!-- CONFIRMATION MODAL -->
+    <div id="confirm-modal"
+        class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all duration-300 opacity-0 transform scale-95">
+        <div
+            class="bg-slate-900 border border-slate-700/50 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-pop">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="triangle-alert" class="w-8 h-8 text-red-500"></i>
+                </div>
+                <h3 id="confirm-title" class="text-xl font-bold text-slate-100 mb-2">¿Estás seguro?</h3>
+                <p id="confirm-message" class="text-slate-400 text-sm mb-6">Esta acción no se puede deshacer.</p>
+
+                <div class="flex gap-3">
+                    <button id="confirm-cancel-btn"
+                        class="flex-1 py-2.5 px-4 rounded-xl border border-slate-700 text-slate-300 font-medium hover:bg-slate-800 transition-colors">Cancelar</button>
+                    <button id="confirm-ok-btn"
+                        class="flex-1 py-2.5 px-4 rounded-xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/20 hover:bg-red-600 hover:scale-[1.02] transition-all">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- DATA ---
         const routineData = [
@@ -488,19 +624,22 @@
                     { name: "Prensa de Piernas", sets: "3", reps: "12-15", rir: "RIR 1", notes: "Enfoque en cuádriceps. Pies zona media-baja de plataforma. Descanso: 90 seg.", muscles: { primary: ['quads'], secondary: ['glutes', 'hamstrings'] } },
                     { name: "Sillón de Cuádriceps (Extensiones)", sets: "3", reps: "15-20", rir: "RIR 0", notes: "Nuevo. Bombeo final para definir la pierna. Aguanta 1 seg arriba. Descanso: 60 seg.", muscles: { primary: ['quads'], secondary: [] } },
                     { name: "Curl Femoral (Máquina)", sets: "3", reps: "12-15", rir: "RIR 0", notes: "Isquios. No despeguen la cadera. Controlen la bajada. Descanso: 60 seg.", muscles: { primary: ['hamstrings'], secondary: ['calves'] } },
-                    { name: "Gemelos en Máquina (Pantorrillas)", sets: "4", reps: "15-20", rir: "RIR 0", notes: "Nuevo. Rango completo: talón bien abajo, punta bien arriba. Descanso: 45 seg.", muscles: { primary: ['calves'], secondary: [] } }
+                    { name: "Gemelos en Máquina (Pantorrillas)", sets: "4", reps: "15-20", rir: "RIR 0", notes: "Nuevo. Rango completo: talón bien abajo, punta bien arriba. Descanso: 45 seg.", muscles: { primary: ['calves'], secondary: [] } },
+                    { name: "Elevación de Rodillas (Silla Capitana)", sets: "3", reps: "12-15", rir: "RIR 1", notes: "Espalda pegada. Suban rodillas suave. Sin balanceo. Descanso: 60 seg.", muscles: { primary: ['abs'], secondary: ['obliques'] } }
                 ]
             },
             {
                 day: "Martes",
-                title: "Solo Facundo - Empuje",
+                title: "Solo Facundo - Empuje PESADO",
                 exercises: [
-                    { name: "Press de Banca (Barra)", sets: "4", reps: "6-8", rir: "RIR 2", notes: "Carga pesada. Retracción escapular obligatoria. Descanso: 3 min.", muscles: { primary: ['chest'], secondary: ['triceps', 'shoulders'] } },
-                    { name: "Press Inclinado (Máquina)", sets: "3", reps: "10-12", rir: "RIR 1", notes: "Enfoque en la parte alta del pectoral. Descanso: 2 min.", muscles: { primary: ['chest'], secondary: ['triceps', 'shoulders'] } },
-                    { name: "Fondos (Dips) en Paralelas", sets: "3", reps: "Fallo", rir: "RIR 1", notes: "Inclina el torso. Si duele el hombro, baja menos. Descanso: 2 min.", muscles: { primary: ['chest', 'triceps'], secondary: ['shoulders'] } },
-                    { name: "Elevaciones Laterales (Mancuernas)", sets: "4", reps: "15-20", rir: "RIR 0", notes: "Nuevo. Clave para hombros 3D. Codos semiflexionados. Descanso: 60 seg.", muscles: { primary: ['shoulders'], secondary: ['traps'] } },
-                    { name: "Aperturas (Peck Deck / Mariposa)", sets: "3", reps: "15-20", rir: "RIR 0", notes: "Nuevo. Lleva sangre al pecho sin fatigar tríceps. Estira bien. Descanso: 60 seg.", muscles: { primary: ['chest'], secondary: [] } },
-                    { name: "Extensiones Tríceps (Polea)", sets: "3", reps: "12-15", rir: "RIR 0", notes: "Codos pegados al cuerpo. Aprieta el tríceps abajo. Descanso: 60 seg.", muscles: { primary: ['triceps'], secondary: [] } }
+                    { name: "Press de Banca Plano (Barra)", sets: "4", reps: "6-8", rir: "RIR 2", notes: "Carga pesada. Pies anclados al piso. Retracción escapular. Descanso: 3 min.", muscles: { primary: ['chest'], secondary: ['triceps', 'shoulders'] } },
+                    { name: "Press Declinado (Barra o Manc)", sets: "3", reps: "8-10", rir: "RIR 2", notes: "Nuevo. Enfoca la línea inferior del pecho. Menos estrés en hombros. Descanso: 2-3 min.", muscles: { primary: ['chest'], secondary: ['triceps'] } },
+                    { name: "Press Inclinado (Máquina)", sets: "3", reps: "10-12", rir: "RIR 1", notes: "Completa el desarrollo del pecho superior. Movimiento controlado. Descanso: 2 min.", muscles: { primary: ['chest'], secondary: ['triceps', 'shoulders'] } },
+                    { name: "Fondos (Dips) en Paralelas", sets: "3", reps: "Fallo", rir: "RIR 0", notes: "Al fallo. Inclina el torso. Si puedes lastrarte (agregar peso), hazlo. Descanso: 90 seg.", muscles: { primary: ['chest', 'triceps'], secondary: ['shoulders'] } },
+                    { name: "Elevaciones Laterales (Manc)", sets: "4", reps: "15-20", rir: "RIR 0", notes: "Codos semiflexionados. Hazlas estrictas, sin impulsarte con las piernas. Descanso: 60 seg.", muscles: { primary: ['shoulders'], secondary: ['traps'] } },
+                    { name: "Aperturas (Peck Deck)", sets: "3", reps: "15-20", rir: "RIR 0", notes: "Bombeo final de pecho. Estira al máximo, aprieta al centro. Descanso: 60 seg.", muscles: { primary: ['chest'], secondary: [] } },
+                    { name: "Extensiones Tríceps (Polea)", sets: "3", reps: "12-15", rir: "RIR 0", notes: "Barra recta o V. Codos pegados a costillas. Descanso: 60 seg.", muscles: { primary: ['triceps'], secondary: [] } },
+                    { name: "Extensión Unilateral (Manc/Polea)", sets: "3", reps: "12-15", rir: "RIR 0", notes: "Nuevo. Agarre supino (palma arriba) a una mano. Aisla la cabeza interna. Descanso: 45 seg.", muscles: { primary: ['triceps'], secondary: [] } }
                 ]
             },
             {
@@ -517,14 +656,16 @@
             },
             {
                 day: "Jueves",
-                title: "Solo Facundo - Tracción",
+                title: "Solo Facundo - Tracción VOLUMEN",
                 exercises: [
-                    { name: "Jalón al Pecho (Agarre Neutro/Cerrado)", sets: "4", reps: "8-10", rir: "RIR 1", notes: "Agarre triángulo. Jala fuerte al centro del pecho. Descanso: 2 min.", muscles: { primary: ['lats', 'biceps'], secondary: ['forearms'] } },
-                    { name: "Remo en Máquina (Apoyo al pecho)", sets: "3", reps: "10-12", rir: "RIR 1", notes: "Protege tu lumbar. Céntrate en juntar escápulas atrás. Descanso: 2 min.", muscles: { primary: ['lats', 'traps'], secondary: ['biceps', 'lower_back'] } },
-                    { name: "Pull-Over en Polea Alta (Barra recta)", sets: "3", reps: "15-20", rir: "RIR 0", notes: "Nuevo. Aislación total del dorsal. Brazos semirrígidos. Descanso: 60 seg.", muscles: { primary: ['lats'], secondary: ['chest'] } },
-                    { name: "Vuelos Posteriores (Pájaros/Peck Deck Inverso)", sets: "3", reps: "15-20", rir: "RIR 0", notes: "Nuevo. Hombro posterior. Vital para salud y estética. Descanso: 60 seg.", muscles: { primary: ['shoulders'], secondary: ['traps'] } },
-                    { name: "Curl Predicador (Máquina)", sets: "3", reps: "10-12", rir: "RIR 0", notes: "Bíceps en estiramiento. Rango completo. Descanso: 60 seg.", muscles: { primary: ['biceps'], secondary: [] } },
-                    { name: "Curl Martillo (Mancuernas o Polea)", sets: "3", reps: "12-15", rir: "RIR 0", notes: "Braquial y Antebrazo. Descanso: 60 seg.", muscles: { primary: ['biceps', 'forearms'], secondary: [] } }
+                    { name: "Jalón al Pecho (Agarre Neutro)", sets: "4", reps: "8-10", rir: "RIR 1", notes: "Agarre cerrado/triángulo. Jala con fuerza explosiva, sube controlado. Descanso: 2 min.", muscles: { primary: ['lats', 'biceps'], secondary: ['forearms'] } },
+                    { name: "Remo en Máquina (o T-Bar)", sets: "4", reps: "8-10", rir: "RIR 1", notes: "Serie extra. Carga pesado. Apoya el pecho para cuidar tu lumbar. Descanso: 2 min.", muscles: { primary: ['lats', 'traps'], secondary: ['biceps', 'lower_back'] } },
+                    { name: "Encogimientos (Shrugs) con Mancuernas", sets: "4", reps: "12-15", rir: "RIR 1", notes: "Nuevo. Sube los hombros a las orejas. Aguanta 2 seg arriba. Descanso: 90 seg.", muscles: { primary: ['traps'], secondary: [] } },
+                    { name: "Pull-Over en Polea Alta", sets: "3", reps: "15-20", rir: "RIR 0", notes: "Aislamiento puro del dorsal. Mantén tensión constante. Descanso: 60 seg.", muscles: { primary: ['lats'], secondary: ['chest'] } },
+                    { name: "Vuelos Posteriores (Pájaros)", sets: "3", reps: "15-20", rir: "RIR 0", notes: "Hombro posterior. No juntes las escápulas, aisla el deltoides. Descanso: 60 seg.", muscles: { primary: ['shoulders'], secondary: ['traps'] } },
+                    { name: "Curl Predicador (Máquina)", sets: "3", reps: "10-12", rir: "RIR 0", notes: "Banco Scott. Estira todo el brazo. El bíceps crece en la bajada. Descanso: 60 seg.", muscles: { primary: ['biceps'], secondary: [] } },
+                    { name: "Curl Martillo (Mancuernas)", sets: "3", reps: "10-12", rir: "RIR 0", notes: "Pesado. Palmas enfrentadas. Descanso: 60 seg.", muscles: { primary: ['biceps', 'forearms'], secondary: [] } },
+                    { name: "Curl de Muñeca (Barra tras espalda)", sets: "3", reps: "15-20", rir: "RIR 0", notes: "Nuevo. Barra detrás de los glúteos. Enrolla solo con las muñecas. Descanso: 45 seg.", muscles: { primary: ['forearms'], secondary: [] } }
                 ]
             },
             {
@@ -537,17 +678,27 @@
                     { name: "Patada de Glúteo en Máquina", sets: "4", reps: "12-15", rir: "RIR 0", notes: "Nuevo. Empuja con el talón hacia el techo/atrás. Aprieta el glúteo al final. Descanso: 60 seg.", muscles: { primary: ['glutes'], secondary: ['hamstrings'] } },
                     { name: "Face Pull (Polea Alta)", sets: "3", reps: "15-20", rir: "RIR 1", notes: "Salud de hombros y postura. Cuerda a la frente. Descanso: 60 seg.", muscles: { primary: ['shoulders', 'traps'], secondary: [] } },
                     { name: "Copa Tríceps (Mancuerna a 2 manos)", sets: "3", reps: "12-15", rir: "RIR 0", notes: "Cabeza larga del tríceps. Codos cerrados. Descanso: 60 seg.", muscles: { primary: ['triceps'], secondary: [] } },
-                    { name: "Crunch Abdominal en Polea", sets: "4", reps: "15-20", rir: "RIR 0", notes: "De rodillas. Enrolla el abdomen fuerte hacia abajo. Descanso: 60 seg.", muscles: { primary: ['abs'], secondary: ['obliques'] } }
+                    { name: "Elevación de Rodillas (Silla Capitana)", sets: "4", reps: "15-20", rir: "RIR 0", notes: "Controla la bajada para proteger espalda. Descanso: 60 seg.", muscles: { primary: ['abs'], secondary: ['obliques'] } }
                 ]
             }
         ];
 
         // --- STATE ---
         let activeTab = 0;
+
+        // Auto-reset daily logic
+        const todayStr = new Date().toDateString();
+        const lastVisit = localStorage.getItem('gymLastVisitDate');
+        if (lastVisit !== todayStr) {
+            localStorage.removeItem('gymRoutineSets');
+            localStorage.setItem('gymLastVisitDate', todayStr);
+        }
+
         let completedSets = JSON.parse(localStorage.getItem('gymRoutineSets')) || {};
         let timerInterval = null;
         let currentTimerSeconds = 0;
         let totalTimerSeconds = 0;
+        let savedScrollY = 0;
 
         // --- CALENDAR STATE ---
         let currentView = 'routine'; // 'routine' or 'history'
@@ -904,10 +1055,12 @@
             currentTimerSeconds = seconds;
             totalTimerSeconds = seconds;
 
+            savedScrollY = window.scrollY; // Guardar posición actual
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden'; // Bloquear scroll
             document.body.style.position = 'fixed'; // Fijar posición
+            document.body.style.top = `-${savedScrollY}px`; // Mantener posición visual
             document.body.style.width = '100%'; // Mantener ancho
             document.body.style.touchAction = 'none'; // Bloquear touch scroll
             lucide.createIcons();
@@ -959,12 +1112,43 @@
             modal.classList.remove('flex');
             document.body.style.overflow = ''; // Restaurar scroll
             document.body.style.position = ''; // Restaurar posición
+            document.body.style.top = ''; // Restaurar top
             document.body.style.width = ''; // Restaurar ancho
             document.body.style.touchAction = ''; // Restaurar touch
+            window.scrollTo(0, savedScrollY); // Restaurar posición de scroll
             if (timerInterval) {
                 clearInterval(timerInterval);
                 timerInterval = null;
             }
+        }
+
+        // --- CUSTOM MODAL FUNCTIONS ---
+        let confirmCallback = null;
+
+        function showConfirmModal(title, message, callback) {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+
+            confirmCallback = callback;
+
+            modal.classList.remove('hidden');
+            // Small timeout for animation
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'scale-95');
+                modal.classList.add('opacity-100', 'scale-100');
+            }, 10);
+        }
+
+        function hideConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('opacity-0', 'scale-95');
+            modal.classList.remove('opacity-100', 'scale-100');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                confirmCallback = null;
+            }, 300);
         }
 
         function playTimerEnd() {
@@ -988,6 +1172,11 @@
         }
 
         // Timer event listeners
+        document.getElementById('confirm-cancel-btn').addEventListener('click', hideConfirmModal);
+        document.getElementById('confirm-ok-btn').addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            hideConfirmModal();
+        });
         document.getElementById('timer-skip-btn').addEventListener('click', hideTimer);
         document.getElementById('timer-add-btn').addEventListener('click', () => {
             currentTimerSeconds += 30;
@@ -1064,11 +1253,18 @@
                 const isActive = index === activeTab;
                 const btn = document.createElement('button');
 
+                // Determine color theme based on index
+                const dayColors = ['emerald', 'blue', 'violet', 'cyan', 'rose']; // Lunes, Martes, Miércoles, Jueves, Viernes
+                const activeColor = dayColors[index] || 'emerald';
+
                 // Tailwind classes for buttons
                 let classes = "flex-shrink-0 md:w-full text-left px-4 py-3 rounded-xl transition-all duration-300 flex items-center justify-between group border relative overflow-hidden ";
+
                 if (isActive) {
-                    classes += "bg-emerald-500/10 border-emerald-500 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)] translate-x-1";
+                    // Active State - Add specific class for CSS styling
+                    classes += `active-tab-${activeColor} translate-x-1 shadow-[0_0_20px_rgba(0,0,0,0.1)]`;
                 } else {
+                    // Inactive State
                     classes += "bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700";
                 }
                 btn.className = classes;
@@ -1080,13 +1276,18 @@
                 };
 
                 // Inner HTML
+                // Inner HTML
+                const activeGradient = `from-${activeColor}-500/10`;
+                const activeTextLight = `text-${activeColor}-300`; // for dark mode text
+                const activeTextMain = `text-${activeColor}-500`; // for icon
+
                 btn.innerHTML = `
-                    ${isActive ? '<div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent opacity-50"></div>' : ''}
+                    ${isActive ? `<div class="absolute inset-0 bg-gradient-to-r ${activeGradient} to-transparent opacity-50"></div>` : ''}
                     <div class="flex flex-col relative z-10">
-                        <span class="text-xs font-bold uppercase tracking-wider mb-1 transition-colors ${isActive ? 'text-emerald-300' : 'text-slate-500'}">${day.day}</span>
+                        <span class="text-xs font-bold uppercase tracking-wider mb-1 transition-colors ${isActive ? activeTextLight : 'text-slate-500'} ${isActive ? 'active-tab-label' : ''}">${day.day}</span>
                         <span class="font-medium text-sm truncate w-32 md:w-auto">${day.title}</span>
                     </div>
-                    <i data-lucide="chevron-right" class="w-4 h-4 transition-all duration-300 relative z-10 ${isActive ? 'text-emerald-500 translate-x-0' : 'opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}"></i>
+                    <i data-lucide="chevron-right" class="w-4 h-4 transition-all duration-300 relative z-10 ${isActive ? activeTextMain + ' translate-x-0 active-tab-icon' : 'opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}"></i>
                 `;
 
                 container.appendChild(btn);
@@ -1096,6 +1297,10 @@
 
         function renderContent() {
             const dayData = routineData[activeTab];
+
+            // Determine active color theme
+            const dayColors = ['emerald', 'blue', 'violet', 'cyan', 'rose'];
+            const activeColor = dayColors[activeTab] || 'emerald';
 
             // Update Headers & Progress
             document.getElementById('day-title').textContent = dayData.title;
@@ -1121,6 +1326,10 @@
             // Progress Bar Animation
             const progressBar = document.getElementById('progress-bar');
             document.getElementById('progress-text').textContent = `${progress}%`;
+
+            // Update progress bar color
+            progressBar.className = `h-full rounded-full transition-all duration-1000 ease-out bg-${activeColor}-500 shadow-[0_0_10px_rgba(0,0,0,0.3)]`;
+
             progressBar.style.width = '0%';
             setTimeout(() => {
                 progressBar.style.width = `${progress}%`;
@@ -1138,6 +1347,31 @@
             const listContainer = document.getElementById('exercises-list');
             listContainer.innerHTML = '';
 
+            // BLOQUE 0: ACTIVACIÓN (Mantener estilo específico o usar tema?)
+            // User requested distinctive style for block 0. Let's keep it amber/warm but maybe subtle tweak not needed.
+            // Keeping existing Warmup Block logic as it has specific semantic meaning (Warmup = Fire/Energy).
+
+            const warmupBlock = document.createElement('div');
+            warmupBlock.className = 'warmup-block mb-6 p-4 bg-amber-900/20 rounded-xl border border-amber-700/50';
+            warmupBlock.innerHTML = `
+                <div class="flex items-center gap-2 mb-3">
+                    <i data-lucide="flame" class="w-5 h-5 text-amber-400"></i>
+                    <h3 class="text-lg font-bold text-amber-400">BLOQUE 0: ACTIVACIÓN</h3>
+                    <span class="text-xs text-slate-400 ml-2">(Antes de empezar)</span>
+                </div>
+                <ul class="space-y-2 text-sm">
+                    <li class="flex items-start gap-2 text-slate-300">
+                        <i data-lucide="bike" class="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                        <span><strong>Bicicleta Estática:</strong> 10 Minutos (Ritmo medio)</span>
+                    </li>
+                    <li class="flex items-start gap-2 text-slate-300">
+                        <i data-lucide="rotate-3d" class="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                        <span><strong>Movilidad Articular:</strong> 2-3 min moviendo hombros y caderas (opcional pero recomendado)</span>
+                    </li>
+                </ul>
+            `;
+            listContainer.appendChild(warmupBlock);
+
             dayData.exercises.forEach((exercise, idx) => {
                 const numSets = parseInt(exercise.sets) || 3;
                 const restTime = parseRestTime(exercise.notes || '');
@@ -1154,12 +1388,15 @@
                 const card = document.createElement('div');
                 const staggerClass = idx < 6 ? `stagger-${idx + 1}` : '';
 
-                let cardClasses = `animate-slide-up ${staggerClass} relative group p-0 rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col md:flex-row `;
+                // Add active-theme class for CSS targeting
+                let cardClasses = `animate-slide-up ${staggerClass} relative group p-0 rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col md:flex-row active-theme-${activeColor} `;
 
                 if (isExerciseCompleted) {
-                    cardClasses += "bg-slate-900/40 border-slate-800/50 opacity-80 scale-[0.99]";
+                    cardClasses += `bg-${activeColor}-900/10 border-${activeColor}-900/20 opacity-80 scale-[0.99]`;
                 } else {
-                    cardClasses += "bg-slate-900 border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-emerald-900/10";
+                    // Use standard slate for inactive to avoid rainbow vomit, OR use subtle tint of active color?
+                    // "cuadrito de cada dia y su contenido tengan el mismo color" -> implies tint.
+                    cardClasses += `bg-slate-900 border-slate-800 hover:border-${activeColor}-500/50 hover:shadow-xl hover:shadow-${activeColor}-900/10`;
                 }
                 card.className = cardClasses;
 
@@ -1170,12 +1407,15 @@
                 for (let s = 0; s < numSets; s++) {
                     const setKey = `${activeTab}-${idx}-${s}`;
                     const isSetCompleted = completedSets[setKey];
+                    // Dynamic button colors
+                    // Active: bg-COLOR-500
+                    // Inactive: hover:text-COLOR-400
                     setButtonsHTML += `
                         <button data-set-key="${setKey}" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
                             class="set-btn w-10 h-10 rounded-lg font-bold text-sm transition-all duration-200 flex items-center justify-center
                             ${isSetCompleted
-                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-emerald-400 hover:scale-105'}">
+                            ? `bg-${activeColor}-500 text-white shadow-lg shadow-${activeColor}-500/30`
+                            : `bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-${activeColor}-400 hover:scale-105`}">
                             ${isSetCompleted ? '✓' : (s + 1)}
                         </button>
                     `;
@@ -1183,7 +1423,7 @@
 
                 card.innerHTML = `
                     <!-- Completion Strip -->
-                    <div class="absolute left-0 top-0 bottom-0 w-1 z-10 transition-colors duration-300 ${isExerciseCompleted ? 'bg-emerald-500' : 'bg-transparent group-hover:bg-slate-700'}"></div>
+                    <div class="absolute left-0 top-0 bottom-0 w-1 z-10 transition-colors duration-300 ${isExerciseCompleted ? `bg-${activeColor}-500` : `bg-transparent group-hover:bg-${activeColor}-500/50`}"></div>
 
                     <!-- Left Info -->
                     <div class="flex-1 p-5">
@@ -1263,6 +1503,65 @@
                 `;
                 listContainer.appendChild(card);
             });
+
+            // BLOQUE FINAL: CORE
+            const coreBlock = document.createElement('div');
+            coreBlock.className = 'core-block mt-6 mb-8 p-4 bg-gradient-to-r from-indigo-900/20 to-slate-900 rounded-xl border border-indigo-700/50';
+            coreBlock.innerHTML = `
+                <div class="flex items-center gap-2 mb-3">
+                    <i data-lucide="zap" class="w-5 h-5 text-indigo-400"></i>
+                    <h3 class="text-lg font-bold text-indigo-400">BLOQUE FINAL: CORE</h3>
+                    <span class="text-xs text-slate-400 ml-2">(Opcional si sobra energía)</span>
+                </div>
+                <ul class="space-y-3 text-sm mb-4">
+                    <li class="flex items-start gap-2 text-slate-300">
+                        <i data-lucide="target" class="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0"></i>
+                        <span><strong>Crunch Abdominal o Elevación de Piernas:</strong> 3 series x 15 repes.</span>
+                    </li>
+                    <li class="flex items-start gap-2 text-slate-300">
+                        <i data-lucide="target" class="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0"></i>
+                        <span><strong>Espinales (Superman o Máquina):</strong> 3 series x 12 repes.</span>
+                    </li>
+                </ul>
+                
+                <!-- Advertencia Coach -->
+                <div class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3 flex gap-3">
+                    <i data-lucide="triangle-alert" class="w-5 h-5 text-yellow-500 flex-shrink-0"></i>
+                    <div class="text-xs text-yellow-200/90 leading-relaxed">
+                        <strong>⚠️ Advertencia Coach:</strong> Facundo, con tus espinales ten mucho cuidado. No hagas movimientos bruscos. Prefiero que hagas "Bird-Dog" (cuadrupedia levantando mano y pierna contraria) para fortalecer la zona sin comprimir las vértebras.
+                    </div>
+                </div>
+            `;
+            listContainer.appendChild(coreBlock);
+
+            // RESET BUTTON
+            const resetBtnContainer = document.createElement('div');
+            resetBtnContainer.className = 'mt-8 mb-12 flex justify-center opacity-80 hover:opacity-100 transition-opacity';
+            resetBtnContainer.innerHTML = `
+                <button id="reset-progress-btn" class="flex items-center gap-2 px-6 py-3 bg-slate-800/50 text-slate-400 border border-slate-700/50 rounded-xl hover:bg-red-900/20 hover:text-red-400 hover:border-red-900/50 transition-all duration-300 shadow-sm hover:shadow-red-500/10 active:scale-95 touch-manipulation">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    <span class="font-medium">Reiniciar Entrenamiento</span>
+                </button>
+            `;
+            listContainer.appendChild(resetBtnContainer);
+
+            // Listener for reset
+            setTimeout(() => {
+                const btn = document.getElementById('reset-progress-btn');
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        showConfirmModal(
+                            '¿Reiniciar Progreso?',
+                            'Se borrará todo lo que hiciste hoy. ¿Estás seguro?',
+                            () => {
+                                completedSets = {};
+                                localStorage.removeItem('gymRoutineSets');
+                                renderContent();
+                            }
+                        );
+                    });
+                }
+            }, 0);
 
             // Add event listeners to set buttons
             document.querySelectorAll('.set-btn').forEach(btn => {
