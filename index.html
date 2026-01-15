@@ -192,6 +192,45 @@
         </div>
     </main>
 
+    <!-- Timer Modal -->
+    <div id="timer-modal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div
+            class="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl shadow-emerald-500/10">
+            <div class="mb-4">
+                <i data-lucide="timer" class="w-12 h-12 text-emerald-400 mx-auto mb-2"></i>
+                <h3 class="text-lg font-bold text-slate-300">Tiempo de Descanso</h3>
+                <p id="timer-exercise-name" class="text-sm text-slate-500 truncate"></p>
+            </div>
+            <div id="timer-display" class="text-7xl font-mono font-bold text-emerald-400 mb-6 tabular-nums">
+                0:00
+            </div>
+            <div id="timer-progress-ring" class="relative w-32 h-32 mx-auto mb-6">
+                <svg class="w-32 h-32 transform -rotate-90">
+                    <circle cx="64" cy="64" r="58" stroke="#1e293b" stroke-width="8" fill="none" />
+                    <circle id="timer-ring" cx="64" cy="64" r="58" stroke="#10b981" stroke-width="8" fill="none"
+                        stroke-linecap="round" stroke-dasharray="364.42" stroke-dashoffset="0"
+                        class="transition-all duration-1000 ease-linear" />
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <span id="timer-seconds-left" class="text-3xl font-bold text-white"></span>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-center">
+                <button id="timer-skip-btn"
+                    class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition-all flex items-center gap-2">
+                    <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                    Saltar
+                </button>
+                <button id="timer-add-btn"
+                    class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-all flex items-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    +30s
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="h-6 md:h-0"></div>
 
     <script>
@@ -254,7 +293,116 @@
 
         // --- STATE ---
         let activeTab = 0;
-        let completedExercises = JSON.parse(localStorage.getItem('gymRoutineProgress')) || {};
+        let completedSets = JSON.parse(localStorage.getItem('gymRoutineSets')) || {};
+        let timerInterval = null;
+        let currentTimerSeconds = 0;
+        let totalTimerSeconds = 0;
+
+        // --- HELPER: Parse rest time from notes ---
+        function parseRestTime(notes) {
+            const match = notes.match(/Descanso:\s*(\d+)(?:-\d+)?\s*(min|seg)/i);
+            if (match) {
+                const value = parseInt(match[1]);
+                const unit = match[2].toLowerCase();
+                return unit === 'min' ? value * 60 : value;
+            }
+            return 90; // Default 90 seconds
+        }
+
+        // --- TIMER FUNCTIONS ---
+        function showTimer(exerciseName, seconds) {
+            const modal = document.getElementById('timer-modal');
+            const display = document.getElementById('timer-display');
+            const ring = document.getElementById('timer-ring');
+            const secondsLeft = document.getElementById('timer-seconds-left');
+            const exerciseNameEl = document.getElementById('timer-exercise-name');
+
+            exerciseNameEl.textContent = exerciseName;
+            currentTimerSeconds = seconds;
+            totalTimerSeconds = seconds;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                currentTimerSeconds--;
+                updateTimerDisplay();
+
+                if (currentTimerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    playTimerEnd();
+                    setTimeout(hideTimer, 1500);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timer-display');
+            const ring = document.getElementById('timer-ring');
+            const secondsLeft = document.getElementById('timer-seconds-left');
+
+            const mins = Math.floor(currentTimerSeconds / 60);
+            const secs = currentTimerSeconds % 60;
+            display.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            secondsLeft.textContent = currentTimerSeconds;
+
+            // Update ring progress
+            const circumference = 364.42;
+            const progress = currentTimerSeconds / totalTimerSeconds;
+            ring.style.strokeDashoffset = circumference * (1 - progress);
+
+            // Change color when low
+            if (currentTimerSeconds <= 10) {
+                ring.style.stroke = '#ef4444';
+                display.classList.remove('text-emerald-400');
+                display.classList.add('text-red-400');
+            } else {
+                ring.style.stroke = '#10b981';
+                display.classList.remove('text-red-400');
+                display.classList.add('text-emerald-400');
+            }
+        }
+
+        function hideTimer() {
+            const modal = document.getElementById('timer-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function playTimerEnd() {
+            // Vibrate if supported
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+            // Play beep sound
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.frequency.value = 880;
+                oscillator.type = 'sine';
+                gainNode.gain.value = 0.3;
+                oscillator.start();
+                setTimeout(() => oscillator.stop(), 300);
+            } catch (e) { }
+        }
+
+        // Timer event listeners
+        document.getElementById('timer-skip-btn').addEventListener('click', hideTimer);
+        document.getElementById('timer-add-btn').addEventListener('click', () => {
+            currentTimerSeconds += 30;
+            totalTimerSeconds += 30;
+            updateTimerDisplay();
+        });
 
         // --- MUSCLE MAP GENERATOR ---
         const getMuscleMapSVG = (primary = [], secondary = []) => {
@@ -362,9 +510,19 @@
             document.getElementById('day-title').textContent = dayData.title;
             document.getElementById('exercise-count').textContent = `${dayData.exercises.length} Ejercicios`;
 
-            const totalExercises = dayData.exercises.length;
-            const completedCount = dayData.exercises.filter((_, idx) => completedExercises[`${activeTab}-${idx}`]).length;
-            const progress = totalExercises === 0 ? 0 : Math.round((completedCount / totalExercises) * 100);
+            // Calculate total sets and completed sets for progress
+            let totalSets = 0;
+            let completedSetsCount = 0;
+            dayData.exercises.forEach((exercise, idx) => {
+                const numSets = parseInt(exercise.sets) || 3;
+                totalSets += numSets;
+                for (let s = 0; s < numSets; s++) {
+                    if (completedSets[`${activeTab}-${idx}-${s}`]) {
+                        completedSetsCount++;
+                    }
+                }
+            });
+            const progress = totalSets === 0 ? 0 : Math.round((completedSetsCount / totalSets) * 100);
 
             const progressContainer = document.getElementById('progress-container');
             progressContainer.classList.remove('hidden');
@@ -372,7 +530,6 @@
             // Progress Bar Animation
             const progressBar = document.getElementById('progress-bar');
             document.getElementById('progress-text').textContent = `${progress}%`;
-            // Reset width to trigger transition
             progressBar.style.width = '0%';
             setTimeout(() => {
                 progressBar.style.width = `${progress}%`;
@@ -391,76 +548,105 @@
             listContainer.innerHTML = '';
 
             dayData.exercises.forEach((exercise, idx) => {
-                const key = `${activeTab}-${idx}`;
-                const isCompleted = completedExercises[key];
+                const numSets = parseInt(exercise.sets) || 3;
+                const restTime = parseRestTime(exercise.notes || '');
+
+                // Count completed sets for this exercise
+                let exerciseCompletedSets = 0;
+                for (let s = 0; s < numSets; s++) {
+                    if (completedSets[`${activeTab}-${idx}-${s}`]) {
+                        exerciseCompletedSets++;
+                    }
+                }
+                const isExerciseCompleted = exerciseCompletedSets === numSets;
 
                 const card = document.createElement('div');
-                // Stagger Animation
                 const staggerClass = idx < 6 ? `stagger-${idx + 1}` : '';
 
-                // Base classes
-                let cardClasses = `animate-slide-up ${staggerClass} relative group p-0 rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col md:flex-row transform cursor-pointer `;
+                let cardClasses = `animate-slide-up ${staggerClass} relative group p-0 rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col md:flex-row `;
 
-                if (isCompleted) {
+                if (isExerciseCompleted) {
                     cardClasses += "bg-slate-900/40 border-slate-800/50 opacity-80 scale-[0.99]";
                 } else {
-                    cardClasses += "bg-slate-900 border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-emerald-900/10 hover:-translate-y-1";
+                    cardClasses += "bg-slate-900 border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-emerald-900/10";
                 }
                 card.className = cardClasses;
 
-                // Event Listener for click
-                card.addEventListener('click', (e) => {
-                    // Prevent triggering if clicking specific non-interactive areas if needed, but here whole card is clickable
-                    completedExercises[key] = !completedExercises[key];
-                    localStorage.setItem('gymRoutineProgress', JSON.stringify(completedExercises));
-                    renderContent(); // Re-render to update UI
-                });
-
                 const muscleMapHTML = getMuscleMapSVG(exercise.muscles.primary, exercise.muscles.secondary);
+
+                // Generate set buttons HTML
+                let setButtonsHTML = '';
+                for (let s = 0; s < numSets; s++) {
+                    const setKey = `${activeTab}-${idx}-${s}`;
+                    const isSetCompleted = completedSets[setKey];
+                    setButtonsHTML += `
+                        <button data-set-key="${setKey}" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
+                            class="set-btn w-10 h-10 rounded-lg font-bold text-sm transition-all duration-200 flex items-center justify-center
+                            ${isSetCompleted
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-emerald-400 hover:scale-105'}">
+                            ${isSetCompleted ? '✓' : (s + 1)}
+                        </button>
+                    `;
+                }
 
                 card.innerHTML = `
                     <!-- Completion Strip -->
-                    <div class="absolute left-0 top-0 bottom-0 w-1 z-10 transition-colors duration-300 ${isCompleted ? 'bg-emerald-500' : 'bg-transparent group-hover:bg-slate-700'}"></div>
+                    <div class="absolute left-0 top-0 bottom-0 w-1 z-10 transition-colors duration-300 ${isExerciseCompleted ? 'bg-emerald-500' : 'bg-transparent group-hover:bg-slate-700'}"></div>
 
                     <!-- Left Info -->
                     <div class="flex-1 p-5">
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex-1">
                                 <div class="flex items-center gap-3 mb-2">
-                                    <div class="p-2 rounded-lg transition-colors duration-300 ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-300 group-hover:bg-slate-700'}">
-                                        <i data-lucide="dumbbell" class="w-5 h-5 ${isCompleted ? 'animate-pulse' : ''}"></i>
+                                    <div class="p-2 rounded-lg transition-colors duration-300 ${isExerciseCompleted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-300 group-hover:bg-slate-700'}">
+                                        <i data-lucide="dumbbell" class="w-5 h-5 ${isExerciseCompleted ? 'animate-pulse' : ''}"></i>
                                     </div>
-                                    <h3 class="font-bold text-lg transition-all duration-300 ${isCompleted ? 'text-slate-500 line-through decoration-slate-600 decoration-2' : 'text-slate-100 group-hover:text-emerald-300'}">
+                                    <h3 class="font-bold text-lg transition-all duration-300 ${isExerciseCompleted ? 'text-slate-500 line-through decoration-slate-600 decoration-2' : 'text-slate-100 group-hover:text-emerald-300'}">
                                         ${exercise.name}
                                     </h3>
                                 </div>
                                 
-                                <div class="grid grid-cols-2 gap-y-3 gap-x-6 mt-3 text-sm transition-opacity duration-300 ${isCompleted ? 'opacity-50' : 'opacity-100'}">
-                                    <div class="flex flex-col">
+                                <!-- Sets Row -->
+                                <div class="mt-4 mb-3">
+                                    <div class="flex items-center gap-2 mb-2">
                                         <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Series</span>
-                                        <span class="font-mono text-emerald-400 font-bold text-base">${exercise.sets}</span>
+                                        <span class="text-xs text-slate-600">(${exerciseCompletedSets}/${numSets})</span>
+                                        <div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden ml-2">
+                                            <div class="h-full bg-emerald-500 transition-all duration-300" style="width: ${(exerciseCompletedSets / numSets) * 100}%"></div>
+                                        </div>
                                     </div>
+                                    <div class="flex gap-2 flex-wrap">
+                                        ${setButtonsHTML}
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-x-4 gap-y-2 text-sm transition-opacity duration-300 ${isExerciseCompleted ? 'opacity-50' : 'opacity-100'}">
                                     <div class="flex flex-col">
                                         <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Reps</span>
                                         <span class="font-mono text-white font-medium">${exercise.reps}</span>
                                     </div>
-                                    <div class="flex flex-col col-span-2">
+                                    <div class="flex flex-col">
                                         <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Intensidad</span>
                                         <span class="text-orange-400 font-medium">${exercise.rir}</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Descanso</span>
+                                        <span class="text-cyan-400 font-medium">${restTime >= 60 ? Math.floor(restTime / 60) + ' min' : restTime + 's'}</span>
                                     </div>
                                 </div>
 
                                 ${exercise.notes ? `
-                                <div class="mt-3 pt-3 border-t border-slate-800/50 transition-opacity duration-300 ${isCompleted ? 'opacity-40' : 'opacity-100'}">
+                                <div class="mt-3 pt-3 border-t border-slate-800/50 transition-opacity duration-300 ${isExerciseCompleted ? 'opacity-40' : 'opacity-100'}">
                                     <p class="text-slate-400 text-sm italic flex items-start gap-1.5">
                                         <span class="text-emerald-500 not-italic font-bold">Tip:</span> 
-                                        ${exercise.notes}
+                                        ${exercise.notes.replace(/Descanso:.*?(min|seg)\.?/gi, '').trim()}
                                     </p>
                                 </div>` : ''}
                             </div>
 
                             <div class="mt-1">
-                                ${isCompleted
+                                ${isExerciseCompleted
                         ? `<i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-500 fill-emerald-500/20 animate-pop drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"></i>`
                         : `<i data-lucide="circle" class="w-8 h-8 text-slate-700 group-hover:text-emerald-500/50 transition-all duration-300 transform group-hover:scale-110"></i>`
                     }
@@ -469,7 +655,7 @@
                     </div>
 
                     <!-- Muscle Map -->
-                    <div class="w-full md:w-32 bg-slate-950/50 border-t md:border-t-0 md:border-l border-slate-800 p-2 flex flex-col items-center justify-center transition-opacity duration-300 ${isCompleted ? 'opacity-50 grayscale' : ''}">
+                    <div class="w-full md:w-32 bg-slate-950/50 border-t md:border-t-0 md:border-l border-slate-800 p-2 flex flex-col items-center justify-center transition-opacity duration-300 ${isExerciseCompleted ? 'opacity-50 grayscale' : ''}">
                         <span class="text-[10px] uppercase text-slate-500 font-bold mb-1 tracking-wider text-center">Impacto Muscular</span>
                         ${muscleMapHTML}
                         <div class="flex gap-2 mt-2 justify-center">
@@ -485,6 +671,30 @@
                     </div>
                 `;
                 listContainer.appendChild(card);
+            });
+
+            // Add event listeners to set buttons
+            document.querySelectorAll('.set-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const setKey = btn.dataset.setKey;
+                    const exerciseName = btn.dataset.exerciseName;
+                    const restTime = parseInt(btn.dataset.restTime);
+
+                    if (!completedSets[setKey]) {
+                        // Mark as completed
+                        completedSets[setKey] = true;
+                        localStorage.setItem('gymRoutineSets', JSON.stringify(completedSets));
+                        renderContent();
+                        // Start timer
+                        showTimer(exerciseName, restTime);
+                    } else {
+                        // Toggle off (unmark)
+                        completedSets[setKey] = false;
+                        localStorage.setItem('gymRoutineSets', JSON.stringify(completedSets));
+                        renderContent();
+                    }
+                });
             });
 
             // Re-init icons for newly added elements
