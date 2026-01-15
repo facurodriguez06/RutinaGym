@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutina de Alma y Facu</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Tipografía Base */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
+            /* slate-950 */
+            color: #e2e8f0;
+            /* slate-200 */
+        }
+
+        /* Scrollbar Personalizado */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #10b981;
+        }
+
+        /* Utilidades para ocultar scrollbar */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animaciones */
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUpFade 0.5s ease-out forwards;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.3);
+            }
+
+            100% {
+                transform: scale(1.1);
+            }
+        }
+
+        .animate-pop {
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Stagger delays */
+        .stagger-1 {
+            animation-delay: 0.05s;
+        }
+
+        .stagger-2 {
+            animation-delay: 0.1s;
+        }
+
+        .stagger-3 {
+            animation-delay: 0.15s;
+        }
+
+        .stagger-4 {
+            animation-delay: 0.2s;
+        }
+
+        .stagger-5 {
+            animation-delay: 0.25s;
+        }
+
+        .stagger-6 {
+            animation-delay: 0.3s;
+        }
+    </style>
+</head>
+
+<body class="selection:bg-emerald-500 selection:text-white pb-20 md:pb-0 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20 shadow-lg backdrop-blur-sm bg-opacity-90">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="animate-slide-up">
+                <h1 class="text-xl md:text-2xl font-bold text-emerald-400 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-6 h-6 animate-pulse"></i>
+                    Rutina de Alma y Facu
+                </h1>
+                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Training System</p>
+            </div>
+            <div class="hidden md:block animate-slide-up stagger-1">
+                <span id="current-date"
+                    class="bg-slate-800 text-emerald-400 px-3 py-1 rounded-full text-sm font-medium border border-slate-700 shadow-sm capitalize">
+                    <!-- Fecha inyectada por JS -->
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-6 md:py-8 flex flex-col md:flex-row gap-6 w-full flex-1">
+
+        <!-- Sidebar / Top Tabs -->
+        <nav class="md:w-64 flex-shrink-0 animate-slide-up">
+            <div id="tabs-container"
+                class="flex md:flex-col overflow-x-auto md:overflow-visible gap-2 pb-2 md:pb-0 scrollbar-hide">
+                <!-- Botones inyectados por JS -->
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="flex-1 w-full">
+
+            <!-- Progress Section -->
+            <div id="progress-container"
+                class="mb-6 bg-slate-900 rounded-xl p-4 border border-slate-800 shadow-sm animate-slide-up stagger-1 hidden">
+                <div class="flex justify-between items-end mb-2">
+                    <div>
+                        <h2 id="day-title" class="text-2xl font-bold text-white flex items-center gap-2">
+                            <!-- Título del día -->
+                        </h2>
+                        <p class="text-slate-400 text-sm mt-1 flex items-center gap-1">
+                            <i data-lucide="flame" class="w-4 h-4 text-orange-500"></i>
+                            <span id="exercise-count">0 Ejercicios</span>
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <span id="progress-text"
+                            class="text-3xl font-bold text-emerald-400 transition-all duration-500">0%</span>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                    <div id="progress-bar"
+                        class="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                        style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Exercises List -->
+            <div id="exercises-list" class="space-y-4">
+                <!-- Tarjetas inyectadas por JS -->
+            </div>
+
+            <!-- Completion Message -->
+            <div id="completion-message"
+                class="hidden mt-8 p-6 bg-gradient-to-r from-emerald-900/30 to-slate-900 rounded-2xl border border-emerald-900/50 text-center animate-slide-up shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                <div
+                    class="inline-flex items-center justify-center p-3 bg-emerald-500/20 rounded-full mb-4 animate-bounce">
+                    <i data-lucide="trophy" class="w-8 h-8 text-emerald-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">¡Entrenamiento Completado!</h3>
+                <p class="text-slate-400">Excelente trabajo hoy, Alma y Facu. ¡A recuperar!</p>
+            </div>
+
+        </div>
+    </main>
+
+    <div class="h-6 md:h-0"></div>
+
+    <script>
+        // --- DATA ---
+        const routineData = [
+            {
+                day: "Día 1",
+                title: "Tracción (Espalda/Bíceps)",
+                exercises: [
+                    { name: "Jalón al Pecho (Agarre Neutro)", sets: "3", reps: "10 - 12", rir: "RIR 1-2", notes: "Codos pegados al cuerpo, retracción escapular.", muscles: { primary: ['lats'], secondary: ['biceps', 'forearms'] } },
+                    { name: "Remo con Barra (Yates)", sets: "3", reps: "8 - 10", rir: "RIR 2", notes: "Torso a 45º, agarre supino.", muscles: { primary: ['lats', 'traps'], secondary: ['lower_back', 'biceps'] } },
+                    { name: "Remo Unilateral en Máquina", sets: "3", reps: "10 - 12", rir: "RIR 1", notes: "Enfoque en dorsal bajo.", muscles: { primary: ['lats'], secondary: ['biceps'] } },
+                    { name: "Curl con Barra Z", sets: "3", reps: "10 - 12", rir: "RIR 1", notes: "Sin balanceo.", muscles: { primary: ['biceps'], secondary: ['forearms'] } },
+                    { name: "Curl Martillo (Mancuernas)", sets: "3", reps: "10 - 12", rir: "RIR 1", notes: "Enfoque en braquial.", muscles: { primary: ['biceps', 'forearms'], secondary: [] } },
+                    { name: "Facepulls", sets: "3", reps: "15 - 20", rir: "RIR 2", notes: "Rotación externa del hombro.", muscles: { primary: ['shoulders', 'traps'], secondary: [] } }
+                ]
+            },
+            {
+                day: "Día 2",
+                title: "Empuje (Pecho/Hombro/Tríceps)",
+                exercises: [
+                    { name: "Press Inclinado con Mancuernas", sets: "3", reps: "8 - 10", rir: "RIR 2", notes: "Banco a 30 grados.", muscles: { primary: ['chest', 'shoulders'], secondary: ['triceps'] } },
+                    { name: "Press Plano en Máquina", sets: "3", reps: "10 - 12", rir: "RIR 1", notes: "Movimiento controlado.", muscles: { primary: ['chest'], secondary: ['triceps', 'shoulders'] } },
+                    { name: "Elevaciones Laterales (Polea)", sets: "4", reps: "12 - 15", rir: "RIR 1", notes: "Codo ligeramente flexionado.", muscles: { primary: ['shoulders'], secondary: ['traps'] } },
+                    { name: "Extensiones de Tríceps (Polea)", sets: "3", reps: "12 - 15", rir: "RIR 1", notes: "Codos fijos.", muscles: { primary: ['triceps'], secondary: [] } },
+                    { name: "Fondos en Paralelas", sets: "3", reps: "Al fallo", rir: "RIR 0", notes: "Inclinarse adelante para pecho.", muscles: { primary: ['triceps', 'chest'], secondary: ['shoulders'] } }
+                ]
+            },
+            {
+                day: "Día 3",
+                title: "Pierna (Enfoque Cuádriceps)",
+                exercises: [
+                    { name: "Sentadilla Hack", sets: "3", reps: "6 - 8", rir: "RIR 2", notes: "Profunda, pies ancho de hombros.", muscles: { primary: ['quads'], secondary: ['glutes'] } },
+                    { name: "Prensa 45 Grados", sets: "3", reps: "10 - 12", rir: "RIR 2", notes: "Pies abajo en la plataforma.", muscles: { primary: ['quads'], secondary: ['glutes', 'hamstrings'] } },
+                    { name: "Sillón de Cuádriceps", sets: "3", reps: "12 - 15", rir: "RIR 0", notes: "Drop set en la última serie.", muscles: { primary: ['quads'], secondary: [] } },
+                    { name: "Pantorrilla en Prensa", sets: "4", reps: "15 - 20", rir: "RIR 1", notes: "Pausar abajo 1 seg.", muscles: { primary: ['calves'], secondary: [] } }
+                ]
+            },
+            {
+                day: "Día 4",
+                title: "Torso (Hipertrofia)",
+                exercises: [
+                    { name: "Press Militar con Mancuernas", sets: "3", reps: "8 - 10", rir: "RIR 2", notes: "Sentado, espalda recta.", muscles: { primary: ['shoulders'], secondary: ['triceps'] } },
+                    { name: "Dominadas", sets: "3", reps: "Al fallo", rir: "RIR 0", notes: "Rango completo.", muscles: { primary: ['lats'], secondary: ['biceps'] } },
+                    { name: "Remo Gironda (Polea Baja)", sets: "3", reps: "10 - 12", rir: "RIR 1", notes: "Estirar dorsal al frente.", muscles: { primary: ['lats', 'traps'], secondary: ['biceps'] } },
+                    { name: "Aperturas (Peck Deck)", sets: "3", reps: "12 - 15", rir: "RIR 1", notes: "Apretar pecho 1 seg al cerrar.", muscles: { primary: ['chest'], secondary: ['shoulders'] } },
+                    { name: "Curl Araña (Spider)", sets: "3", reps: "12 - 15", rir: "RIR 1", notes: "Pecho apoyado en banco inclinado.", muscles: { primary: ['biceps'], secondary: [] } }
+                ]
+            },
+            {
+                day: "Día 5",
+                title: "Pierna (Femoral y Glúteo)",
+                exercises: [
+                    { name: "Peso Muerto Rumano", sets: "3", reps: "6 - 8", rir: "RIR 2", notes: "Barra o mancuernas. Bajar lento.", muscles: { primary: ['hamstrings', 'glutes'], secondary: ['lower_back'] } },
+                    { name: "Hip Thrust", sets: "3", reps: "8 - 10", rir: "RIR 1", notes: "Explosivo arriba.", muscles: { primary: ['glutes'], secondary: ['hamstrings'] } },
+                    { name: "Curl Femoral Acostado", sets: "3", reps: "10 - 12", rir: "RIR 1", notes: "No levantar la cadera del banco.", muscles: { primary: ['hamstrings'], secondary: ['calves'] } },
+                    { name: "Zancadas (Caminata)", sets: "3", reps: "12 pasos", rir: "RIR 1", notes: "Pasos largos (enfoque glúteo).", muscles: { primary: ['glutes', 'quads'], secondary: ['hamstrings'] } }
+                ]
+            }
+        ];
+
+        // --- STATE ---
+        let activeTab = 0;
+        let completedExercises = JSON.parse(localStorage.getItem('gymRoutineProgress')) || {};
+
+        // --- MUSCLE MAP GENERATOR ---
+        const getMuscleMapSVG = (primary = [], secondary = []) => {
+            const getColor = (muscleId) => {
+                if (primary.includes(muscleId)) return "#ef4444"; // Red-500
+                if (secondary.includes(muscleId)) return "#eab308"; // Yellow-500
+                return "#334155"; // Slate-700
+            };
+
+            // SVG Content (Same paths as React component)
+            return `
+            <div class="flex gap-2 h-32 w-full justify-center opacity-90 transition-opacity duration-500 hover:opacity-100">
+                <svg viewBox="0 0 100 200" class="h-full w-auto drop-shadow-lg">
+                    <circle cx="50" cy="20" r="12" fill="#1e293b" />
+                    <path d="M38,32 Q50,40 62,32 L65,35 L35,35 Z" fill="${getColor('traps')}" />
+                    <path d="M25,35 Q30,30 38,32 L38,45 Q25,50 22,40 Z" fill="${getColor('shoulders')}" />
+                    <path d="M75,35 Q70,30 62,32 L62,45 Q75,50 78,40 Z" fill="${getColor('shoulders')}" />
+                    <path d="M38,32 Q50,45 62,32 L62,55 Q50,65 38,55 Z" fill="${getColor('chest')}" />
+                    <path d="M22,40 Q25,50 20,60 L28,60 Q30,50 38,45 Z" fill="${getColor('biceps')}" />
+                    <path d="M78,40 Q75,50 80,60 L72,60 Q70,50 62,45 Z" fill="${getColor('biceps')}" />
+                    <path d="M20,60 L18,80 L26,80 L28,60 Z" fill="${getColor('forearms')}" />
+                    <path d="M80,60 L82,80 L74,80 L72,60 Z" fill="${getColor('forearms')}" />
+                    <path d="M38,55 Q50,65 62,55 L60,85 Q50,90 40,85 Z" fill="${getColor('abs')}" />
+                    <path d="M38,55 L35,80 L40,85 L38,55 Z" fill="${getColor('obliques')}" />
+                    <path d="M62,55 L65,80 L60,85 L62,55 Z" fill="${getColor('obliques')}" />
+                    <path d="M35,85 Q25,100 30,135 L48,135 Q50,100 45,85 Z" fill="${getColor('quads')}" />
+                    <path d="M65,85 Q75,100 70,135 L52,135 Q50,100 55,85 Z" fill="${getColor('quads')}" />
+                    <path d="M32,140 Q28,155 32,170 L46,170 Q48,155 46,140 Z" fill="${getColor('calves')}" />
+                    <path d="M68,140 Q72,155 68,170 L54,170 Q52,155 54,140 Z" fill="${getColor('calves')}" />
+                </svg>
+                <svg viewBox="0 0 100 200" class="h-full w-auto drop-shadow-lg">
+                    <circle cx="50" cy="20" r="12" fill="#1e293b" />
+                    <path d="M35,32 L65,32 L50,55 Z" fill="${getColor('traps')}" />
+                    <path d="M25,35 Q30,30 35,32 L35,45 Q25,50 22,40 Z" fill="${getColor('shoulders')}" />
+                    <path d="M75,35 Q70,30 65,32 L65,45 Q75,50 78,40 Z" fill="${getColor('shoulders')}" />
+                    <path d="M35,45 L28,65 Q35,75 50,85 Q65,75 72,65 L65,45 L50,55 Z" fill="${getColor('lats')}" />
+                    <path d="M42,85 L58,85 L55,95 L45,95 Z" fill="${getColor('lower_back')}" />
+                    <path d="M22,40 Q18,50 20,60 L28,60 Q30,50 35,45 Z" fill="${getColor('triceps')}" />
+                    <path d="M78,40 Q82,50 80,60 L72,60 Q70,50 65,45 Z" fill="${getColor('triceps')}" />
+                    <path d="M35,95 Q25,105 35,120 L50,120 L50,95 Z" fill="${getColor('glutes')}" />
+                    <path d="M65,95 Q75,105 65,120 L50,120 L50,95 Z" fill="${getColor('glutes')}" />
+                    <path d="M35,120 Q30,135 32,150 L48,150 Q48,135 45,120 Z" fill="${getColor('hamstrings')}" />
+                    <path d="M65,120 Q70,135 68,150 L52,150 Q52,135 55,120 Z" fill="${getColor('hamstrings')}" />
+                    <path d="M32,152 Q25,165 34,180 L46,180 Q48,165 46,152 Z" fill="${getColor('calves')}" />
+                    <path d="M68,152 Q75,165 66,180 L54,180 Q52,165 54,152 Z" fill="${getColor('calves')}" />
+                </svg>
+            </div>
+            `;
+        };
+
+        // --- INIT & RENDER FUNCTIONS ---
+
+        function init() {
+            // Set Date
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('es-AR', options);
+
+            renderTabs();
+            renderContent();
+            lucide.createIcons();
+        }
+
+        function renderTabs() {
+            const container = document.getElementById('tabs-container');
+            container.innerHTML = '';
+
+            routineData.forEach((day, index) => {
+                const isActive = index === activeTab;
+                const btn = document.createElement('button');
+
+                // Tailwind classes for buttons
+                let classes = "flex-shrink-0 md:w-full text-left px-4 py-3 rounded-xl transition-all duration-300 flex items-center justify-between group border relative overflow-hidden ";
+                if (isActive) {
+                    classes += "bg-emerald-500/10 border-emerald-500 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)] translate-x-1";
+                } else {
+                    classes += "bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700";
+                }
+                btn.className = classes;
+
+                btn.onclick = () => {
+                    activeTab = index;
+                    renderTabs();
+                    renderContent();
+                };
+
+                // Inner HTML
+                btn.innerHTML = `
+                    ${isActive ? '<div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent opacity-50"></div>' : ''}
+                    <div class="flex flex-col relative z-10">
+                        <span class="text-xs font-bold uppercase tracking-wider mb-1 transition-colors ${isActive ? 'text-emerald-300' : 'text-slate-500'}">${day.day}</span>
+                        <span class="font-medium text-sm truncate w-32 md:w-auto">${day.title}</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 transition-all duration-300 relative z-10 ${isActive ? 'text-emerald-500 translate-x-0' : 'opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}"></i>
+                `;
+
+                container.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        function renderContent() {
+            const dayData = routineData[activeTab];
+
+            // Update Headers & Progress
+            document.getElementById('day-title').textContent = dayData.title;
+            document.getElementById('exercise-count').textContent = `${dayData.exercises.length} Ejercicios`;
+
+            const totalExercises = dayData.exercises.length;
+            const completedCount = dayData.exercises.filter((_, idx) => completedExercises[`${activeTab}-${idx}`]).length;
+            const progress = totalExercises === 0 ? 0 : Math.round((completedCount / totalExercises) * 100);
+
+            const progressContainer = document.getElementById('progress-container');
+            progressContainer.classList.remove('hidden');
+
+            // Progress Bar Animation
+            const progressBar = document.getElementById('progress-bar');
+            document.getElementById('progress-text').textContent = `${progress}%`;
+            // Reset width to trigger transition
+            progressBar.style.width = '0%';
+            setTimeout(() => {
+                progressBar.style.width = `${progress}%`;
+            }, 50);
+
+            // Completion Message
+            const completionMsg = document.getElementById('completion-message');
+            if (progress === 100) {
+                completionMsg.classList.remove('hidden');
+            } else {
+                completionMsg.classList.add('hidden');
+            }
+
+            // Render Exercises
+            const listContainer = document.getElementById('exercises-list');
+            listContainer.innerHTML = '';
+
+            dayData.exercises.forEach((exercise, idx) => {
+                const key = `${activeTab}-${idx}`;
+                const isCompleted = completedExercises[key];
+
+                const card = document.createElement('div');
+                // Stagger Animation
+                const staggerClass = idx < 6 ? `stagger-${idx + 1}` : '';
+
+                // Base classes
+                let cardClasses = `animate-slide-up ${staggerClass} relative group p-0 rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col md:flex-row transform cursor-pointer `;
+
+                if (isCompleted) {
+                    cardClasses += "bg-slate-900/40 border-slate-800/50 opacity-80 scale-[0.99]";
+                } else {
+                    cardClasses += "bg-slate-900 border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-emerald-900/10 hover:-translate-y-1";
+                }
+                card.className = cardClasses;
+
+                // Event Listener for click
+                card.addEventListener('click', (e) => {
+                    // Prevent triggering if clicking specific non-interactive areas if needed, but here whole card is clickable
+                    completedExercises[key] = !completedExercises[key];
+                    localStorage.setItem('gymRoutineProgress', JSON.stringify(completedExercises));
+                    renderContent(); // Re-render to update UI
+                });
+
+                const muscleMapHTML = getMuscleMapSVG(exercise.muscles.primary, exercise.muscles.secondary);
+
+                card.innerHTML = `
+                    <!-- Completion Strip -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1 z-10 transition-colors duration-300 ${isCompleted ? 'bg-emerald-500' : 'bg-transparent group-hover:bg-slate-700'}"></div>
+
+                    <!-- Left Info -->
+                    <div class="flex-1 p-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="p-2 rounded-lg transition-colors duration-300 ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-300 group-hover:bg-slate-700'}">
+                                        <i data-lucide="dumbbell" class="w-5 h-5 ${isCompleted ? 'animate-pulse' : ''}"></i>
+                                    </div>
+                                    <h3 class="font-bold text-lg transition-all duration-300 ${isCompleted ? 'text-slate-500 line-through decoration-slate-600 decoration-2' : 'text-slate-100 group-hover:text-emerald-300'}">
+                                        ${exercise.name}
+                                    </h3>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-y-3 gap-x-6 mt-3 text-sm transition-opacity duration-300 ${isCompleted ? 'opacity-50' : 'opacity-100'}">
+                                    <div class="flex flex-col">
+                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Series</span>
+                                        <span class="font-mono text-emerald-400 font-bold text-base">${exercise.sets}</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Reps</span>
+                                        <span class="font-mono text-white font-medium">${exercise.reps}</span>
+                                    </div>
+                                    <div class="flex flex-col col-span-2">
+                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Intensidad</span>
+                                        <span class="text-orange-400 font-medium">${exercise.rir}</span>
+                                    </div>
+                                </div>
+
+                                ${exercise.notes ? `
+                                <div class="mt-3 pt-3 border-t border-slate-800/50 transition-opacity duration-300 ${isCompleted ? 'opacity-40' : 'opacity-100'}">
+                                    <p class="text-slate-400 text-sm italic flex items-start gap-1.5">
+                                        <span class="text-emerald-500 not-italic font-bold">Tip:</span> 
+                                        ${exercise.notes}
+                                    </p>
+                                </div>` : ''}
+                            </div>
+
+                            <div class="mt-1">
+                                ${isCompleted
+                        ? `<i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-500 fill-emerald-500/20 animate-pop drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"></i>`
+                        : `<i data-lucide="circle" class="w-8 h-8 text-slate-700 group-hover:text-emerald-500/50 transition-all duration-300 transform group-hover:scale-110"></i>`
+                    }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Muscle Map -->
+                    <div class="w-full md:w-32 bg-slate-950/50 border-t md:border-t-0 md:border-l border-slate-800 p-2 flex flex-col items-center justify-center transition-opacity duration-300 ${isCompleted ? 'opacity-50 grayscale' : ''}">
+                        <span class="text-[10px] uppercase text-slate-500 font-bold mb-1 tracking-wider text-center">Impacto Muscular</span>
+                        ${muscleMapHTML}
+                        <div class="flex gap-2 mt-2 justify-center">
+                            <div class="flex items-center gap-1">
+                                <div class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
+                                <span class="text-[9px] text-slate-400">1º</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)]"></div>
+                                <span class="text-[9px] text-slate-400">2º</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+
+            // Re-init icons for newly added elements
+            lucide.createIcons();
+        }
+
+        // Init App
+        init();
+
+    </script>
+</body>
+
+</html>
