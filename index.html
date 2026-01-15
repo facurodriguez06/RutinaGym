@@ -906,6 +906,10 @@
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            document.body.style.overflow = 'hidden'; // Bloquear scroll
+            document.body.style.position = 'fixed'; // Fijar posición
+            document.body.style.width = '100%'; // Mantener ancho
+            document.body.style.touchAction = 'none'; // Bloquear touch scroll
             lucide.createIcons();
 
             updateTimerDisplay();
@@ -953,6 +957,10 @@
             const modal = document.getElementById('timer-modal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+            document.body.style.overflow = ''; // Restaurar scroll
+            document.body.style.position = ''; // Restaurar posición
+            document.body.style.width = ''; // Restaurar ancho
+            document.body.style.touchAction = ''; // Restaurar touch
             if (timerInterval) {
                 clearInterval(timerInterval);
                 timerInterval = null;
