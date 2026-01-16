@@ -819,6 +819,7 @@ function disableBackgroundMode() {
 // --- TIMER FUNCTIONS ---
 let timerEndTime = null;
 let wakeLock = null;
+let lastNotificationSeconds = null;
 
 async function requestWakeLock() {
   try {
@@ -906,13 +907,17 @@ function showTimer(exerciseName, seconds) {
       }
 
       setTimeout(hideTimer, 1500);
+      setTimeout(hideTimer, 1500);
     } else {
       // UPDATE NOTIFICATION (Live Countdown)
+      // Only update if seconds changed from last tick AND app is hidden
       if (
-        currentTimerSeconds % 1 === 0 &&
+        currentTimerSeconds !== lastNotificationSeconds &&
         Notification.permission === "granted" &&
         document.visibilityState === "hidden"
       ) {
+        lastNotificationSeconds = currentTimerSeconds; // Update tracker
+
         if (navigator.serviceWorker) {
           navigator.serviceWorker.ready.then((reg) => {
             const mins = Math.floor(currentTimerSeconds / 60);
@@ -924,7 +929,7 @@ function showTimer(exerciseName, seconds) {
                 icon: "favicon.svg",
                 tag: "timer-progress",
                 silent: true, // Don't vibrate on update
-                renotify: false,
+                renotify: false, // Crucial for Android to not block rapid updates
               }
             );
           });
