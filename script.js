@@ -1744,10 +1744,17 @@ if ("serviceWorker" in navigator) {
 const testBtn = document.getElementById("test-notif-btn");
 if (testBtn) {
   testBtn.addEventListener("click", () => {
-    if (Notification.permission !== "granted") {
+    if (Notification.permission === "denied") {
+      alert(
+        "⚠️ Notificaciones Bloqueadas.\n\nEl navegador tiene bloqueadas las notificaciones para este sitio.\n\nDebes desbloquearlas manualmente en la configuración del navegador (icono del candado 🔒)."
+      );
+    } else if (Notification.permission !== "granted") {
       Notification.requestPermission().then((res) => {
         if (res === "granted") sendTestNotif();
-        else alert("Permiso denegado");
+        else
+          alert(
+            "⚠️ Permiso denegado.\n\nPara arreglarlo:\n1. Toca el candado 🔒 o configuración ⚙️ junto a la URL.\n2. Busca 'Permisos' o 'Configuración del sitio'.\n3. Permite 'Notificaciones' y 'Sonido'.\n4. Recarga la página."
+          );
       });
     } else {
       sendTestNotif();
