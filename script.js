@@ -1745,16 +1745,11 @@ const testBtn = document.getElementById("test-notif-btn");
 if (testBtn) {
   testBtn.addEventListener("click", () => {
     if (Notification.permission === "denied") {
-      alert(
-        "⚠️ Notificaciones Bloqueadas.\n\nEl navegador tiene bloqueadas las notificaciones para este sitio.\n\nDebes desbloquearlas manualmente en la configuración del navegador (icono del candado 🔒)."
-      );
+      showPermissionModal();
     } else if (Notification.permission !== "granted") {
       Notification.requestPermission().then((res) => {
         if (res === "granted") sendTestNotif();
-        else
-          alert(
-            "⚠️ Permiso denegado.\n\nPara arreglarlo:\n1. Toca el candado 🔒 o configuración ⚙️ junto a la URL.\n2. Busca 'Permisos' o 'Configuración del sitio'.\n3. Permite 'Notificaciones' y 'Sonido'.\n4. Recarga la página."
-          );
+        else showPermissionModal();
       });
     } else {
       sendTestNotif();
@@ -1776,6 +1771,60 @@ function sendTestNotif() {
     new Notification("Test Gym", { body: "Service Worker no activo" });
   }
 }
+
+// --- PERMISSION MODAL ---
+function showPermissionModal() {
+  const modal = document.getElementById("permission-modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    // Animation trigger
+    requestAnimationFrame(() => {
+      modal.classList.remove("opacity-0", "scale-95");
+      modal.classList.add("opacity-100", "scale-100");
+    });
+    lucide.createIcons();
+  }
+}
+
+function closePermissionModal() {
+  const modal = document.getElementById("permission-modal");
+  if (modal) {
+    modal.classList.remove("opacity-100", "scale-100");
+    modal.classList.add("opacity-0", "scale-95");
+    setTimeout(() => modal.classList.add("hidden"), 300);
+  }
+}
+
+function switchPermTab(platform) {
+  const androidContent = document.getElementById("perm-content-android");
+  const iosContent = document.getElementById("perm-content-ios");
+  const androidTab = document.getElementById("perm-tab-android");
+  const iosTab = document.getElementById("perm-tab-ios");
+
+  if (platform === "android") {
+    androidContent.classList.remove("hidden");
+    iosContent.classList.add("hidden");
+
+    androidTab.classList.remove("text-slate-400", "hover:bg-slate-700/50");
+    androidTab.classList.add("bg-indigo-500", "text-white", "shadow-sm");
+
+    iosTab.classList.add("text-slate-400", "hover:bg-slate-700/50");
+    iosTab.classList.remove("bg-indigo-500", "text-white", "shadow-sm");
+  } else {
+    androidContent.classList.add("hidden");
+    iosContent.classList.remove("hidden");
+
+    iosTab.classList.remove("text-slate-400", "hover:bg-slate-700/50");
+    iosTab.classList.add("bg-indigo-500", "text-white", "shadow-sm");
+
+    androidTab.classList.add("text-slate-400", "hover:bg-slate-700/50");
+    androidTab.classList.remove("bg-indigo-500", "text-white", "shadow-sm");
+  }
+}
+
+// Make functions global
+window.closePermissionModal = closePermissionModal;
+window.switchPermTab = switchPermTab;
 
 // Init App
 init();
