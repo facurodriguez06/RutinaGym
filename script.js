@@ -1758,17 +1758,36 @@ if (testBtn) {
 }
 
 function sendTestNotif() {
+  // Alert user we are trying (helps confirm button click works)
+  // alert("Intentando enviar notificación...");
+
   if (navigator.serviceWorker) {
     navigator.serviceWorker.ready.then((reg) => {
-      reg.showNotification("Test Gym", {
-        body: "Si ves esto, las notificaciones funcionan.",
-        icon: "favicon.svg",
-        vibrate: [100, 50, 100],
-        tag: "test",
-      });
+      reg
+        .showNotification("Test Gym", {
+          body: "Si ves esto, las notificaciones funcionan.",
+          icon: "favicon.svg",
+          vibrate: [100, 50, 100],
+          tag: "test",
+        })
+        .then(() => {
+          // Success feedback? Not usually returning anything interactive,
+          // but if promise resolves, the OS accepted it.
+          // alert("✅ Sistema: Enviado. Revisa tu barra de estado.");
+        })
+        .catch((err) => {
+          alert("❌ Error enviando: " + err);
+        });
     });
   } else {
-    new Notification("Test Gym", { body: "Service Worker no activo" });
+    try {
+      new Notification("Test Gym", {
+        body: "Service Worker no activo... (Fallback)",
+      });
+      // alert("⚠️ Usando método Fallback.");
+    } catch (e) {
+      alert("❌ Error Fallback: " + e);
+    }
   }
 }
 
