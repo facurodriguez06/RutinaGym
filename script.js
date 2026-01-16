@@ -1741,21 +1741,32 @@ if ("serviceWorker" in navigator) {
 }
 
 // Debug
-const testBtn = document.getElementById("test-notif-btn");
-if (testBtn) {
-  testBtn.addEventListener("click", () => {
-    if (Notification.permission === "denied") {
-      showPermissionModal();
-    } else if (Notification.permission !== "granted") {
-      Notification.requestPermission().then((res) => {
-        if (res === "granted") sendTestNotif();
-        else showPermissionModal();
-      });
-    } else {
-      sendTestNotif();
-    }
-  });
+// Debug Click Handler (Global)
+function handleTestClick() {
+  logToScreen("👆 Click detectado en botón Test", "info");
+
+  if (Notification.permission === "denied") {
+    logToScreen("⚠️ Permisos denegados explícitamente.", "error");
+    showPermissionModal();
+  } else if (Notification.permission !== "granted") {
+    logToScreen("⚠️ Permisos no concedidos. Solicitando...", "info");
+    Notification.requestPermission().then((res) => {
+      if (res === "granted") {
+        logToScreen("✅ Permiso concedido por usuario.", "success");
+        sendTestNotif();
+      } else {
+        logToScreen("❌ Usuario denegó permiso modal.", "error");
+        showPermissionModal();
+      }
+    });
+  } else {
+    logToScreen("✅ Permisos OK. Enviando test...", "success");
+    sendTestNotif();
+  }
 }
+
+// Ensure function is global
+window.handleTestClick = handleTestClick;
 
 function sendTestNotif() {
   logToScreen("Iniciando Test de Notificación...", "info");
@@ -1900,6 +1911,12 @@ console.error = function (...args) {
 // Make global
 window.toggleDebug = toggleDebug;
 window.logToScreen = logToScreen;
+
+// Log startup
+setTimeout(
+  () => logToScreen("🚀 Sistema v2.1 Cargado. Listo para tests.", "success"),
+  500
+);
 
 // Init App
 init();
