@@ -893,7 +893,8 @@ function showTimer(exerciseName, seconds) {
             body: `Descanso finalizado para ${exerciseName}`,
             icon: "favicon.svg",
             vibrate: [200, 100, 200, 100, 200],
-            tag: "timer-end",
+            tag: "timer-progress", // Replaces progress notification
+            renotify: true,
           });
         });
       } else if (Notification.permission === "granted") {
@@ -905,6 +906,30 @@ function showTimer(exerciseName, seconds) {
       }
 
       setTimeout(hideTimer, 1500);
+    } else {
+      // UPDATE NOTIFICATION (Live Countdown)
+      if (
+        currentTimerSeconds % 1 === 0 &&
+        Notification.permission === "granted" &&
+        document.visibilityState === "hidden"
+      ) {
+        if (navigator.serviceWorker) {
+          navigator.serviceWorker.ready.then((reg) => {
+            const mins = Math.floor(currentTimerSeconds / 60);
+            const secs = currentTimerSeconds % 60;
+            reg.showNotification(
+              `Descansando: ${mins}:${secs.toString().padStart(2, "0")}`,
+              {
+                body: `${exerciseName}`,
+                icon: "favicon.svg",
+                tag: "timer-progress",
+                silent: true, // Don't vibrate on update
+                renotify: false,
+              }
+            );
+          });
+        }
+      }
     }
   }, 200); // Check more frequently for smooth UI, but logic relies on Time
 }
@@ -957,6 +982,15 @@ function hideTimer() {
 
   releaseWakeLock();
   disableBackgroundMode();
+
+  // Clear persistent notification
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.getNotifications({ tag: "timer-progress" }).then((notifications) => {
+        notifications.forEach((n) => n.close());
+      });
+    });
+  }
 }
 
 // --- CUSTOM MODAL FUNCTIONS ---
