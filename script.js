@@ -1758,37 +1758,54 @@ if (testBtn) {
 }
 
 function sendTestNotif() {
-  // Alert user we are trying (helps confirm button click works)
-  // alert("Intentando enviar notificación...");
+  logToScreen("Iniciando Test de Notificación...", "info");
 
-  if (navigator.serviceWorker) {
-    navigator.serviceWorker.ready.then((reg) => {
+  if (Notification.permission !== "granted") {
+    logToScreen("❌ Permiso NO concedido: " + Notification.permission, "error");
+    return;
+  }
+
+  if (!navigator.serviceWorker) {
+    logToScreen("⚠️ Service Worker no soportado en este navegador.", "error");
+    try {
+      new Notification("Test Fallback", { body: "Prueba sin SW" });
+      logToScreen("✅ Notificación Fallback enviada.", "success");
+    } catch (e) {
+      logToScreen("❌ Error Fallback: " + e, "error");
+    }
+    return;
+  }
+
+  navigator.serviceWorker
+    .getRegistration()
+    .then((reg) => {
+      if (!reg) {
+        logToScreen(
+          "❌ Service Worker NO registrado (scope undefined).",
+          "error"
+        );
+        return;
+      }
+
+      logToScreen("✅ SW Encontrado. Scope: " + reg.scope, "success");
+
       reg
-        .showNotification("Test Gym", {
-          body: "Si ves esto, las notificaciones funcionan.",
+        .showNotification("Test Gym SW", {
+          body: "Si ves esto, funciona el SW.",
           icon: "favicon.svg",
           vibrate: [100, 50, 100],
-          tag: "test",
+          tag: "test-" + Date.now(), // Unique tag to ensure it always fires
         })
         .then(() => {
-          // Success feedback? Not usually returning anything interactive,
-          // but if promise resolves, the OS accepted it.
-          // alert("✅ Sistema: Enviado. Revisa tu barra de estado.");
+          logToScreen("🚀 SW: Promesa resuelta (Enviado al OS).", "success");
         })
         .catch((err) => {
-          alert("❌ Error enviando: " + err);
+          logToScreen("❌ SW Error al enviar: " + err, "error");
         });
+    })
+    .catch((err) => {
+      logToScreen("❌ Error obteniendo registro SW: " + err, "error");
     });
-  } else {
-    try {
-      new Notification("Test Gym", {
-        body: "Service Worker no activo... (Fallback)",
-      });
-      // alert("⚠️ Usando método Fallback.");
-    } catch (e) {
-      alert("❌ Error Fallback: " + e);
-    }
-  }
 }
 
 // --- PERMISSION MODAL ---
@@ -1844,6 +1861,45 @@ function switchPermTab(platform) {
 // Make functions global
 window.closePermissionModal = closePermissionModal;
 window.switchPermTab = switchPermTab;
+
+// --- DEBUG CONSOLE LGOIC ---
+function logToScreen(msg, type = "info") {
+  const debugContent = document.getElementById("debug-content");
+  if (!debugContent) return;
+
+  const entry = document.createElement("div");
+  const time = new Date().toLocaleTimeString();
+  entry.textContent = `[${time}] ${msg}`;
+
+  if (type === "error") entry.className = "text-red-400";
+  else if (type === "success") entry.className = "text-emerald-400";
+  else entry.className = "text-slate-300";
+
+  debugContent.prepend(entry); // Newest top
+}
+
+function toggleDebug() {
+  const consoleEl = document.getElementById("debug-console");
+  if (consoleEl) consoleEl.classList.toggle("hidden");
+}
+
+// Override console
+const originalLog = console.log;
+const originalError = console.error;
+
+console.log = function (...args) {
+  originalLog.apply(console, args);
+  logToScreen(args.join(" "));
+};
+
+console.error = function (...args) {
+  originalError.apply(console, args);
+  logToScreen(args.join(" "), "error");
+};
+
+// Make global
+window.toggleDebug = toggleDebug;
+window.logToScreen = logToScreen;
 
 // Init App
 init();
