@@ -767,6 +767,28 @@ function parseRestTime(notes) {
 }
 
 // --- TIMER FUNCTIONS ---
+let timerEndTime = null;
+let wakeLock = null;
+
+async function requestWakeLock() {
+  try {
+    if ("wakeLock" in navigator) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      console.log("Wake Lock active");
+    }
+  } catch (err) {
+    console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+  }
+}
+
+async function releaseWakeLock() {
+  if (wakeLock !== null) {
+    await wakeLock.release();
+    wakeLock = null;
+    console.log("Wake Lock released");
+  }
+}
+
 function showTimer(exerciseName, seconds) {
   const modal = document.getElementById("timer-modal");
   const display = document.getElementById("timer-display");
@@ -777,6 +799,9 @@ function showTimer(exerciseName, seconds) {
   exerciseNameEl.textContent = exerciseName;
   currentTimerSeconds = seconds;
   totalTimerSeconds = seconds;
+
+  // Use timestamps for accuracy
+  timerEndTime = Date.now() + seconds * 1000;
 
   savedScrollY = window.scrollY; // Guardar posición actual
   modal.classList.remove("hidden");
@@ -790,16 +815,35 @@ function showTimer(exerciseName, seconds) {
 
   updateTimerDisplay();
 
+  // Activate Wake Lock
+  requestWakeLock();
+
   timerInterval = setInterval(() => {
-    currentTimerSeconds--;
+    // Calculate remaining based on system time
+    const now = Date.now();
+    const diff = timerEndTime - now;
+
+    currentTimerSeconds = Math.ceil(diff / 1000);
+
     updateTimerDisplay();
 
     if (currentTimerSeconds <= 0) {
       clearInterval(timerInterval);
+      currentTimerSeconds = 0;
+      updateTimerDisplay();
       playTimerEnd();
+
+      // Try to send notification if possible
+      if (Notification.permission === "granted") {
+        new Notification("¡Tiempo Terminado!", {
+          body: `Descanso finalizado para ${exerciseName}`,
+          icon: "favicon.svg",
+        });
+      }
+
       setTimeout(hideTimer, 1500);
     }
-  }, 1000);
+  }, 200); // Check more frequently for smooth UI, but logic relies on Time
 }
 
 function updateTimerDisplay() {
@@ -807,18 +851,21 @@ function updateTimerDisplay() {
   const ring = document.getElementById("timer-ring");
   const secondsLeft = document.getElementById("timer-seconds-left");
 
-  const mins = Math.floor(currentTimerSeconds / 60);
-  const secs = currentTimerSeconds % 60;
+  // Prevent negative display
+  const displaySeconds = Math.max(0, currentTimerSeconds);
+
+  const mins = Math.floor(displaySeconds / 60);
+  const secs = displaySeconds % 60;
   display.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
-  secondsLeft.textContent = currentTimerSeconds;
+  secondsLeft.textContent = displaySeconds;
 
   // Update ring progress
   const circumference = 364.42;
-  const progress = currentTimerSeconds / totalTimerSeconds;
+  const progress = Math.max(0, displaySeconds / totalTimerSeconds); // Clamp 0-1
   ring.style.strokeDashoffset = circumference * (1 - progress);
 
   // Change color when low
-  if (currentTimerSeconds <= 10) {
+  if (displaySeconds <= 10) {
     ring.style.stroke = "#ef4444";
     display.classList.remove("text-emerald-400");
     display.classList.add("text-red-400");
@@ -839,10 +886,13 @@ function hideTimer() {
   document.body.style.width = ""; // Restaurar ancho
   document.body.style.touchAction = ""; // Restaurar touch
   window.scrollTo(0, savedScrollY); // Restaurar posición de scroll
+
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
+
+  releaseWakeLock();
 }
 
 // --- CUSTOM MODAL FUNCTIONS ---
@@ -904,9 +954,14 @@ document.getElementById("confirm-ok-btn").addEventListener("click", () => {
 });
 document.getElementById("timer-skip-btn").addEventListener("click", hideTimer);
 document.getElementById("timer-add-btn").addEventListener("click", () => {
-  currentTimerSeconds += 30;
-  totalTimerSeconds += 30;
-  updateTimerDisplay();
+  if (timerEndTime) {
+    timerEndTime += 30000; // Add 30 seconds to the target timestamp
+    totalTimerSeconds += 30; // Update total for progress ring calculation
+    // Force immediate update
+    const diff = timerEndTime - Date.now();
+    currentTimerSeconds = Math.ceil(diff / 1000);
+    updateTimerDisplay();
+  }
 });
 
 // --- MUSCLE MAP GENERATOR ---
@@ -1490,6 +1545,11 @@ function renderContent() {
       renderContent();
     });
   });
+
+  // Request Notification Permission
+  if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
+  }
 
   // Re-init icons for newly added elements
   lucide.createIcons();
