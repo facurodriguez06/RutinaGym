@@ -1743,19 +1743,27 @@ if ("serviceWorker" in navigator) {
 // Debug
 // Debug Click Handler (Global)
 function handleTestClick() {
-  logToScreen("👆 Click detectado en botón Test", "info");
+  logToScreen("--- DIAGNÓSTICO INICIADO ---");
+  logToScreen(`🔒 Estado Crudo: '${Notification.permission}'`);
+  logToScreen(`🔐 Seguro (HTTPS): ${window.isSecureContext}`);
+  logToScreen(`📱 ServiceWorker Reg: ${!!navigator.serviceWorker.controller}`);
 
   if (Notification.permission === "denied") {
-    logToScreen("⚠️ Permisos denegados explícitamente.", "error");
+    logToScreen("❌ El navegador reporta 'DENIED'.", "error");
+    logToScreen(
+      "⚠️ Esto significa que el BLOQUEO es del SITIO WEB, no del celular.",
+      "error"
+    );
     showPermissionModal();
   } else if (Notification.permission !== "granted") {
-    logToScreen("⚠️ Permisos no concedidos. Solicitando...", "info");
+    logToScreen("⚠️ Permisos 'default'. Solicitando...", "info");
     Notification.requestPermission().then((res) => {
+      logToScreen(`📝 Respuesta solicitud: '${res}'`);
       if (res === "granted") {
-        logToScreen("✅ Permiso concedido por usuario.", "success");
+        logToScreen("✅ Permiso ACEPTADO.", "success");
         sendTestNotif();
       } else {
-        logToScreen("❌ Usuario denegó permiso modal.", "error");
+        logToScreen("❌ Solicitud Rechazada/Ignorada.", "error");
         showPermissionModal();
       }
     });
