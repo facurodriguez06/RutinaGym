@@ -924,6 +924,22 @@ function hideConfirmModal() {
   }, 300);
 }
 
+// --- AUDIO UNLOCKER ---
+let audioCtx = null;
+
+function unlockAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+}
+
+// Attach unlock to all interactive elements if possible, or just global click once
+document.addEventListener("click", unlockAudio, { once: true });
+document.addEventListener("touchstart", unlockAudio, { once: true });
+
 function playTimerEnd() {
   // Vibrate if supported
   if (navigator.vibrate) {
@@ -931,17 +947,21 @@ function playTimerEnd() {
   }
   // Play beep sound
   try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     oscillator.frequency.value = 880;
     oscillator.type = "sine";
-    gainNode.gain.value = 0.3;
+    gainNode.gain.value = 0.5; // Slightly louder
     oscillator.start();
-    setTimeout(() => oscillator.stop(), 300);
-  } catch (e) {}
+    setTimeout(() => oscillator.stop(), 500); // Longer beep
+  } catch (e) {
+    console.error("Audio play error", e);
+  }
 }
 
 // Timer event listeners
@@ -1525,6 +1545,11 @@ function renderContent() {
         completedSets[setKey] = { facu: false, alma: false };
       }
 
+      // Request Notification if needed
+      if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+      }
+
       // Handle Logic
       const currentState = completedSets[setKey][user];
 
@@ -1546,14 +1571,35 @@ function renderContent() {
     });
   });
 
-  // Request Notification Permission
-  if ("Notification" in window && Notification.permission !== "granted") {
-    Notification.requestPermission();
-  }
-
   // Re-init icons for newly added elements
   lucide.createIcons();
 }
+
+// --- VISIBILITY HANDLER ---
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    // Resume audio context if suspended
+    unlockAudio();
+
+    // Check if timer expired while in background
+    if (timerEndTime) {
+      const now = Date.now();
+      const diff = timerEndTime - now;
+
+      // If timer ended more than 1 second ago
+      if (diff <= -1000) {
+        currentTimerSeconds = 0;
+        updateTimerDisplay();
+        playTimerEnd(); // Play sound if missed
+        hideTimer(); // Force close immediately
+      } else {
+        // Just update display immediately
+        currentTimerSeconds = Math.ceil(diff / 1000);
+        updateTimerDisplay();
+      }
+    }
+  }
+});
 
 // Init App
 init();
