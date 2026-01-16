@@ -766,6 +766,56 @@ function parseRestTime(notes) {
   return 90; // Default 90 seconds
 }
 
+// --- SILENT AUDIO FOR BACKGROUND & LOCK SCREEN ---
+// 1 second of silence mp3
+const SILENT_AUDIO_URI =
+  "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAAAAAAAAAAAAACCAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA";
+let bgAudio = new Audio(SILENT_AUDIO_URI);
+bgAudio.loop = true;
+
+function enableBackgroundMode(exerciseName, duration) {
+  // Play silent audio to keep background active
+  bgAudio
+    .play()
+    .then(() => {
+      // Setup Lock Screen Media Controls
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: `Descanso: ${exerciseName}`,
+          artist: "GymRutina",
+          artwork: [
+            { src: "favicon.svg", sizes: "96x96", type: "image/svg+xml" },
+            { src: "favicon.svg", sizes: "128x128", type: "image/svg+xml" },
+          ],
+        });
+        navigator.mediaSession.playbackState = "playing";
+
+        // Attempt to show progress bar
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: duration,
+            playbackRate: 1,
+            position: 0,
+          });
+        } catch (e) {
+          console.log("Media Session Position Error", e);
+        }
+      }
+    })
+    .catch((e) => console.log("Silent Audio Play Error", e));
+}
+
+function disableBackgroundMode() {
+  bgAudio.pause();
+  bgAudio.currentTime = 0;
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.playbackState = "paused";
+    if (navigator.mediaSession.metadata) {
+      navigator.mediaSession.metadata.title = "Rutina Pausada";
+    }
+  }
+}
+
 // --- TIMER FUNCTIONS ---
 let timerEndTime = null;
 let wakeLock = null;
@@ -817,6 +867,9 @@ function showTimer(exerciseName, seconds) {
 
   // Activate Wake Lock
   requestWakeLock();
+
+  // Enable Lock Screen Controls
+  enableBackgroundMode(exerciseName, seconds);
 
   timerInterval = setInterval(() => {
     // Calculate remaining based on system time
@@ -903,6 +956,7 @@ function hideTimer() {
   }
 
   releaseWakeLock();
+  disableBackgroundMode();
 }
 
 // --- CUSTOM MODAL FUNCTIONS ---
