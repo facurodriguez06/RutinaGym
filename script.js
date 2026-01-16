@@ -1842,31 +1842,27 @@ function closePermissionModal() {
   }
 }
 
-function switchPermTab(platform) {
-  const androidContent = document.getElementById("perm-content-android");
-  const iosContent = document.getElementById("perm-content-ios");
-  const androidTab = document.getElementById("perm-tab-android");
-  const iosTab = document.getElementById("perm-tab-ios");
+function switchPermTab(tabName) {
+  const tabs = ["android-chrome", "android-app", "ios"];
 
-  if (platform === "android") {
-    androidContent.classList.remove("hidden");
-    iosContent.classList.add("hidden");
+  tabs.forEach((t) => {
+    const content = document.getElementById(`perm-content-${t}`);
+    const btn = document.getElementById(`perm-tab-${t}`);
 
-    androidTab.classList.remove("text-slate-400", "hover:bg-slate-700/50");
-    androidTab.classList.add("bg-indigo-500", "text-white", "shadow-sm");
-
-    iosTab.classList.add("text-slate-400", "hover:bg-slate-700/50");
-    iosTab.classList.remove("bg-indigo-500", "text-white", "shadow-sm");
-  } else {
-    androidContent.classList.add("hidden");
-    iosContent.classList.remove("hidden");
-
-    iosTab.classList.remove("text-slate-400", "hover:bg-slate-700/50");
-    iosTab.classList.add("bg-indigo-500", "text-white", "shadow-sm");
-
-    androidTab.classList.add("text-slate-400", "hover:bg-slate-700/50");
-    androidTab.classList.remove("bg-indigo-500", "text-white", "shadow-sm");
-  }
+    if (t === tabName) {
+      if (content) content.classList.remove("hidden");
+      if (btn) {
+        btn.classList.remove("text-slate-400", "hover:bg-slate-700/50");
+        btn.classList.add("bg-indigo-500", "text-white", "shadow-sm");
+      }
+    } else {
+      if (content) content.classList.add("hidden");
+      if (btn) {
+        btn.classList.add("text-slate-400", "hover:bg-slate-700/50");
+        btn.classList.remove("bg-indigo-500", "text-white", "shadow-sm");
+      }
+    }
+  });
 }
 
 // Make functions global
