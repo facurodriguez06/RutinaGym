@@ -930,6 +930,8 @@ function showTimer(exerciseName, seconds) {
                 tag: "timer-progress",
                 silent: true, // Don't vibrate on update
                 renotify: false, // Crucial for Android to not block rapid updates
+                visibility: "public", // Show on secure lock screens
+                priority: 2, // High priority
               }
             );
           });
