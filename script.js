@@ -1701,6 +1701,28 @@ document.addEventListener("visibilitychange", () => {
         updateTimerDisplay();
       }
     }
+  } else if (document.visibilityState === "hidden" && currentTimerSeconds > 0) {
+    // IMMEDIATE NOTIFICATION ON HIDE
+    // This ensures the user sees something right away rather than waiting for next tick
+    if (Notification.permission === "granted" && navigator.serviceWorker) {
+      navigator.serviceWorker.ready.then((reg) => {
+        const exerciseName =
+          document.getElementById("timer-exercise-name").textContent ||
+          "Ejercicio";
+        const mins = Math.floor(currentTimerSeconds / 60);
+        const secs = currentTimerSeconds % 60;
+        reg.showNotification(
+          `Descansando: ${mins}:${secs.toString().padStart(2, "0")}`,
+          {
+            body: `${exerciseName}`,
+            icon: "favicon.svg",
+            tag: "timer-progress",
+            silent: false, // First one makes a sound/vibration to confirm it's working? Or keep silent? Better silent but immediate.
+            renotify: false,
+          }
+        );
+      });
+    }
   }
 });
 
@@ -1716,6 +1738,36 @@ if ("serviceWorker" in navigator) {
         console.log("ServiceWorker registration failed:", error);
       });
   });
+}
+
+// Debug
+const testBtn = document.getElementById("test-notif-btn");
+if (testBtn) {
+  testBtn.addEventListener("click", () => {
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission().then((res) => {
+        if (res === "granted") sendTestNotif();
+        else alert("Permiso denegado");
+      });
+    } else {
+      sendTestNotif();
+    }
+  });
+}
+
+function sendTestNotif() {
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.showNotification("Test Gym", {
+        body: "Si ves esto, las notificaciones funcionan.",
+        icon: "favicon.svg",
+        vibrate: [100, 50, 100],
+        tag: "test",
+      });
+    });
+  } else {
+    new Notification("Test Gym", { body: "Service Worker no activo" });
+  }
 }
 
 // Init App
