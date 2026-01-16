@@ -778,6 +778,7 @@ function enableBackgroundMode(exerciseName, duration) {
   bgAudio
     .play()
     .then(() => {
+      logToScreen("🔊 Audio Silencioso ACTIVO (Lock Screen Mode)", "success");
       // Setup Lock Screen Media Controls
       if ("mediaSession" in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -798,11 +799,11 @@ function enableBackgroundMode(exerciseName, duration) {
             position: 0,
           });
         } catch (e) {
-          console.log("Media Session Position Error", e);
+          logToScreen("Media Session Position Error: " + e, "error");
         }
       }
     })
-    .catch((e) => console.log("Silent Audio Play Error", e));
+    .catch((e) => logToScreen("❌ Audio Silencioso FALLÓ: " + e, "error"));
 }
 
 function disableBackgroundMode() {
@@ -880,6 +881,19 @@ function showTimer(exerciseName, seconds) {
     currentTimerSeconds = Math.ceil(diff / 1000);
 
     updateTimerDisplay();
+
+    // Update Lock Screen Media Player position (live countdown)
+    if ("mediaSession" in navigator && currentTimerSeconds > 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: totalTimerSeconds,
+          playbackRate: 1,
+          position: totalTimerSeconds - currentTimerSeconds,
+        });
+      } catch (e) {
+        /* Ignore position errors */
+      }
+    }
 
     if (currentTimerSeconds <= 0) {
       clearInterval(timerInterval);
