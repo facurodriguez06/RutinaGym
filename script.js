@@ -9,7 +9,7 @@ const routineData = [
         sets: "3",
         reps: "8-10",
         rir: "RIR 2",
-        notes: "El ejercicio rey. Prioricen la profundidad. Descanso: 3 min.",
+        notes: "El ejercicio rey. Prioricen la profundidad. Descanso: 20 seg.",
         muscles: {
           primary: ["quads", "glutes"],
           secondary: ["hamstrings", "lower_back"],
@@ -833,8 +833,18 @@ function showTimer(exerciseName, seconds) {
       updateTimerDisplay();
       playTimerEnd();
 
-      // Try to send notification if possible
-      if (Notification.permission === "granted") {
+      // Try to send notification via Service Worker
+      if (Notification.permission === "granted" && navigator.serviceWorker) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification("¡Tiempo Terminado!", {
+            body: `Descanso finalizado para ${exerciseName}`,
+            icon: "favicon.svg",
+            vibrate: [200, 100, 200, 100, 200],
+            tag: "timer-end",
+          });
+        });
+      } else if (Notification.permission === "granted") {
+        // Fallback
         new Notification("¡Tiempo Terminado!", {
           body: `Descanso finalizado para ${exerciseName}`,
           icon: "favicon.svg",
@@ -1600,6 +1610,20 @@ document.addEventListener("visibilitychange", () => {
     }
   }
 });
+
+// --- SERVICE WORKER REGISTRATION ---
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("sw.js")
+      .then((registration) => {
+        console.log("ServiceWorker registered with scope:", registration.scope);
+      })
+      .catch((error) => {
+        console.log("ServiceWorker registration failed:", error);
+      });
+  });
+}
 
 // Init App
 init();
