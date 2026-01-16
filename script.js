@@ -1111,13 +1111,15 @@ function renderContent() {
   let completedSetsCount = 0;
   dayData.exercises.forEach((exercise, idx) => {
     const numSets = parseInt(exercise.sets) || 3;
-    totalSets += numSets;
+    totalSets += numSets * 2; // Multiplicado por 2 (Facu + Alma)
     for (let s = 0; s < numSets; s++) {
-      if (completedSets[`${activeTab}-${idx}-${s}`]) {
-        completedSetsCount++;
-      }
+      const setKey = `${activeTab}-${idx}-${s}`;
+      const setData = completedSets[setKey] || { facu: false, alma: false };
+      if (setData.facu) completedSetsCount++;
+      if (setData.alma) completedSetsCount++;
     }
   });
+
   const progress =
     totalSets === 0 ? 0 : Math.round((completedSetsCount / totalSets) * 100);
 
@@ -1178,14 +1180,15 @@ function renderContent() {
     const numSets = parseInt(exercise.sets) || 3;
     const restTime = parseRestTime(exercise.notes || "");
 
-    // Count completed sets for this exercise
-    let exerciseCompletedSets = 0;
+    // Count completed sets for this exercise (Total checks / Total required)
+    let exerciseCompletedChecks = 0;
     for (let s = 0; s < numSets; s++) {
-      if (completedSets[`${activeTab}-${idx}-${s}`]) {
-        exerciseCompletedSets++;
-      }
+      const setKey = `${activeTab}-${idx}-${s}`;
+      const setData = completedSets[setKey] || { facu: false, alma: false };
+      if (setData.facu) exerciseCompletedChecks++;
+      if (setData.alma) exerciseCompletedChecks++;
     }
-    const isExerciseCompleted = exerciseCompletedSets === numSets;
+    const isExerciseCompleted = exerciseCompletedChecks === numSets * 2;
 
     const card = document.createElement("div");
     const staggerClass = idx < 6 ? `stagger-${idx + 1}` : "";
@@ -1211,23 +1214,55 @@ function renderContent() {
     let setButtonsHTML = "";
     for (let s = 0; s < numSets; s++) {
       const setKey = `${activeTab}-${idx}-${s}`;
-      const isSetCompleted = completedSets[setKey];
+      // Ensure object structure
+      if (typeof completedSets[setKey] !== "object") {
+        completedSets[setKey] = { facu: false, alma: false };
+      }
+      const setData = completedSets[setKey];
+
       // Dynamic button colors
-      // Active: bg-COLOR-500
-      // Inactive: hover:text-COLOR-400
       setButtonsHTML += `
-                        <button data-set-key="${setKey}" data-exercise-name="${
+          <div class="flex flex-col items-center gap-1.5 bg-slate-950/30 p-2 rounded-xl border border-slate-800/50">
+              <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Set ${
+                s + 1
+              }</span>
+              <div class="flex gap-2">
+                  <!-- Facu Button -->
+                  <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
         exercise.name
       }" data-rest-time="${restTime}"
-                            class="set-btn w-10 h-10 rounded-lg font-bold text-sm transition-all duration-200 flex items-center justify-center
-                            ${
-                              isSetCompleted
-                                ? `bg-${activeColor}-500 text-white shadow-lg shadow-${activeColor}-500/30`
-                                : `bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-${activeColor}-400 hover:scale-105`
-                            }">
-                            ${isSetCompleted ? "✓" : s + 1}
-                        </button>
-                    `;
+                      class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
+                      ${
+                        setData.facu
+                          ? `bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20`
+                          : `bg-slate-800 text-slate-500 border-slate-700 hover:border-blue-500/50 hover:text-blue-400`
+                      }" title="Facu">
+                      ${
+                        setData.facu
+                          ? '<i data-lucide="check" class="w-4 h-4"></i>'
+                          : "F"
+                      }
+                  </button>
+                  
+                  <!-- Alma Button -->
+                  <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
+        exercise.name
+      }" data-rest-time="${restTime}"
+                      class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
+                      ${
+                        setData.alma
+                          ? `bg-pink-600 text-white border-pink-500 shadow-lg shadow-pink-500/20`
+                          : `bg-slate-800 text-slate-500 border-slate-700 hover:border-pink-500/50 hover:text-pink-400`
+                      }" title="Alma">
+                      ${
+                        setData.alma
+                          ? '<i data-lucide="check" class="w-4 h-4"></i>'
+                          : "A"
+                      }
+                  </button>
+              </div>
+          </div>
+      `;
     }
 
     card.innerHTML = `
@@ -1266,17 +1301,16 @@ function renderContent() {
                                 <!-- Sets Row -->
                                 <div class="mt-4 mb-3">
                                     <div class="flex items-center gap-2 mb-2">
-                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Series</span>
-                                        <span class="text-xs text-slate-600">(${exerciseCompletedSets}/${numSets})</span>
+                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Progreso</span>
                                         <div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden ml-2">
                                             <div class="h-full bg-emerald-500 transition-all duration-300" style="width: ${
-                                              (exerciseCompletedSets /
-                                                numSets) *
+                                              (exerciseCompletedChecks /
+                                                (numSets * 2)) *
                                               100
                                             }%"></div>
                                         </div>
                                     </div>
-                                    <div class="flex gap-2 flex-wrap">
+                                    <div class="flex gap-2 flex-wrap items-end">
                                         ${setButtonsHTML}
                                     </div>
                                 </div>
@@ -1422,27 +1456,38 @@ function renderContent() {
     }
   }, 0);
 
-  // Add event listeners to set buttons
+  // Add event listeners to set buttons (UPDATED)
   document.querySelectorAll(".set-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const setKey = btn.dataset.setKey;
+      const user = btn.dataset.user; // 'facu' or 'alma'
       const exerciseName = btn.dataset.exerciseName;
       const restTime = parseInt(btn.dataset.restTime);
 
-      if (!completedSets[setKey]) {
-        // Mark as completed
-        completedSets[setKey] = true;
-        localStorage.setItem("gymRoutineSets", JSON.stringify(completedSets));
-        renderContent();
-        // Start timer
-        showTimer(exerciseName, restTime);
-      } else {
-        // Toggle off (unmark)
-        completedSets[setKey] = false;
-        localStorage.setItem("gymRoutineSets", JSON.stringify(completedSets));
-        renderContent();
+      // Initialize if missing
+      if (!completedSets[setKey] || typeof completedSets[setKey] !== "object") {
+        completedSets[setKey] = { facu: false, alma: false };
       }
+
+      // Handle Logic
+      const currentState = completedSets[setKey][user];
+
+      if (!currentState) {
+        // TURN ON
+        completedSets[setKey][user] = true;
+        // Sólo mostrar timer si se activa (no si se desactiva)
+        showTimer(
+          `${exerciseName} (${user === "facu" ? "Facu" : "Alma"})`,
+          restTime
+        );
+      } else {
+        // TURN OFF
+        completedSets[setKey][user] = false;
+      }
+
+      localStorage.setItem("gymRoutineSets", JSON.stringify(completedSets));
+      renderContent();
     });
   });
 
