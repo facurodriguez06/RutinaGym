@@ -243,9 +243,17 @@
 
     <!-- Timer Modal -->
     <div id="timer-modal"
-        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div
-            class="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl shadow-emerald-500/10">
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-all duration-300"
+        data-minimized="false">
+        <!-- Full Timer Modal -->
+        <div id="timer-full"
+            class="relative bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl shadow-emerald-500/10 transition-all duration-300">
+            <!-- Minimize Button -->
+            <button id="timer-minimize-btn"
+                class="absolute top-4 right-4 p-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-all"
+                title="Minimizar">
+                <i data-lucide="minimize-2" class="w-5 h-5 text-slate-400"></i>
+            </button>
             <div class="mb-4">
                 <i data-lucide="timer" class="w-12 h-12 text-emerald-400 mx-auto mb-2"></i>
                 <h3 class="text-lg font-bold text-slate-300">Tiempo de Descanso</h3>
@@ -274,8 +282,32 @@
                 <button id="timer-add-btn"
                     class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-all flex items-center gap-2">
                     <i data-lucide="plus" class="w-4 h-4"></i>
-                    +30s
+                    30s
                 </button>
+            </div>
+        </div>
+
+        <!-- Minimized Timer Bubble -->
+        <div id="timer-mini"
+            class="hidden fixed bottom-24 right-4 bg-slate-900 border-2 border-emerald-500 rounded-2xl p-4 shadow-2xl shadow-emerald-500/30 cursor-pointer hover:scale-105 transition-all duration-200 z-[60]"
+            title="Toca para expandir">
+            <div class="flex items-center gap-3">
+                <div class="relative w-12 h-12">
+                    <svg class="w-12 h-12 transform -rotate-90">
+                        <circle cx="24" cy="24" r="20" stroke="#1e293b" stroke-width="4" fill="none" />
+                        <circle id="timer-ring-mini" cx="24" cy="24" r="20" stroke="#10b981" stroke-width="4"
+                            fill="none" stroke-linecap="round" stroke-dasharray="125.66" stroke-dashoffset="0"
+                            class="transition-all duration-1000 ease-linear" />
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i data-lucide="timer" class="w-5 h-5 text-emerald-400"></i>
+                    </div>
+                </div>
+                <div class="text-left">
+                    <div id="timer-display-mini"
+                        class="text-2xl font-mono font-bold text-emerald-400 tabular-nums leading-tight">0:00</div>
+                    <p id="timer-exercise-mini" class="text-xs text-slate-500 max-w-[120px] truncate">Descanso</p>
+                </div>
             </div>
         </div>
     </div>

@@ -403,7 +403,7 @@ async function loadFromCloud() {
         headers: {
           "X-Master-Key": JSONBIN_API_KEY,
         },
-      }
+      },
     );
 
     if (response.ok) {
@@ -411,14 +411,14 @@ async function loadFromCloud() {
       trainingHistory = data.record || {};
       localStorage.setItem(
         "gymTrainingHistory",
-        JSON.stringify(trainingHistory)
+        JSON.stringify(trainingHistory),
       );
       console.log("✅ Historial cargado desde la nube");
     }
   } catch (error) {
     console.warn(
       "⚠️ Error cargando desde la nube, usando datos locales:",
-      error
+      error,
     );
     trainingHistory =
       JSON.parse(localStorage.getItem("gymTrainingHistory")) || {};
@@ -444,7 +444,7 @@ async function saveToCloud() {
           "X-Master-Key": JSONBIN_API_KEY,
         },
         body: JSON.stringify(trainingHistory),
-      }
+      },
     );
 
     if (response.ok) {
@@ -525,7 +525,7 @@ function setView(view) {
 function getDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
@@ -553,8 +553,8 @@ function markDayCompleted(who) {
     who === "both"
       ? "text-emerald-400"
       : who === "alma"
-      ? "text-pink-400"
-      : "text-blue-400";
+        ? "text-pink-400"
+        : "text-blue-400";
   const name =
     who === "both" ? "Alma y Facu" : who === "alma" ? "Alma" : "Facu";
   showToast(iconType, iconColor, `¡Día registrado para ${name}!`);
@@ -741,18 +741,14 @@ function updateStats() {
     }
   });
 
-  document.getElementById(
-    "stat-alma"
-  ).innerHTML = `${almaCount} <span class="text-sm text-slate-500">días</span>`;
-  document.getElementById(
-    "stat-facu"
-  ).innerHTML = `${facuCount} <span class="text-sm text-slate-500">días</span>`;
-  document.getElementById(
-    "stat-both"
-  ).innerHTML = `${bothCount} <span class="text-sm text-slate-500">días</span>`;
-  document.getElementById(
-    "stat-total"
-  ).innerHTML = `${totalDays} <span class="text-sm text-slate-500">días</span>`;
+  document.getElementById("stat-alma").innerHTML =
+    `${almaCount} <span class="text-sm text-slate-500">días</span>`;
+  document.getElementById("stat-facu").innerHTML =
+    `${facuCount} <span class="text-sm text-slate-500">días</span>`;
+  document.getElementById("stat-both").innerHTML =
+    `${bothCount} <span class="text-sm text-slate-500">días</span>`;
+  document.getElementById("stat-total").innerHTML =
+    `${totalDays} <span class="text-sm text-slate-500">días</span>`;
 }
 
 // --- HELPER: Parse rest time from notes ---
@@ -847,8 +843,16 @@ function showTimer(exerciseName, seconds) {
   const ring = document.getElementById("timer-ring");
   const secondsLeft = document.getElementById("timer-seconds-left");
   const exerciseNameEl = document.getElementById("timer-exercise-name");
+  const exerciseNameMini = document.getElementById("timer-exercise-mini");
 
   exerciseNameEl.textContent = exerciseName;
+  currentExerciseNameForTimer = exerciseName; // Guardar para usar en mini
+
+  // Update mini timer exercise name
+  if (exerciseNameMini) {
+    exerciseNameMini.textContent = exerciseName;
+  }
+
   currentTimerSeconds = seconds;
   totalTimerSeconds = seconds;
 
@@ -856,6 +860,14 @@ function showTimer(exerciseName, seconds) {
   timerEndTime = Date.now() + seconds * 1000;
 
   savedScrollY = window.scrollY; // Guardar posición actual
+
+  // Reset minimized state
+  isTimerMinimized = false;
+  const timerFull = document.getElementById("timer-full");
+  const timerMini = document.getElementById("timer-mini");
+  if (timerFull) timerFull.classList.remove("hidden");
+  if (timerMini) timerMini.classList.add("hidden");
+
   modal.classList.remove("hidden");
   modal.classList.add("flex");
   document.body.style.overflow = "hidden"; // Bloquear scroll
@@ -946,7 +958,7 @@ function showTimer(exerciseName, seconds) {
                 renotify: false, // Crucial for Android to not block rapid updates
                 visibility: "public", // Show on secure lock screens
                 priority: 2, // High priority
-              }
+              },
             );
           });
         }
@@ -955,40 +967,176 @@ function showTimer(exerciseName, seconds) {
   }, 200); // Check more frequently for smooth UI, but logic relies on Time
 }
 
+// --- TIMER MINIMIZE STATE ---
+let isTimerMinimized = false;
+let currentExerciseNameForTimer = "";
+
 function updateTimerDisplay() {
   const display = document.getElementById("timer-display");
   const ring = document.getElementById("timer-ring");
   const secondsLeft = document.getElementById("timer-seconds-left");
+
+  // Mini timer elements
+  const displayMini = document.getElementById("timer-display-mini");
+  const ringMini = document.getElementById("timer-ring-mini");
 
   // Prevent negative display
   const displaySeconds = Math.max(0, currentTimerSeconds);
 
   const mins = Math.floor(displaySeconds / 60);
   const secs = displaySeconds % 60;
-  display.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+  const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+  display.textContent = timeStr;
   secondsLeft.textContent = displaySeconds;
 
-  // Update ring progress
+  // Update mini display
+  if (displayMini) {
+    displayMini.textContent = timeStr;
+  }
+
+  // Update ring progress (full size)
   const circumference = 364.42;
   const progress = Math.max(0, displaySeconds / totalTimerSeconds); // Clamp 0-1
   ring.style.strokeDashoffset = circumference * (1 - progress);
+
+  // Update mini ring progress
+  if (ringMini) {
+    const circumferenceMini = 125.66; // 2 * PI * 20
+    ringMini.style.strokeDashoffset = circumferenceMini * (1 - progress);
+  }
 
   // Change color when low
   if (displaySeconds <= 10) {
     ring.style.stroke = "#ef4444";
     display.classList.remove("text-emerald-400");
     display.classList.add("text-red-400");
+
+    // Make full timer modal red
+    const timerFull = document.getElementById("timer-full");
+    if (timerFull) {
+      timerFull.classList.remove("border-slate-700", "shadow-emerald-500/10");
+      timerFull.classList.add("border-red-500", "shadow-red-500/20");
+    }
+
+    // Full timer icon (the big one at the top)
+    const timerFullContainer = document.getElementById("timer-full");
+    const timerIconFull = timerFullContainer?.querySelector(
+      '[data-lucide="timer"]',
+    );
+    if (timerIconFull) {
+      timerIconFull.classList.remove("text-emerald-400");
+      timerIconFull.classList.add("text-red-400");
+    }
+
+    // Full timer exercise name
+    const exerciseFull = document.getElementById("timer-exercise-name");
+    if (exerciseFull) {
+      exerciseFull.classList.remove("text-slate-500");
+      exerciseFull.classList.add("text-red-300");
+    }
+
+    if (ringMini) {
+      ringMini.style.stroke = "#ef4444";
+    }
+    if (displayMini) {
+      displayMini.classList.remove("text-emerald-400");
+      displayMini.classList.add("text-red-400");
+    }
+
+    // Make entire mini timer red
+    const timerMini = document.getElementById("timer-mini");
+    if (timerMini) {
+      timerMini.classList.remove("border-emerald-500", "shadow-emerald-500/30");
+      timerMini.classList.add("border-red-500", "shadow-red-500/30");
+    }
+
+    // Mini timer icon
+    const timerIconMini = timerMini?.querySelector('[data-lucide="timer"]');
+    if (timerIconMini) {
+      timerIconMini.classList.remove("text-emerald-400");
+      timerIconMini.classList.add("text-red-400");
+    }
+
+    // Mini timer exercise name
+    const exerciseMini = document.getElementById("timer-exercise-mini");
+    if (exerciseMini) {
+      exerciseMini.classList.remove("text-slate-500");
+      exerciseMini.classList.add("text-red-300");
+    }
   } else {
     ring.style.stroke = "#10b981";
     display.classList.remove("text-red-400");
     display.classList.add("text-emerald-400");
+
+    // Restore full timer modal colors
+    const timerFull = document.getElementById("timer-full");
+    if (timerFull) {
+      timerFull.classList.remove("border-red-500", "shadow-red-500/20");
+      timerFull.classList.add("border-slate-700", "shadow-emerald-500/10");
+    }
+
+    // Full timer icon
+    const timerFullContainer = document.getElementById("timer-full");
+    const timerIconFull = timerFullContainer?.querySelector(
+      '[data-lucide="timer"]',
+    );
+    if (timerIconFull) {
+      timerIconFull.classList.remove("text-red-400");
+      timerIconFull.classList.add("text-emerald-400");
+    }
+
+    // Full timer exercise name
+    const exerciseFull = document.getElementById("timer-exercise-name");
+    if (exerciseFull) {
+      exerciseFull.classList.remove("text-red-300");
+      exerciseFull.classList.add("text-slate-500");
+    }
+
+    if (ringMini) {
+      ringMini.style.stroke = "#10b981";
+    }
+    if (displayMini) {
+      displayMini.classList.remove("text-red-400");
+      displayMini.classList.add("text-emerald-400");
+    }
+
+    // Restore mini timer colors
+    const timerMini = document.getElementById("timer-mini");
+    if (timerMini) {
+      timerMini.classList.remove("border-red-500", "shadow-red-500/30");
+      timerMini.classList.add("border-emerald-500", "shadow-emerald-500/30");
+    }
+
+    // Mini timer icon
+    const timerIconMini = timerMini?.querySelector('[data-lucide="timer"]');
+    if (timerIconMini) {
+      timerIconMini.classList.remove("text-red-400");
+      timerIconMini.classList.add("text-emerald-400");
+    }
+
+    // Mini timer exercise name
+    const exerciseMini = document.getElementById("timer-exercise-mini");
+    if (exerciseMini) {
+      exerciseMini.classList.remove("text-red-300");
+      exerciseMini.classList.add("text-slate-500");
+    }
   }
 }
 
 function hideTimer() {
   const modal = document.getElementById("timer-modal");
+  const timerFull = document.getElementById("timer-full");
+  const timerMini = document.getElementById("timer-mini");
+
   modal.classList.add("hidden");
   modal.classList.remove("flex");
+
+  // Reset minimized state
+  isTimerMinimized = false;
+  if (timerFull) timerFull.classList.remove("hidden");
+  if (timerMini) timerMini.classList.add("hidden");
+
   document.body.style.overflow = ""; // Restaurar scroll
   document.body.style.position = ""; // Restaurar posición
   document.body.style.top = ""; // Restaurar top
@@ -1012,6 +1160,65 @@ function hideTimer() {
       });
     });
   }
+}
+
+// --- TIMER MINIMIZE/EXPAND FUNCTIONS ---
+function minimizeTimer() {
+  const modal = document.getElementById("timer-modal");
+  const timerFull = document.getElementById("timer-full");
+  const timerMini = document.getElementById("timer-mini");
+
+  isTimerMinimized = true;
+
+  // Hide full modal background and content
+  modal.classList.remove("bg-black/80", "backdrop-blur-sm");
+  modal.classList.add("bg-transparent", "pointer-events-none");
+  if (timerFull) timerFull.classList.add("hidden");
+
+  // Show mini timer
+  if (timerMini) {
+    timerMini.classList.remove("hidden");
+    timerMini.classList.add("pointer-events-auto");
+  }
+
+  // Restore scroll ability
+  document.body.style.overflow = "";
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.width = "";
+  document.body.style.touchAction = "";
+  window.scrollTo(0, savedScrollY);
+
+  lucide.createIcons();
+}
+
+function expandTimer() {
+  const modal = document.getElementById("timer-modal");
+  const timerFull = document.getElementById("timer-full");
+  const timerMini = document.getElementById("timer-mini");
+
+  isTimerMinimized = false;
+
+  // Restore full modal
+  savedScrollY = window.scrollY; // Guardar nueva posición
+  modal.classList.add("bg-black/80", "backdrop-blur-sm");
+  modal.classList.remove("bg-transparent", "pointer-events-none");
+  if (timerFull) timerFull.classList.remove("hidden");
+
+  // Hide mini timer
+  if (timerMini) {
+    timerMini.classList.add("hidden");
+    timerMini.classList.remove("pointer-events-auto");
+  }
+
+  // Block scroll again
+  document.body.style.overflow = "hidden";
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${savedScrollY}px`;
+  document.body.style.width = "100%";
+  document.body.style.touchAction = "none";
+
+  lucide.createIcons();
 }
 
 // --- CUSTOM MODAL FUNCTIONS ---
@@ -1103,6 +1310,12 @@ document.getElementById("timer-add-btn").addEventListener("click", () => {
   }
 });
 
+// Timer minimize/expand event listeners
+document
+  .getElementById("timer-minimize-btn")
+  .addEventListener("click", minimizeTimer);
+document.getElementById("timer-mini").addEventListener("click", expandTimer);
+
 // --- MUSCLE MAP GENERATOR ---
 const getMuscleMapSVG = (primary = [], secondary = []) => {
   const getColor = (muscleId) => {
@@ -1117,91 +1330,91 @@ const getMuscleMapSVG = (primary = [], secondary = []) => {
                 <svg viewBox="0 0 100 200" class="h-full w-auto drop-shadow-lg">
                     <circle cx="50" cy="20" r="12" fill="#1e293b" />
                     <path d="M38,32 Q50,40 62,32 L65,35 L35,35 Z" fill="${getColor(
-                      "traps"
+                      "traps",
                     )}" />
                     <path d="M25,35 Q30,30 38,32 L38,45 Q25,50 22,40 Z" fill="${getColor(
-                      "shoulders"
+                      "shoulders",
                     )}" />
                     <path d="M75,35 Q70,30 62,32 L62,45 Q75,50 78,40 Z" fill="${getColor(
-                      "shoulders"
+                      "shoulders",
                     )}" />
                     <path d="M38,32 Q50,45 62,32 L62,55 Q50,65 38,55 Z" fill="${getColor(
-                      "chest"
+                      "chest",
                     )}" />
                     <path d="M22,40 Q25,50 20,60 L28,60 Q30,50 38,45 Z" fill="${getColor(
-                      "biceps"
+                      "biceps",
                     )}" />
                     <path d="M78,40 Q75,50 80,60 L72,60 Q70,50 62,45 Z" fill="${getColor(
-                      "biceps"
+                      "biceps",
                     )}" />
                     <path d="M20,60 L18,80 L26,80 L28,60 Z" fill="${getColor(
-                      "forearms"
+                      "forearms",
                     )}" />
                     <path d="M80,60 L82,80 L74,80 L72,60 Z" fill="${getColor(
-                      "forearms"
+                      "forearms",
                     )}" />
                     <path d="M38,55 Q50,65 62,55 L60,85 Q50,90 40,85 Z" fill="${getColor(
-                      "abs"
+                      "abs",
                     )}" />
                     <path d="M38,55 L35,80 L40,85 L38,55 Z" fill="${getColor(
-                      "obliques"
+                      "obliques",
                     )}" />
                     <path d="M62,55 L65,80 L60,85 L62,55 Z" fill="${getColor(
-                      "obliques"
+                      "obliques",
                     )}" />
                     <path d="M35,85 Q25,100 30,135 L48,135 Q50,100 45,85 Z" fill="${getColor(
-                      "quads"
+                      "quads",
                     )}" />
                     <path d="M65,85 Q75,100 70,135 L52,135 Q50,100 55,85 Z" fill="${getColor(
-                      "quads"
+                      "quads",
                     )}" />
                     <path d="M32,140 Q28,155 32,170 L46,170 Q48,155 46,140 Z" fill="${getColor(
-                      "calves"
+                      "calves",
                     )}" />
                     <path d="M68,140 Q72,155 68,170 L54,170 Q52,155 54,140 Z" fill="${getColor(
-                      "calves"
+                      "calves",
                     )}" />
                 </svg>
                 <svg viewBox="0 0 100 200" class="h-full w-auto drop-shadow-lg">
                     <circle cx="50" cy="20" r="12" fill="#1e293b" />
                     <path d="M35,32 L65,32 L50,55 Z" fill="${getColor(
-                      "traps"
+                      "traps",
                     )}" />
                     <path d="M25,35 Q30,30 35,32 L35,45 Q25,50 22,40 Z" fill="${getColor(
-                      "shoulders"
+                      "shoulders",
                     )}" />
                     <path d="M75,35 Q70,30 65,32 L65,45 Q75,50 78,40 Z" fill="${getColor(
-                      "shoulders"
+                      "shoulders",
                     )}" />
                     <path d="M35,45 L28,65 Q35,75 50,85 Q65,75 72,65 L65,45 L50,55 Z" fill="${getColor(
-                      "lats"
+                      "lats",
                     )}" />
                     <path d="M42,85 L58,85 L55,95 L45,95 Z" fill="${getColor(
-                      "lower_back"
+                      "lower_back",
                     )}" />
                     <path d="M22,40 Q18,50 20,60 L28,60 Q30,50 35,45 Z" fill="${getColor(
-                      "triceps"
+                      "triceps",
                     )}" />
                     <path d="M78,40 Q82,50 80,60 L72,60 Q70,50 65,45 Z" fill="${getColor(
-                      "triceps"
+                      "triceps",
                     )}" />
                     <path d="M35,95 Q25,105 35,120 L50,120 L50,95 Z" fill="${getColor(
-                      "glutes"
+                      "glutes",
                     )}" />
                     <path d="M65,95 Q75,105 65,120 L50,120 L50,95 Z" fill="${getColor(
-                      "glutes"
+                      "glutes",
                     )}" />
                     <path d="M35,120 Q30,135 32,150 L48,150 Q48,135 45,120 Z" fill="${getColor(
-                      "hamstrings"
+                      "hamstrings",
                     )}" />
                     <path d="M65,120 Q70,135 68,150 L52,150 Q52,135 55,120 Z" fill="${getColor(
-                      "hamstrings"
+                      "hamstrings",
                     )}" />
                     <path d="M32,152 Q25,165 34,180 L46,180 Q48,165 46,152 Z" fill="${getColor(
-                      "calves"
+                      "calves",
                     )}" />
                     <path d="M68,152 Q75,165 66,180 L54,180 Q52,165 54,152 Z" fill="${getColor(
-                      "calves"
+                      "calves",
                     )}" />
                 </svg>
             </div>
@@ -1269,8 +1482,8 @@ function renderTabs() {
                         <span class="text-xs font-bold uppercase tracking-wider mb-1 transition-colors ${
                           isActive ? activeTextLight : "text-slate-500"
                         } ${isActive ? "active-tab-label" : ""}">${
-      day.day
-    }</span>
+                          day.day
+                        }</span>
                         <span class="font-medium text-sm truncate w-32 md:w-auto">${
                           day.title
                         }</span>
@@ -1296,9 +1509,8 @@ function renderContent() {
 
   // Update Headers & Progress
   document.getElementById("day-title").textContent = dayData.title;
-  document.getElementById(
-    "exercise-count"
-  ).textContent = `${dayData.exercises.length} Ejercicios`;
+  document.getElementById("exercise-count").textContent =
+    `${dayData.exercises.length} Ejercicios`;
 
   // Calculate total sets and completed sets for progress
   let totalSets = 0;
@@ -1401,7 +1613,7 @@ function renderContent() {
 
     const muscleMapHTML = getMuscleMapSVG(
       exercise.muscles.primary,
-      exercise.muscles.secondary
+      exercise.muscles.secondary,
     );
 
     // Generate set buttons HTML
@@ -1423,8 +1635,8 @@ function renderContent() {
               <div class="flex gap-2">
                   <!-- Facu Button -->
                   <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
-        exercise.name
-      }" data-rest-time="${restTime}"
+                    exercise.name
+                  }" data-rest-time="${restTime}"
                       class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
                       ${
                         setData.facu
@@ -1440,8 +1652,8 @@ function renderContent() {
                   
                   <!-- Alma Button -->
                   <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
-        exercise.name
-      }" data-rest-time="${restTime}"
+                    exercise.name
+                  }" data-rest-time="${restTime}"
                       class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
                       ${
                         setData.alma
@@ -1549,7 +1761,7 @@ function renderContent() {
                                         ${exercise.notes
                                           .replace(
                                             /Descanso:.*?(min|seg)\.?/gi,
-                                            ""
+                                            "",
                                           )
                                           .trim()}
                                     </p>
@@ -1644,7 +1856,7 @@ function renderContent() {
             completedSets = {};
             localStorage.removeItem("gymRoutineSets");
             renderContent();
-          }
+          },
         );
       });
     }
@@ -1678,7 +1890,7 @@ function renderContent() {
         // Sólo mostrar timer si se activa (no si se desactiva)
         showTimer(
           `${exerciseName} (${user === "facu" ? "Facu" : "Alma"})`,
-          restTime
+          restTime,
         );
       } else {
         // TURN OFF
@@ -1735,7 +1947,7 @@ document.addEventListener("visibilitychange", () => {
             tag: "timer-progress",
             silent: false, // First one makes a sound/vibration to confirm it's working? Or keep silent? Better silent but immediate.
             renotify: false,
-          }
+          },
         );
       });
     }
@@ -1768,7 +1980,7 @@ function handleTestClick() {
     logToScreen("❌ El navegador reporta 'DENIED'.", "error");
     logToScreen(
       "⚠️ Esto significa que el BLOQUEO es del SITIO WEB, no del celular.",
-      "error"
+      "error",
     );
     showPermissionModal();
   } else if (Notification.permission !== "granted") {
@@ -1817,7 +2029,7 @@ function sendTestNotif() {
       if (!reg) {
         logToScreen(
           "❌ Service Worker NO registrado (scope undefined).",
-          "error"
+          "error",
         );
         return;
       }
@@ -1935,7 +2147,7 @@ window.logToScreen = logToScreen;
 // Log startup
 setTimeout(
   () => logToScreen("🚀 Sistema v2.1 Cargado. Listo para tests.", "success"),
-  500
+  500,
 );
 
 // Init App
