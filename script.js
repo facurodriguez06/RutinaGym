@@ -1956,11 +1956,26 @@ document.addEventListener("visibilitychange", () => {
 
 // --- SERVICE WORKER REGISTRATION WITH AUTO-UPDATE ---
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
+  window.addEventListener("load", async () => {
+    // Limpiar todos los cachés viejos automáticamente
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      const currentCacheVersion = "gym-rutina-v2";
+      for (const cacheName of cacheNames) {
+        if (cacheName !== currentCacheVersion) {
+          console.log("Limpiando caché viejo:", cacheName);
+          await caches.delete(cacheName);
+        }
+      }
+    }
+
     navigator.serviceWorker
       .register("sw.js")
       .then((registration) => {
         console.log("ServiceWorker registered with scope:", registration.scope);
+
+        // Forzar verificación de actualizaciones
+        registration.update();
 
         // Verificar actualizaciones automáticamente
         registration.addEventListener("updatefound", () => {
