@@ -2320,6 +2320,12 @@ function openMuscleMapModal(primary, secondary) {
 
   if (!modal || !container) return;
 
+  // Fix Mobile Scrolling Clipping:
+  // Remove vertical centering on mobile so tall content starts at top and flows down.
+  // Keep centering on desktop where it fits side-by-side.
+  container.classList.remove("items-center");
+  container.classList.add("items-start", "md:items-center");
+
   // Reuse the SVG generation Logic
   const svgHTML = getMuscleMapSVG(primary, secondary);
 
