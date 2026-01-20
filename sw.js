@@ -1,4 +1,4 @@
-const CACHE_NAME = "gym-rutina-v1";
+const CACHE_NAME = "gym-rutina-v2"; // Incrementar versión para forzar actualización
 const urlsToCache = [
   "./",
   "./index.html",
@@ -12,21 +12,49 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache);
-    })
+    }),
   );
 });
 
+// Network First Strategy: siempre intenta buscar del servidor primero
+// Solo usa caché si no hay conexión (para que funcione offline)
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
+    fetch(event.request)
+      .then((response) => {
+        // Si la respuesta es válida, guardarla en caché y devolverla
+        if (response && response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
         return response;
-      }
-      return fetch(event.request);
-    })
+      })
+      .catch(() => {
+        // Si falla la red, usar el caché (modo offline)
+        return caches.match(event.request);
+      }),
   );
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim()); // Take control immediately
+  // Eliminar cachés viejos
+  event.waitUntil(
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log("Eliminando caché viejo:", cacheName);
+              return caches.delete(cacheName);
+            }
+          }),
+        );
+      })
+      .then(() => {
+        return self.clients.claim(); // Take control immediately
+      }),
+  );
 });
