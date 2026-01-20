@@ -366,9 +366,29 @@ if (lastVisit !== todayStr) {
 }
 
 let completedSets = JSON.parse(localStorage.getItem("gymRoutineSets")) || {};
-let timerInterval = null;
-let currentTimerSeconds = 0;
-let totalTimerSeconds = 0;
+
+// --- TIMER STATE ---
+const timerState = {
+  facu: {
+    endTime: null,
+    totalSeconds: 0,
+    currentSeconds: 0,
+    exerciseName: "",
+    minimized: false,
+    active: false,
+  },
+  alma: {
+    endTime: null,
+    totalSeconds: 0,
+    currentSeconds: 0,
+    exerciseName: "",
+    minimized: false,
+    active: false,
+  },
+};
+
+let globalTimerInterval = null;
+let activeFullModalUser = null; // 'facu', 'alma', or null
 let savedScrollY = 0;
 
 // --- CALENDAR STATE ---
@@ -814,7 +834,6 @@ function disableBackgroundMode() {
 }
 
 // --- TIMER FUNCTIONS ---
-let timerEndTime = null;
 let wakeLock = null;
 let lastNotificationSeconds = null;
 
@@ -837,388 +856,498 @@ async function releaseWakeLock() {
   }
 }
 
-function showTimer(exerciseName, seconds) {
-  const modal = document.getElementById("timer-modal");
-  const display = document.getElementById("timer-display");
-  const ring = document.getElementById("timer-ring");
-  const secondsLeft = document.getElementById("timer-seconds-left");
-  const exerciseNameEl = document.getElementById("timer-exercise-name");
-  const exerciseNameMini = document.getElementById("timer-exercise-mini");
+function showTimer(user, exerciseName, seconds) {
+  // 1. Set State for this user
+  timerState[user] = {
+    endTime: Date.now() + seconds * 1000,
+    totalSeconds: seconds,
+    currentSeconds: seconds,
+    exerciseName: exerciseName,
+    minimized: false,
+    active: true,
+  };
 
-  exerciseNameEl.textContent = exerciseName;
-  currentExerciseNameForTimer = exerciseName; // Guardar para usar en mini
+  // 2. Logic to determine display
+  // If another user is already Full Screen, minimize them?
+  // OR just force this new one to be Full Screen and minimize the other.
+  // We'll force this one to Full Screen.
 
-  // Update mini timer exercise name
-  if (exerciseNameMini) {
-    exerciseNameMini.textContent = exerciseName;
+  if (activeFullModalUser && activeFullModalUser !== user) {
+    // Minimize the currently active user
+    timerState[activeFullModalUser].minimized = true;
   }
 
-  currentTimerSeconds = seconds;
-  totalTimerSeconds = seconds;
+  activeFullModalUser = user;
+  timerState[user].minimized = false;
+  savedScrollY = window.scrollY; // Update scroll position
 
-  // Use timestamps for accuracy
-  timerEndTime = Date.now() + seconds * 1000;
+  // 3. Render and Start
+  renderTimerUI();
+  startGlobalTimerIfNeeded();
 
-  savedScrollY = window.scrollY; // Guardar posición actual
-
-  // Reset minimized state
-  isTimerMinimized = false;
-  const timerFull = document.getElementById("timer-full");
-  const timerMini = document.getElementById("timer-mini");
-  if (timerFull) timerFull.classList.remove("hidden");
-  if (timerMini) timerMini.classList.add("hidden");
-
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-  document.body.style.overflow = "hidden"; // Bloquear scroll
-  document.body.style.position = "fixed"; // Fijar posición
-  document.body.style.top = `-${savedScrollY}px`; // Mantener posición visual
-  document.body.style.width = "100%"; // Mantener ancho
-  document.body.style.touchAction = "none"; // Bloquear touch scroll
-  lucide.createIcons();
-
-  updateTimerDisplay();
-
-  // Activate Wake Lock
-  requestWakeLock();
-
-  // Enable Lock Screen Controls
-  enableBackgroundMode(exerciseName, seconds);
-
-  timerInterval = setInterval(() => {
-    // Calculate remaining based on system time
-    const now = Date.now();
-    const diff = timerEndTime - now;
-
-    currentTimerSeconds = Math.ceil(diff / 1000);
-
-    updateTimerDisplay();
-
-    // Update Lock Screen Media Player position (live countdown)
-    if ("mediaSession" in navigator && currentTimerSeconds > 0) {
-      try {
-        navigator.mediaSession.setPositionState({
-          duration: totalTimerSeconds,
-          playbackRate: 1,
-          position: totalTimerSeconds - currentTimerSeconds,
-        });
-      } catch (e) {
-        /* Ignore position errors */
-      }
-    }
-
-    if (currentTimerSeconds <= 0) {
-      clearInterval(timerInterval);
-      currentTimerSeconds = 0;
-      updateTimerDisplay();
-      playTimerEnd();
-
-      // Try to send notification via Service Worker
-      if (Notification.permission === "granted" && navigator.serviceWorker) {
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.showNotification("¡Tiempo Terminado!", {
-            body: `Descanso finalizado para ${exerciseName}`,
-            icon: "favicon.svg",
-            vibrate: [200, 100, 200, 100, 200],
-            tag: "timer-progress", // Replaces progress notification
-            renotify: true,
-          });
-        });
-      } else if (Notification.permission === "granted") {
-        // Fallback
-        new Notification("¡Tiempo Terminado!", {
-          body: `Descanso finalizado para ${exerciseName}`,
-          icon: "favicon.svg",
-        });
-      }
-
-      setTimeout(hideTimer, 1500);
-      setTimeout(hideTimer, 1500);
-    } else {
-      // UPDATE NOTIFICATION (Live Countdown)
-      // Only update if seconds changed from last tick AND app is hidden
-      if (
-        currentTimerSeconds !== lastNotificationSeconds &&
-        Notification.permission === "granted" &&
-        document.visibilityState === "hidden"
-      ) {
-        lastNotificationSeconds = currentTimerSeconds; // Update tracker
-
-        if (navigator.serviceWorker) {
-          navigator.serviceWorker.ready.then((reg) => {
-            const mins = Math.floor(currentTimerSeconds / 60);
-            const secs = currentTimerSeconds % 60;
-            reg.showNotification(
-              `Descansando: ${mins}:${secs.toString().padStart(2, "0")}`,
-              {
-                body: `${exerciseName}`,
-                icon: "favicon.svg",
-                tag: "timer-progress",
-                silent: true, // Don't vibrate on update
-                renotify: false, // Crucial for Android to not block rapid updates
-                visibility: "public", // Show on secure lock screens
-                priority: 2, // High priority
-              },
-            );
-          });
-        }
-      }
-    }
-  }, 200); // Check more frequently for smooth UI, but logic relies on Time
-}
-
-// --- TIMER MINIMIZE STATE ---
-let isTimerMinimized = false;
-let currentExerciseNameForTimer = "";
-
-function updateTimerDisplay() {
-  const display = document.getElementById("timer-display");
-  const ring = document.getElementById("timer-ring");
-  const secondsLeft = document.getElementById("timer-seconds-left");
-
-  // Mini timer elements
-  const displayMini = document.getElementById("timer-display-mini");
-  const ringMini = document.getElementById("timer-ring-mini");
-
-  // Prevent negative display
-  const displaySeconds = Math.max(0, currentTimerSeconds);
-
-  const mins = Math.floor(displaySeconds / 60);
-  const secs = displaySeconds % 60;
-  const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
-
-  display.textContent = timeStr;
-  secondsLeft.textContent = displaySeconds;
-
-  // Update mini display
-  if (displayMini) {
-    displayMini.textContent = timeStr;
-  }
-
-  // Update ring progress (full size)
-  const circumference = 364.42;
-  const progress = Math.max(0, displaySeconds / totalTimerSeconds); // Clamp 0-1
-  ring.style.strokeDashoffset = circumference * (1 - progress);
-
-  // Update mini ring progress
-  if (ringMini) {
-    const circumferenceMini = 125.66; // 2 * PI * 20
-    ringMini.style.strokeDashoffset = circumferenceMini * (1 - progress);
-  }
-
-  // Change color when low
-  if (displaySeconds <= 10) {
-    ring.style.stroke = "#ef4444";
-    display.classList.remove("text-emerald-400");
-    display.classList.add("text-red-400");
-
-    // Make full timer modal red
-    const timerFull = document.getElementById("timer-full");
-    if (timerFull) {
-      timerFull.classList.remove("border-slate-700", "shadow-emerald-500/10");
-      timerFull.classList.add("border-red-500", "shadow-red-500/20");
-    }
-
-    // Full timer icon (the big one at the top)
-    const timerFullContainer = document.getElementById("timer-full");
-    const timerIconFull = timerFullContainer?.querySelector(
-      '[data-lucide="timer"]',
-    );
-    if (timerIconFull) {
-      timerIconFull.classList.remove("text-emerald-400");
-      timerIconFull.classList.add("text-red-400");
-    }
-
-    // Full timer exercise name
-    const exerciseFull = document.getElementById("timer-exercise-name");
-    if (exerciseFull) {
-      exerciseFull.classList.remove("text-slate-500");
-      exerciseFull.classList.add("text-red-300");
-    }
-
-    if (ringMini) {
-      ringMini.style.stroke = "#ef4444";
-    }
-    if (displayMini) {
-      displayMini.classList.remove("text-emerald-400");
-      displayMini.classList.add("text-red-400");
-    }
-
-    // Make entire mini timer red
-    const timerMini = document.getElementById("timer-mini");
-    if (timerMini) {
-      timerMini.classList.remove("border-emerald-500", "shadow-emerald-500/30");
-      timerMini.classList.add("border-red-500", "shadow-red-500/30");
-    }
-
-    // Mini timer icon
-    const timerIconMini = timerMini?.querySelector('[data-lucide="timer"]');
-    if (timerIconMini) {
-      timerIconMini.classList.remove("text-emerald-400");
-      timerIconMini.classList.add("text-red-400");
-    }
-
-    // Mini timer exercise name
-    const exerciseMini = document.getElementById("timer-exercise-mini");
-    if (exerciseMini) {
-      exerciseMini.classList.remove("text-slate-500");
-      exerciseMini.classList.add("text-red-300");
-    }
-  } else {
-    ring.style.stroke = "#10b981";
-    display.classList.remove("text-red-400");
-    display.classList.add("text-emerald-400");
-
-    // Restore full timer modal colors
-    const timerFull = document.getElementById("timer-full");
-    if (timerFull) {
-      timerFull.classList.remove("border-red-500", "shadow-red-500/20");
-      timerFull.classList.add("border-slate-700", "shadow-emerald-500/10");
-    }
-
-    // Full timer icon
-    const timerFullContainer = document.getElementById("timer-full");
-    const timerIconFull = timerFullContainer?.querySelector(
-      '[data-lucide="timer"]',
-    );
-    if (timerIconFull) {
-      timerIconFull.classList.remove("text-red-400");
-      timerIconFull.classList.add("text-emerald-400");
-    }
-
-    // Full timer exercise name
-    const exerciseFull = document.getElementById("timer-exercise-name");
-    if (exerciseFull) {
-      exerciseFull.classList.remove("text-red-300");
-      exerciseFull.classList.add("text-slate-500");
-    }
-
-    if (ringMini) {
-      ringMini.style.stroke = "#10b981";
-    }
-    if (displayMini) {
-      displayMini.classList.remove("text-red-400");
-      displayMini.classList.add("text-emerald-400");
-    }
-
-    // Restore mini timer colors
-    const timerMini = document.getElementById("timer-mini");
-    if (timerMini) {
-      timerMini.classList.remove("border-red-500", "shadow-red-500/30");
-      timerMini.classList.add("border-emerald-500", "shadow-emerald-500/30");
-    }
-
-    // Mini timer icon
-    const timerIconMini = timerMini?.querySelector('[data-lucide="timer"]');
-    if (timerIconMini) {
-      timerIconMini.classList.remove("text-red-400");
-      timerIconMini.classList.add("text-emerald-400");
-    }
-
-    // Mini timer exercise name
-    const exerciseMini = document.getElementById("timer-exercise-mini");
-    if (exerciseMini) {
-      exerciseMini.classList.remove("text-red-300");
-      exerciseMini.classList.add("text-slate-500");
-    }
-  }
-}
-
-function hideTimer() {
-  const modal = document.getElementById("timer-modal");
-  const timerFull = document.getElementById("timer-full");
-  const timerMini = document.getElementById("timer-mini");
-
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
-
-  // Reset minimized state
-  isTimerMinimized = false;
-  if (timerFull) timerFull.classList.remove("hidden");
-  if (timerMini) timerMini.classList.add("hidden");
-
-  document.body.style.overflow = ""; // Restaurar scroll
-  document.body.style.position = ""; // Restaurar posición
-  document.body.style.top = ""; // Restaurar top
-  document.body.style.width = ""; // Restaurar ancho
-  document.body.style.touchAction = ""; // Restaurar touch
-  window.scrollTo(0, savedScrollY); // Restaurar posición de scroll
-
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-
-  releaseWakeLock();
-  disableBackgroundMode();
-
-  // Clear persistent notification
-  if (navigator.serviceWorker) {
-    navigator.serviceWorker.ready.then((reg) => {
-      reg.getNotifications({ tag: "timer-progress" }).then((notifications) => {
-        notifications.forEach((n) => n.close());
-      });
-    });
-  }
-}
-
-// --- TIMER MINIMIZE/EXPAND FUNCTIONS ---
-function minimizeTimer() {
-  const modal = document.getElementById("timer-modal");
-  const timerFull = document.getElementById("timer-full");
-  const timerMini = document.getElementById("timer-mini");
-
-  isTimerMinimized = true;
-
-  // Hide full modal background and content
-  modal.classList.remove("bg-black/80", "backdrop-blur-sm");
-  modal.classList.add("bg-transparent", "pointer-events-none");
-  if (timerFull) timerFull.classList.add("hidden");
-
-  // Show mini timer
-  if (timerMini) {
-    timerMini.classList.remove("hidden");
-    timerMini.classList.add("pointer-events-auto");
-  }
-
-  // Restore scroll ability
-  document.body.style.overflow = "";
-  document.body.style.position = "";
-  document.body.style.top = "";
-  document.body.style.width = "";
-  document.body.style.touchAction = "";
-  window.scrollTo(0, savedScrollY);
-
-  lucide.createIcons();
-}
-
-function expandTimer() {
-  const modal = document.getElementById("timer-modal");
-  const timerFull = document.getElementById("timer-full");
-  const timerMini = document.getElementById("timer-mini");
-
-  isTimerMinimized = false;
-
-  // Restore full modal
-  savedScrollY = window.scrollY; // Guardar nueva posición
-  modal.classList.add("bg-black/80", "backdrop-blur-sm");
-  modal.classList.remove("bg-transparent", "pointer-events-none");
-  if (timerFull) timerFull.classList.remove("hidden");
-
-  // Hide mini timer
-  if (timerMini) {
-    timerMini.classList.add("hidden");
-    timerMini.classList.remove("pointer-events-auto");
-  }
-
-  // Block scroll again
+  // 4. System controls
   document.body.style.overflow = "hidden";
   document.body.style.position = "fixed";
   document.body.style.top = `-${savedScrollY}px`;
   document.body.style.width = "100%";
   document.body.style.touchAction = "none";
 
+  // Audio & Lock
+  requestWakeLock();
+  enableBackgroundMode(exerciseName, seconds);
+}
+
+function startGlobalTimerIfNeeded() {
+  if (globalTimerInterval) return;
+
+  globalTimerInterval = setInterval(() => {
+    const now = Date.now();
+    let anyoneActive = false;
+
+    ["facu", "alma"].forEach((user) => {
+      const state = timerState[user];
+      if (!state.active) return;
+      anyoneActive = true;
+
+      const diff = state.endTime - now;
+      state.currentSeconds = Math.ceil(diff / 1000);
+
+      if (state.currentSeconds <= 0) {
+        state.currentSeconds = 0;
+        // Timer Finished Logic
+        handleTimerComplete(user);
+      }
+    });
+
+    if (!anyoneActive) {
+      clearInterval(globalTimerInterval);
+      globalTimerInterval = null;
+      releaseWakeLock();
+      disableBackgroundMode();
+    } else {
+      updateTimerDisplay(); // Updates values only
+
+      // Update Lock Screen Media Player position (live countdown)
+      if (
+        "mediaSession" in navigator &&
+        activeFullModalUser &&
+        timerState[activeFullModalUser].active
+      ) {
+        const state = timerState[activeFullModalUser];
+        // Ensure strictly positive for setPositionState validation
+        if (
+          state.currentSeconds >= 0 &&
+          state.totalSeconds >= state.currentSeconds
+        ) {
+          try {
+            navigator.mediaSession.setPositionState({
+              duration: state.totalSeconds,
+              playbackRate: 1,
+              position: state.totalSeconds - state.currentSeconds,
+            });
+          } catch (e) {
+            // Ignore position errors
+          }
+        }
+      }
+
+      // Notification Logic checks
+      handleNotifications();
+    }
+  }, 200);
+}
+
+function handleTimerComplete(user) {
+  const state = timerState[user];
+  state.active = false;
+
+  // Sound
+  playTimerEnd();
+
+  // Notifications
+  if (Notification.permission === "granted") {
+    const title = "¡Tiempo Terminado!";
+    const options = {
+      body: `Descanso finalizado para ${state.exerciseName} (${user === "facu" ? "Facu" : "Alma"})`,
+      icon: "favicon.svg",
+      vibrate: [200, 100, 200, 100, 200],
+      tag: `timer-end-${user}`,
+      renotify: true,
+    };
+
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then((reg) =>
+        reg.showNotification(title, options),
+      );
+    } else {
+      new Notification(title, options);
+    }
+  }
+
+  // Auto-hide UI after delay
+  // If this user was Full Screen, hide modal.
+  // If this user was Minimized, remove bubble.
+  setTimeout(() => {
+    hideTimer(user);
+  }, 1500);
+
+  // Force UI update immediately to show 0:00
+  renderTimerUI();
+}
+
+function handleNotifications() {
+  // Simple logic: If in backgound, update notification for the user with LEAST time remaining?
+  // Or just update the one that is Full Screen (most relevant).
+  if (
+    document.visibilityState === "hidden" &&
+    Notification.permission === "granted"
+  ) {
+    // Find the most urgent timer
+    let urgentUser = null;
+    let minTime = Infinity;
+
+    ["facu", "alma"].forEach((user) => {
+      if (
+        timerState[user].active &&
+        timerState[user].currentSeconds < minTime
+      ) {
+        minTime = timerState[user].currentSeconds;
+        urgentUser = user;
+      }
+    });
+
+    if (urgentUser) {
+      const state = timerState[urgentUser];
+      if (state.currentSeconds !== lastNotificationSeconds) {
+        lastNotificationSeconds = state.currentSeconds;
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then((reg) => {
+            const mins = Math.floor(state.currentSeconds / 60);
+            const secs = state.currentSeconds % 60;
+            reg.showNotification(
+              `Descansando (${urgentUser === "facu" ? "Facu" : "Alma"}): ${mins}:${secs.toString().padStart(2, "0")}`,
+              {
+                body: state.exerciseName,
+                icon: "favicon.svg",
+                tag: "timer-progress",
+                silent: true,
+                renotify: false,
+                visibility: "public",
+              },
+            );
+          });
+        }
+      }
+    }
+  }
+}
+
+function renderTimerUI() {
+  const modal = document.getElementById("timer-modal");
+  const fullContainer = document.getElementById("timer-full");
+  const miniContainer = document.getElementById("mini-timers-container");
+
+  // Clear Mini Container
+  miniContainer.innerHTML = "";
+
+  // Check if anyone is active
+  const anyActive = timerState.facu.active || timerState.alma.active;
+
+  if (!anyActive) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    return;
+  }
+
+  // Show Modal Wrapper
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  // Render Full Modal?
+  if (
+    activeFullModalUser &&
+    timerState[activeFullModalUser].active &&
+    !timerState[activeFullModalUser].minimized
+  ) {
+    // Show Full Modal
+    fullContainer.classList.remove("hidden");
+    modal.classList.add("bg-black/80", "backdrop-blur-sm");
+    modal.classList.remove("bg-transparent", "pointer-events-none");
+
+    // SETUP FULL MODAL CONTENT
+    const user = activeFullModalUser;
+    const state = timerState[user];
+
+    // Colors based on user
+    const colorClass = user === "facu" ? "text-blue-400" : "text-pink-400";
+    const borderClass = user === "facu" ? "border-blue-500" : "border-pink-500";
+
+    // Update static elements of modal if needed (titles, colors)
+    // We'll update dynamic values in updateTimerDisplay
+    document.getElementById("timer-exercise-name").textContent =
+      `${state.exerciseName} (${user === "facu" ? "Facu" : "Alma"})`;
+
+    // Just ensure the container looks right for the user?
+    // Optionally trigger a color update or just keep it emerald/neutral.
+    // Let's keep existing emerald theme BUT maybe adding a user badge?
+  } else {
+    // No one in Full Screen (all minimized)
+    fullContainer.classList.add("hidden");
+    modal.classList.remove("bg-black/80", "backdrop-blur-sm");
+    modal.classList.add("bg-transparent", "pointer-events-none");
+  }
+
+  // Render Bubbles (for anyone minimized or NOT the active full screen)
+  ["facu", "alma"].forEach((user) => {
+    const state = timerState[user];
+    if (state.active && (state.minimized || user !== activeFullModalUser)) {
+      // Render Bubble
+      const bubble = createMiniTimerBubble(user, state);
+      miniContainer.appendChild(bubble);
+    }
+  });
+
   lucide.createIcons();
+}
+
+function createMiniTimerBubble(user, state) {
+  const div = document.createElement("div");
+  const color = user === "facu" ? "blue" : "pink";
+  const borderColor = user === "facu" ? "border-blue-500" : "border-pink-500";
+  const textColor = user === "facu" ? "text-blue-400" : "text-pink-400";
+  const shadowColor =
+    user === "facu" ? "shadow-blue-500/30" : "shadow-pink-500/30";
+
+  div.className = `bg-slate-900 border-2 ${borderColor} rounded-2xl p-3 shadow-xl ${shadowColor} cursor-pointer hover:scale-105 transition-all duration-200 pointer-events-auto flex items-center gap-3`;
+  div.onclick = () => expandTimer(user);
+
+  div.innerHTML = `
+        <div class="relative w-10 h-10">
+             <svg class="w-10 h-10 transform -rotate-90">
+                <circle cx="20" cy="20" r="16" stroke="#1e293b" stroke-width="3" fill="none" />
+                <circle id="mini-ring-${user}" cx="20" cy="20" r="16" stroke="currentColor" stroke-width="3"
+                    fill="none" stroke-linecap="round" stroke-dasharray="100.53" stroke-dashoffset="0"
+                    class="${textColor} transition-all duration-1000 ease-linear" />
+            </svg>
+             <div class="absolute inset-0 flex items-center justify-center">
+                 <span class="text-[10px] font-bold uppercase text-slate-500">${user === "facu" ? "F" : "A"}</span>
+             </div>
+        </div>
+        <div class="text-left">
+            <div id="mini-display-${user}" class="text-xl font-mono font-bold ${textColor} tabular-nums leading-tight">0:00</div>
+            <p class="text-[10px] text-slate-500 max-w-[100px] truncate">${state.exerciseName}</p>
+        </div>
+    `;
+  return div;
+}
+
+function updateTimerDisplay() {
+  if (
+    activeFullModalUser &&
+    timerState[activeFullModalUser].active &&
+    !timerState[activeFullModalUser].minimized
+  ) {
+    const user = activeFullModalUser;
+    const state = timerState[user];
+
+    const display = document.getElementById("timer-display");
+    const ring = document.getElementById("timer-ring");
+    const secondsLeft = document.getElementById("timer-seconds-left");
+
+    const displaySeconds = Math.max(0, state.currentSeconds);
+    const mins = Math.floor(displaySeconds / 60);
+    const secs = displaySeconds % 60;
+    const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+    display.textContent = timeStr;
+    secondsLeft.textContent = displaySeconds;
+
+    const circumference = 364.42;
+    const progress = Math.max(0, displaySeconds / state.totalSeconds);
+    ring.style.strokeDashoffset = circumference * (1 - progress);
+
+    // Low time warning colors
+    const timerIcon = document.querySelector("#timer-full .lucide-timer");
+    const addBtn = document.getElementById("timer-add-btn");
+
+    if (displaySeconds <= 10) {
+      ring.style.stroke = "#ef4444";
+      display.className =
+        "text-7xl font-mono font-bold text-red-400 mb-6 tabular-nums";
+
+      const modal = document.getElementById("timer-full");
+      if (modal) {
+        modal.classList.remove("border-slate-700", "shadow-emerald-500/10");
+        modal.classList.add("border-red-500", "shadow-red-500/20");
+      }
+
+      // Icon Red
+      if (timerIcon) {
+        timerIcon.classList.remove("text-emerald-400");
+        timerIcon.classList.add("text-red-400");
+      }
+
+      // Add Button Red
+      if (addBtn) {
+        addBtn.classList.remove("bg-emerald-600", "hover:bg-emerald-500");
+        addBtn.classList.add("bg-red-600", "hover:bg-red-500");
+      }
+    } else {
+      ring.style.stroke = "#10b981";
+      display.className =
+        "text-7xl font-mono font-bold text-emerald-400 mb-6 tabular-nums";
+
+      const modal = document.getElementById("timer-full");
+      if (modal) {
+        modal.classList.add("border-slate-700", "shadow-emerald-500/10");
+        modal.classList.remove("border-red-500", "shadow-red-500/20");
+      }
+
+      // Icon Revert
+      if (timerIcon) {
+        timerIcon.classList.add("text-emerald-400");
+        timerIcon.classList.remove("text-red-400");
+      }
+
+      // Add Button Revert
+      if (addBtn) {
+        addBtn.classList.add("bg-emerald-600", "hover:bg-emerald-500");
+        addBtn.classList.remove("bg-red-600", "hover:bg-red-500");
+      }
+    }
+  }
+
+  // Update Minis
+  ["facu", "alma"].forEach((user) => {
+    const displayMini = document.getElementById(`mini-display-${user}`);
+    const ringMini = document.getElementById(`mini-ring-${user}`);
+    const container = displayMini?.closest("div.bg-slate-900"); // Get the bubble container
+
+    if (displayMini && ringMini && timerState[user].active) {
+      const state = timerState[user];
+      const displaySeconds = Math.max(0, state.currentSeconds);
+      const mins = Math.floor(displaySeconds / 60);
+      const secs = displaySeconds % 60;
+      displayMini.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+      const progress = Math.max(0, displaySeconds / state.totalSeconds);
+      const circumference = 100.53;
+      ringMini.style.strokeDashoffset = circumference * (1 - progress);
+
+      // Color logic for mini
+      if (displaySeconds <= 10) {
+        ringMini.style.stroke = "#ef4444";
+        displayMini.classList.remove("text-blue-400", "text-pink-400");
+        displayMini.classList.add("text-red-400");
+        if (container) {
+          container.classList.add("border-red-500", "shadow-red-500/30");
+          container.classList.remove(
+            "border-blue-500",
+            "shadow-blue-500/30",
+            "border-pink-500",
+            "shadow-pink-500/30",
+          );
+        }
+      } else {
+        // Restore default colors
+        const defaultColor = user === "facu" ? "blue" : "pink";
+        ringMini.style.stroke = user === "facu" ? "#60a5fa" : "#f472b6"; // tailwind blue-400 / pink-400 hex approx
+        // Re-add correct text color
+        displayMini.classList.remove("text-red-400");
+        displayMini.classList.add(`text-${defaultColor}-400`);
+
+        if (container) {
+          container.classList.remove("border-red-500", "shadow-red-500/30");
+          container.classList.add(
+            `border-${defaultColor}-500`,
+            `shadow-${defaultColor}-500/30`,
+          );
+        }
+      }
+    }
+  });
+}
+
+function hideTimer(user) {
+  if (user) {
+    // Hide specific user
+    timerState[user].active = false;
+
+    // Logic: If the user being hidden was the Active Full Screen one...
+    if (activeFullModalUser === user) {
+      const otherUser = user === "facu" ? "alma" : "facu";
+
+      // Check if other user is active AND NOT minimized
+      // If the other user is active but minimized, we should probably keep them minimized
+      // unless the user explicitly expands them.
+
+      if (timerState[otherUser].active && !timerState[otherUser].minimized) {
+        expandTimer(otherUser);
+      } else if (
+        timerState[otherUser].active &&
+        timerState[otherUser].minimized
+      ) {
+        // Other user is active but chose to be minimized.
+        // We do NOT expand them automatically. We just clear the full screen slot.
+        activeFullModalUser = null;
+      } else {
+        // No one else is active
+        activeFullModalUser = null;
+      }
+    }
+  } else {
+    // Force Hide ALL (e.g. skip button if we want it to close current)
+    if (activeFullModalUser) {
+      hideTimer(activeFullModalUser);
+      return;
+    }
+  }
+
+  renderTimerUI();
+
+  // Cleanup if nobody active handled by startGlobalTimerIfNeeded loop,
+  // but we should explicit cleanup layout if empty.
+  if (!timerState.facu.active && !timerState.alma.active) {
+    document.body.style.overflow = "";
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.width = "";
+    document.body.style.touchAction = "";
+    window.scrollTo(0, savedScrollY);
+  }
+}
+
+// --- TIMER MINIMIZE/EXPAND FUNCTIONS ---
+function minimizeTimer() {
+  if (activeFullModalUser) {
+    timerState[activeFullModalUser].minimized = true;
+    renderTimerUI();
+
+    // Restore body scroll since we are minimized
+    document.body.style.overflow = "";
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.width = "";
+    document.body.style.touchAction = "";
+    window.scrollTo(0, savedScrollY);
+  }
+}
+
+function expandTimer(user) {
+  if (timerState[user].active) {
+    // Restore scroll lock
+    savedScrollY = window.scrollY; // Update position
+
+    activeFullModalUser = user;
+    timerState[user].minimized = false;
+    renderTimerUI();
+
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${savedScrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.touchAction = "none";
+  }
 }
 
 // --- CUSTOM MODAL FUNCTIONS ---
@@ -1291,6 +1420,7 @@ function playTimerEnd() {
 }
 
 // Timer event listeners
+// Timer event listeners
 document
   .getElementById("confirm-cancel-btn")
   .addEventListener("click", hideConfirmModal);
@@ -1298,14 +1428,20 @@ document.getElementById("confirm-ok-btn").addEventListener("click", () => {
   if (confirmCallback) confirmCallback();
   hideConfirmModal();
 });
-document.getElementById("timer-skip-btn").addEventListener("click", hideTimer);
+document
+  .getElementById("timer-skip-btn")
+  .addEventListener("click", () => hideTimer(activeFullModalUser));
 document.getElementById("timer-add-btn").addEventListener("click", () => {
-  if (timerEndTime) {
-    timerEndTime += 30000; // Add 30 seconds to the target timestamp
-    totalTimerSeconds += 30; // Update total for progress ring calculation
+  if (activeFullModalUser && timerState[activeFullModalUser].active) {
+    const user = activeFullModalUser;
+    const state = timerState[user];
+
+    state.endTime += 30000; // Add 30 seconds
+    state.totalSeconds += 30;
+
     // Force immediate update
-    const diff = timerEndTime - Date.now();
-    currentTimerSeconds = Math.ceil(diff / 1000);
+    const diff = state.endTime - Date.now();
+    state.currentSeconds = Math.ceil(diff / 1000);
     updateTimerDisplay();
   }
 });
@@ -1314,111 +1450,111 @@ document.getElementById("timer-add-btn").addEventListener("click", () => {
 document
   .getElementById("timer-minimize-btn")
   .addEventListener("click", minimizeTimer);
-document.getElementById("timer-mini").addEventListener("click", expandTimer);
 
 // --- MUSCLE MAP GENERATOR ---
 const getMuscleMapSVG = (primary = [], secondary = []) => {
   const getColor = (muscleId) => {
     if (primary.includes(muscleId)) return "#ef4444"; // Red-500
     if (secondary.includes(muscleId)) return "#eab308"; // Yellow-500
-    return "#334155"; // Slate-700
+    return "#e2e8f0"; // Slate-200 (Atlas Base Color)
   };
 
-  // SVG Content (Same paths as React component)
+  const strokeColor = "#94a3b8";
+  const strokeWidth = "2";
+
+  // SVG Content - Atlas Style
   return `
-            <div class="flex gap-2 h-32 w-full justify-center opacity-90 transition-opacity duration-500 hover:opacity-100">
-                <svg viewBox="0 0 100 200" class="h-full w-auto drop-shadow-lg">
-                    <circle cx="50" cy="20" r="12" fill="#1e293b" />
-                    <path d="M38,32 Q50,40 62,32 L65,35 L35,35 Z" fill="${getColor(
-                      "traps",
-                    )}" />
-                    <path d="M25,35 Q30,30 38,32 L38,45 Q25,50 22,40 Z" fill="${getColor(
-                      "shoulders",
-                    )}" />
-                    <path d="M75,35 Q70,30 62,32 L62,45 Q75,50 78,40 Z" fill="${getColor(
-                      "shoulders",
-                    )}" />
-                    <path d="M38,32 Q50,45 62,32 L62,55 Q50,65 38,55 Z" fill="${getColor(
-                      "chest",
-                    )}" />
-                    <path d="M22,40 Q25,50 20,60 L28,60 Q30,50 38,45 Z" fill="${getColor(
-                      "biceps",
-                    )}" />
-                    <path d="M78,40 Q75,50 80,60 L72,60 Q70,50 62,45 Z" fill="${getColor(
-                      "biceps",
-                    )}" />
-                    <path d="M20,60 L18,80 L26,80 L28,60 Z" fill="${getColor(
-                      "forearms",
-                    )}" />
-                    <path d="M80,60 L82,80 L74,80 L72,60 Z" fill="${getColor(
-                      "forearms",
-                    )}" />
-                    <path d="M38,55 Q50,65 62,55 L60,85 Q50,90 40,85 Z" fill="${getColor(
-                      "abs",
-                    )}" />
-                    <path d="M38,55 L35,80 L40,85 L38,55 Z" fill="${getColor(
-                      "obliques",
-                    )}" />
-                    <path d="M62,55 L65,80 L60,85 L62,55 Z" fill="${getColor(
-                      "obliques",
-                    )}" />
-                    <path d="M35,85 Q25,100 30,135 L48,135 Q50,100 45,85 Z" fill="${getColor(
-                      "quads",
-                    )}" />
-                    <path d="M65,85 Q75,100 70,135 L52,135 Q50,100 55,85 Z" fill="${getColor(
-                      "quads",
-                    )}" />
-                    <path d="M32,140 Q28,155 32,170 L46,170 Q48,155 46,140 Z" fill="${getColor(
-                      "calves",
-                    )}" />
-                    <path d="M68,140 Q72,155 68,170 L54,170 Q52,155 54,140 Z" fill="${getColor(
-                      "calves",
-                    )}" />
-                </svg>
-                <svg viewBox="0 0 100 200" class="h-full w-auto drop-shadow-lg">
-                    <circle cx="50" cy="20" r="12" fill="#1e293b" />
-                    <path d="M35,32 L65,32 L50,55 Z" fill="${getColor(
-                      "traps",
-                    )}" />
-                    <path d="M25,35 Q30,30 35,32 L35,45 Q25,50 22,40 Z" fill="${getColor(
-                      "shoulders",
-                    )}" />
-                    <path d="M75,35 Q70,30 65,32 L65,45 Q75,50 78,40 Z" fill="${getColor(
-                      "shoulders",
-                    )}" />
-                    <path d="M35,45 L28,65 Q35,75 50,85 Q65,75 72,65 L65,45 L50,55 Z" fill="${getColor(
-                      "lats",
-                    )}" />
-                    <path d="M42,85 L58,85 L55,95 L45,95 Z" fill="${getColor(
-                      "lower_back",
-                    )}" />
-                    <path d="M22,40 Q18,50 20,60 L28,60 Q30,50 35,45 Z" fill="${getColor(
-                      "triceps",
-                    )}" />
-                    <path d="M78,40 Q82,50 80,60 L72,60 Q70,50 65,45 Z" fill="${getColor(
-                      "triceps",
-                    )}" />
-                    <path d="M35,95 Q25,105 35,120 L50,120 L50,95 Z" fill="${getColor(
-                      "glutes",
-                    )}" />
-                    <path d="M65,95 Q75,105 65,120 L50,120 L50,95 Z" fill="${getColor(
-                      "glutes",
-                    )}" />
-                    <path d="M35,120 Q30,135 32,150 L48,150 Q48,135 45,120 Z" fill="${getColor(
-                      "hamstrings",
-                    )}" />
-                    <path d="M65,120 Q70,135 68,150 L52,150 Q52,135 55,120 Z" fill="${getColor(
-                      "hamstrings",
-                    )}" />
-                    <path d="M32,152 Q25,165 34,180 L46,180 Q48,165 46,152 Z" fill="${getColor(
-                      "calves",
-                    )}" />
-                    <path d="M68,152 Q75,165 66,180 L54,180 Q52,165 54,152 Z" fill="${getColor(
-                      "calves",
-                    )}" />
-                </svg>
-            </div>
-            `;
+    <div class="flex gap-2 h-56 w-full justify-center opacity-90 transition-opacity duration-500 hover:opacity-100 py-2">
+        <!-- FRONT VIEW -->
+        <svg viewBox="0 0 400 780" class="h-full w-auto drop-shadow-md">
+             <!-- Head -->
+            <ellipse cx="200" cy="60" rx="35" ry="45" fill="#f1f5f9" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <rect x="185" y="100" width="30" height="25" fill="#f1f5f9" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Traps -->
+            <path d="M185,105 L150,115 L140,125 L185,120 Z" fill="${getColor("traps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M215,105 L250,115 L260,125 L215,120 Z" fill="${getColor("traps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Shoulders -->
+            <path d="M140,125 Q115,130 110,160 Q120,185 140,170 Q150,150 140,125 Z" fill="${getColor("shoulders")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M260,125 Q285,130 290,160 Q280,185 260,170 Q250,150 260,125 Z" fill="${getColor("shoulders")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+             <!-- Chest -->
+            <path d="M200,130 L160,130 Q140,135 140,160 Q160,190 200,190 L200,130 Z" fill="${getColor("chest")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M200,130 L240,130 Q260,135 260,160 Q240,190 200,190 L200,130 Z" fill="${getColor("chest")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Abs -->
+            <path d="M170,195 H230 V280 Q200,290 170,280 Z" fill="${getColor("abs")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            
+            <!-- Obliques -->
+            <path d="M170,195 L155,200 Q150,240 160,270 L170,280 V195 Z" fill="${getColor("obliques")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M230,195 L245,200 Q250,240 240,270 L230,280 V195 Z" fill="${getColor("obliques")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Biceps -->
+            <path d="M110,160 Q100,190 110,210 Q130,205 140,170 Z" fill="${getColor("biceps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M290,160 Q300,190 290,210 Q270,205 260,170 Z" fill="${getColor("biceps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Forearms -->
+            <path d="M110,210 Q95,250 100,290 L120,285 Q125,240 130,210 Z" fill="${getColor("forearms")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M290,210 Q305,250 300,290 L280,285 Q275,240 270,210 Z" fill="${getColor("forearms")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Quads -->
+            <path d="M160,285 Q140,350 150,450 L195,450 Q195,350 195,290 Z" fill="${getColor("quads")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M240,285 Q260,350 250,450 L205,450 Q205,350 205,290 Z" fill="${getColor("quads")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            
+            <!-- Tibials (Using Calves color for completeness) -->
+             <path d="M155,480 Q150,530 160,580 L175,580 Q170,530 170,480 Z" fill="${getColor("calves")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+             <path d="M245,480 Q250,530 240,580 L225,580 Q230,530 230,480 Z" fill="${getColor("calves")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+             <!-- Knees -->
+             <circle cx="172" cy="465" r="12" fill="#e2e8f0" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+             <circle cx="228" cy="465" r="12" fill="#e2e8f0" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+        </svg>
+
+        <!-- BACK VIEW -->
+        <svg viewBox="0 0 400 780" class="h-full w-auto drop-shadow-md">
+            <!-- Head -->
+            <ellipse cx="200" cy="60" rx="35" ry="45" fill="#f1f5f9" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <rect x="185" y="100" width="30" height="20" fill="#f1f5f9" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Traps (Back) -->
+            <path d="M200,100 L160,120 L180,180 L200,230 L220,180 L240,120 Z" fill="${getColor("traps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Shoulders (Rear) -->
+            <path d="M140,125 Q115,135 110,160 L130,170 Q145,150 160,120 Z" fill="${getColor("shoulders")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M260,125 Q285,135 290,160 L270,170 Q255,150 240,120 Z" fill="${getColor("shoulders")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Lats -->
+            <path d="M180,180 L150,200 L160,260 L200,280 L240,260 L250,200 L220,180 L200,230 Z" fill="${getColor("lats")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Lower Back -->
+            <path d="M185,280 V300 Q185,310 200,310 Q215,310 215,300 V280 Z" fill="${getColor("lower_back")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Triceps -->
+            <path d="M110,160 Q100,180 110,210 L130,205 Q135,170 130,170 Z" fill="${getColor("triceps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M290,160 Q300,180 290,210 L270,205 Q265,170 270,170 Z" fill="${getColor("triceps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Forearms (Rear) -->
+            <path d="M110,210 Q95,250 100,290 L120,285 Q125,240 130,210 Z" fill="${getColor("forearms")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M290,210 Q305,250 300,290 L280,285 Q275,240 270,210 Z" fill="${getColor("forearms")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+             <!-- Glutes -->
+            <path d="M160,280 Q140,300 145,340 Q170,360 200,340 Q230,360 255,340 Q260,300 240,280 Q200,300 160,280 Z" fill="${getColor("glutes")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+
+            <!-- Hamstrings -->
+            <path d="M150,350 Q145,400 155,460 L190,460 Q195,400 190,350 Z" fill="${getColor("hamstrings")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M250,350 Q255,400 245,460 L210,460 Q205,400 210,350 Z" fill="${getColor("hamstrings")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            
+            <!-- Popliteal -->
+            <rect x="160" y="460" width="30" height="15" fill="#f1f5f9" stroke="none" />
+            <rect x="210" y="460" width="30" height="15" fill="#f1f5f9" stroke="none" />
+
+            <!-- Calves -->
+            <path d="M155,475 Q140,500 160,560 L185,550 Q195,500 185,475 Z" fill="${getColor("calves")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M245,475 Q260,500 240,560 L215,550 Q205,500 215,475 Z" fill="${getColor("calves")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+        </svg>
+    </div>
+  `;
 };
 
 // --- INIT & RENDER FUNCTIONS ---
@@ -1781,10 +1917,11 @@ function renderContent() {
                     </div>
 
                     <!-- Muscle Map -->
-                    <div class="w-full md:w-32 bg-slate-950/50 border-t md:border-t-0 md:border-l border-slate-800 p-2 flex flex-col items-center justify-center transition-opacity duration-300 ${
-                      isExerciseCompleted ? "opacity-50 grayscale" : ""
-                    }">
-                        <span class="text-[10px] uppercase text-slate-500 font-bold mb-1 tracking-wider text-center">Impacto Muscular</span>
+                    <div onclick='openMuscleMapModal(${JSON.stringify(exercise.muscles.primary)}, ${JSON.stringify(exercise.muscles.secondary)})' 
+                        class="w-full md:w-32 bg-slate-950/50 border-t md:border-t-0 md:border-l border-slate-800 p-2 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer hover:bg-slate-900 group/map ${
+                          isExerciseCompleted ? "opacity-50 grayscale" : ""
+                        }">
+                        <span class="text-[10px] uppercase text-slate-500 font-bold mb-1 tracking-wider text-center group-hover/map:text-emerald-400 transition-colors">Impacto Muscular <i data-lucide="zoom-in" class="inline w-3 h-3 ml-1"></i></span>
                         ${muscleMapHTML}
                         <div class="flex gap-2 mt-2 justify-center">
                             <div class="flex items-center gap-1">
@@ -1887,11 +2024,8 @@ function renderContent() {
       if (!currentState) {
         // TURN ON
         completedSets[setKey][user] = true;
-        // Sólo mostrar timer si se activa (no si se desactiva)
-        showTimer(
-          `${exerciseName} (${user === "facu" ? "Facu" : "Alma"})`,
-          restTime,
-        );
+        // Sólo mostrar timer si se activa
+        showTimer(user, exerciseName, restTime);
       } else {
         // TURN OFF
         completedSets[setKey][user] = false;
@@ -1912,45 +2046,32 @@ document.addEventListener("visibilitychange", () => {
     // Resume audio context if suspended
     unlockAudio();
 
-    // Check if timer expired while in background
-    if (timerEndTime) {
-      const now = Date.now();
-      const diff = timerEndTime - now;
+    // Check if any timer expired while in background
+    let needsUpdate = false;
+    const now = Date.now();
 
-      // If timer ended more than 1 second ago
-      if (diff <= -1000) {
-        currentTimerSeconds = 0;
-        updateTimerDisplay();
-        playTimerEnd(); // Play sound if missed
-        hideTimer(); // Force close immediately
-      } else {
-        // Just update display immediately
-        currentTimerSeconds = Math.ceil(diff / 1000);
-        updateTimerDisplay();
+    ["facu", "alma"].forEach((user) => {
+      const state = timerState[user];
+      if (state.active) {
+        const diff = state.endTime - now;
+        if (diff <= -1000) {
+          // Expired significantly ago
+          state.currentSeconds = 0;
+          handleTimerComplete(user);
+          needsUpdate = true;
+        } else {
+          state.currentSeconds = Math.ceil(diff / 1000);
+          needsUpdate = true;
+        }
       }
+    });
+
+    if (needsUpdate) {
+      updateTimerDisplay();
     }
-  } else if (document.visibilityState === "hidden" && currentTimerSeconds > 0) {
-    // IMMEDIATE NOTIFICATION ON HIDE
-    // This ensures the user sees something right away rather than waiting for next tick
-    if (Notification.permission === "granted" && navigator.serviceWorker) {
-      navigator.serviceWorker.ready.then((reg) => {
-        const exerciseName =
-          document.getElementById("timer-exercise-name").textContent ||
-          "Ejercicio";
-        const mins = Math.floor(currentTimerSeconds / 60);
-        const secs = currentTimerSeconds % 60;
-        reg.showNotification(
-          `Descansando: ${mins}:${secs.toString().padStart(2, "0")}`,
-          {
-            body: `${exerciseName}`,
-            icon: "favicon.svg",
-            tag: "timer-progress",
-            silent: false, // First one makes a sound/vibration to confirm it's working? Or keep silent? Better silent but immediate.
-            renotify: false,
-          },
-        );
-      });
-    }
+  } else if (document.visibilityState === "hidden") {
+    // Immediate notification update
+    handleNotifications();
   }
 });
 
@@ -2192,5 +2313,83 @@ setTimeout(
   500,
 );
 
+// --- MUSCLE MAP MODAL ---
+function openMuscleMapModal(primary, secondary) {
+  const modal = document.getElementById("muscle-map-modal");
+  const container = document.getElementById("muscle-map-large-container");
+
+  if (!modal || !container) return;
+
+  // Reuse the SVG generation Logic
+  const svgHTML = getMuscleMapSVG(primary, secondary);
+
+  // Inject
+  container.innerHTML = svgHTML;
+
+  // Tweak styles for full size inside modal
+  // We need to target the container div returned by getMuscleMapSVG
+  const wrapper = container.firstElementChild;
+  if (wrapper) {
+    // Remove the restrictive height classes from the small view
+    wrapper.classList.remove("h-56", "gap-2", "py-2");
+
+    // Add classes for the large view: Responsive Layout
+    // Mobile: Flex-col (stacked), nice and wide
+    // Desktop: Flex-row (side-by-side), constrained by height
+    wrapper.classList.add(
+      "flex-col",
+      "md:flex-row",
+      "gap-6",
+      "items-center",
+      "justify-center",
+      "p-0",
+      "w-full",
+      "h-auto",
+      "md:h-full",
+    );
+
+    // Target the SVGs inside to ensure they scale
+    const svgs = wrapper.querySelectorAll("svg");
+    svgs.forEach((svg) => {
+      svg.classList.remove("drop-shadow-md");
+
+      // Responsive constraints
+      svg.classList.remove("h-full", "w-auto"); // clean old style
+      svg.classList.add(
+        "drop-shadow-2xl",
+        "w-[85%]", // Mobile: 85% width
+        "md:w-auto", // Desktop: Width auto
+        "h-auto", // Mobile: Height auto
+        "md:h-[95%]", // Desktop: almost full height
+      );
+
+      svg.removeAttribute("viewBox");
+      svg.setAttribute("viewBox", "0 0 400 780"); // Match the Atlas coordinate system
+    });
+  }
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function closeMuscleMapModal() {
+  const modal = document.getElementById("muscle-map-modal");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+}
+
+// Ensure global scope access
+window.openMuscleMapModal = openMuscleMapModal;
+window.closeMuscleMapModal = closeMuscleMapModal;
+
 // Init App
-init();
+// Init App
+try {
+  init();
+} catch (e) {
+  console.error("CRITICAL INIT ERROR:", e);
+  logToScreen("❌ ERROR CRÍTICO AL INICIAR: " + e.message, "error");
+  alert("Error crítico: " + e.message); // Emergency alert
+}
