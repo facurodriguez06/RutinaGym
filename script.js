@@ -1954,17 +1954,44 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-// --- SERVICE WORKER REGISTRATION ---
+// --- SERVICE WORKER REGISTRATION WITH AUTO-UPDATE ---
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("sw.js")
       .then((registration) => {
         console.log("ServiceWorker registered with scope:", registration.scope);
+
+        // Verificar actualizaciones automáticamente
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          console.log("Nueva versión del Service Worker encontrada...");
+
+          newWorker.addEventListener("statechange", () => {
+            if (
+              newWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              // Hay una nueva versión lista, recargar automáticamente
+              console.log("Nueva versión instalada, recargando...");
+              window.location.reload();
+            }
+          });
+        });
       })
       .catch((error) => {
         console.log("ServiceWorker registration failed:", error);
       });
+
+    // Si el Service Worker toma control, recargar para aplicar cambios
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!refreshing) {
+        refreshing = true;
+        console.log("Service Worker actualizado, recargando página...");
+        window.location.reload();
+      }
+    });
   });
 }
 
