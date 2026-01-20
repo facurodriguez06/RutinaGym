@@ -429,6 +429,14 @@ async function loadFromCloud() {
     if (response.ok) {
       const data = await response.json();
       trainingHistory = data.record || {};
+
+      // Load Gamification from Cloud
+      if (trainingHistory.gamificationState) {
+        gamification = trainingHistory.gamificationState;
+        delete trainingHistory.gamificationState; // Clean up logic so it doesn't pollute history iteration
+        localStorage.setItem("gymGamification", JSON.stringify(gamification));
+      }
+
       localStorage.setItem(
         "gymTrainingHistory",
         JSON.stringify(trainingHistory),
@@ -447,11 +455,35 @@ async function loadFromCloud() {
   }
 }
 
+// --- GAMIFICATION STATE ---
+let gamification = JSON.parse(localStorage.getItem("gymGamification")) || {
+  facu: { points: 0, freezes: 0, frozenWeeks: [] },
+  alma: { points: 0, freezes: 0, frozenWeeks: [] },
+};
+
+// Ensure structure integrity if updating from older version
+["facu", "alma"].forEach((u) => {
+  if (!gamification[u])
+    gamification[u] = { points: 0, freezes: 0, frozenWeeks: [] };
+  if (!gamification[u].frozenWeeks) gamification[u].frozenWeeks = [];
+});
+
 async function saveToCloud() {
   // Always save locally first
   localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+  localStorage.setItem("gymGamification", JSON.stringify(gamification)); // Save Gamification
 
   if (!JSONBIN_ENABLED) return;
+  // ... rest of saveToCloud functionality wraps gamification too?
+  // Since we are using JSONBIN, we should structure the payload to include both or have a separate bin.
+  // Current implementation saves `trainingHistory` directly as the body.
+  // To avoid breaking changes or complex migration of the bin structure,
+  // I will attach gamification to the trainingHistory object TEMPORARILY as a hidden field `_gamification`.
+  // Or better, I'll update the structure if I can.
+  // User said "trainingHistory = data.record".
+  // Let's attach it to trainingHistory as a special key "gamificationState".
+
+  trainingHistory.gamificationState = gamification;
 
   try {
     isSyncing = true;
@@ -468,7 +500,7 @@ async function saveToCloud() {
     );
 
     if (response.ok) {
-      console.log("✅ Historial guardado en la nube");
+      console.log("✅ Datos guardados en la nube");
     }
   } catch (error) {
     console.warn("⚠️ Error guardando en la nube:", error);
@@ -483,6 +515,7 @@ loadFromCloud().then(() => {
     renderCalendar();
     updateStats();
   }
+  updateStreak();
 });
 
 // --- THEME STATE ---
@@ -553,19 +586,43 @@ function markDayCompleted(who) {
   const today = getDateKey(new Date());
 
   if (!trainingHistory[today]) {
-    trainingHistory[today] = { alma: false, facu: false };
+    trainingHistory[today] = { alma: false, facu: false, weights: {} };
   }
+
+  // Ensure weights object exists if migrating from old data
+  if (!trainingHistory[today].weights) {
+    trainingHistory[today].weights = {};
+  }
+
+  // Snapshot current weights into history for today
+  // We merge to avoid overwriting if they check one person then the other
+  trainingHistory[today].weights = {
+    ...trainingHistory[today].weights,
+    ...setWeights,
+  };
+
+  // AWARD POINTS
+  const POINTS_PER_WORKOUT = 100;
+  let pointsMsg = "";
 
   if (who === "alma") {
     trainingHistory[today].alma = true;
+    gamification.alma.points += POINTS_PER_WORKOUT;
+    pointsMsg = ` (+${POINTS_PER_WORKOUT} pts)`;
   } else if (who === "facu") {
     trainingHistory[today].facu = true;
+    gamification.facu.points += POINTS_PER_WORKOUT;
+    pointsMsg = ` (+${POINTS_PER_WORKOUT} pts)`;
   } else if (who === "both") {
     trainingHistory[today].alma = true;
     trainingHistory[today].facu = true;
+    gamification.alma.points += POINTS_PER_WORKOUT;
+    gamification.facu.points += POINTS_PER_WORKOUT;
+    pointsMsg = ` (+${POINTS_PER_WORKOUT} pts c/u)`;
   }
 
   saveToCloud();
+  updateGamificationUI();
 
   // Show toast notification
   const iconType = who === "both" ? "users" : "user";
@@ -577,7 +634,7 @@ function markDayCompleted(who) {
         : "text-blue-400";
   const name =
     who === "both" ? "Alma y Facu" : who === "alma" ? "Alma" : "Facu";
-  showToast(iconType, iconColor, `¡Día registrado para ${name}!`);
+  showToast(iconType, iconColor, `¡Día registrado para ${name}!${pointsMsg}`);
 
   if (currentView === "history") {
     renderCalendar();
@@ -1559,6 +1616,9 @@ const getMuscleMapSVG = (primary = [], secondary = []) => {
 
 // --- INIT & RENDER FUNCTIONS ---
 
+// --- STATE (Weights) ---
+let setWeights = JSON.parse(localStorage.getItem("gymRoutineWeights")) || {};
+
 function init() {
   // Set Date
   const options = { weekday: "long", day: "numeric", month: "long" };
@@ -1762,46 +1822,73 @@ function renderContent() {
       }
       const setData = completedSets[setKey];
 
-      // Dynamic button colors
+      // Dynamic button colors and Weight Inputs
+      const weightFacu =
+        setWeights[setKey] && setWeights[setKey].facu
+          ? setWeights[setKey].facu
+          : "";
+      const weightAlma =
+        setWeights[setKey] && setWeights[setKey].alma
+          ? setWeights[setKey].alma
+          : "";
+
       setButtonsHTML += `
           <div class="flex flex-col items-center gap-1.5 bg-slate-950/30 p-2 rounded-xl border border-slate-800/50">
               <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Set ${
                 s + 1
               }</span>
-              <div class="flex gap-2">
-                  <!-- Facu Button -->
-                  <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
-                    exercise.name
-                  }" data-rest-time="${restTime}"
-                      class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
-                      ${
-                        setData.facu
-                          ? `bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20`
-                          : `bg-slate-800 text-slate-500 border-slate-700 hover:border-blue-500/50 hover:text-blue-400`
-                      }" title="Facu">
-                      ${
-                        setData.facu
-                          ? '<i data-lucide="check" class="w-4 h-4"></i>'
-                          : "F"
-                      }
-                  </button>
+              <div class="flex gap-3">
+                  <!-- Facu Column -->
+                  <div class="flex flex-col items-center gap-1">
+                    <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
+                      exercise.name
+                    }" data-rest-time="${restTime}"
+                          class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
+                          ${
+                            setData.facu
+                              ? `bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20`
+                              : `bg-slate-800 text-slate-500 border-slate-700 hover:border-blue-500/50 hover:text-blue-400`
+                          }" title="Facu">
+                          ${
+                            setData.facu
+                              ? '<i data-lucide="check" class="w-4 h-4"></i>'
+                              : "F"
+                          }
+                      </button>
+                      <input type="number" 
+                             value="${weightFacu}" 
+                             placeholder="kg" 
+                             data-set-key="${setKey}" 
+                             data-user="facu"
+                             class="weight-input w-10 bg-transparent text-center text-[10px] text-slate-300 border-b border-slate-700 focus:border-blue-500 outline-none p-0.5 placeholder:text-slate-700"
+                             onclick="event.stopPropagation()">
+                  </div>
                   
-                  <!-- Alma Button -->
-                  <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
-                    exercise.name
-                  }" data-rest-time="${restTime}"
-                      class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
-                      ${
-                        setData.alma
-                          ? `bg-pink-600 text-white border-pink-500 shadow-lg shadow-pink-500/20`
-                          : `bg-slate-800 text-slate-500 border-slate-700 hover:border-pink-500/50 hover:text-pink-400`
-                      }" title="Alma">
-                      ${
-                        setData.alma
-                          ? '<i data-lucide="check" class="w-4 h-4"></i>'
-                          : "A"
-                      }
-                  </button>
+                  <!-- Alma Column -->
+                  <div class="flex flex-col items-center gap-1">
+                    <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
+                      exercise.name
+                    }" data-rest-time="${restTime}"
+                          class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
+                          ${
+                            setData.alma
+                              ? `bg-pink-600 text-white border-pink-500 shadow-lg shadow-pink-500/20`
+                              : `bg-slate-800 text-slate-500 border-slate-700 hover:border-pink-500/50 hover:text-pink-400`
+                          }" title="Alma">
+                          ${
+                            setData.alma
+                              ? '<i data-lucide="check" class="w-4 h-4"></i>'
+                              : "A"
+                          }
+                      </button>
+                      <input type="number" 
+                             value="${weightAlma}" 
+                             placeholder="kg" 
+                             data-set-key="${setKey}" 
+                             data-user="alma"
+                             class="weight-input w-10 bg-transparent text-center text-[10px] text-slate-300 border-b border-slate-700 focus:border-pink-500 outline-none p-0.5 placeholder:text-slate-700"
+                             onclick="event.stopPropagation()">
+                  </div>
               </div>
           </div>
       `;
@@ -1831,13 +1918,19 @@ function renderContent() {
                                             : ""
                                         }"></i>
                                     </div>
-                                    <h3 class="font-bold text-lg transition-all duration-300 ${
+                                    <h3 class="font-bold text-lg transition-all duration-300 flex-1 ${
                                       isExerciseCompleted
                                         ? "text-slate-500 line-through decoration-slate-600 decoration-2"
                                         : "text-slate-100 group-hover:text-emerald-300"
                                     }">
                                         ${exercise.name}
                                     </h3>
+                                    <!-- History Button -->
+                                    <button onclick="event.stopPropagation(); showExerciseHistory('${exercise.name}')"
+                                        class="p-2 rounded-full hover:bg-slate-800 text-slate-500 hover:text-blue-400 transition-colors"
+                                        title="Ver Historial">
+                                        <i data-lucide="trending-up" class="w-4 h-4"></i>
+                                    </button>
                                 </div>
                                 
                                 <!-- Sets Row -->
@@ -2034,6 +2127,27 @@ function renderContent() {
       localStorage.setItem("gymRoutineSets", JSON.stringify(completedSets));
       renderContent();
     });
+  });
+
+  // Handle Weight Inputs
+  document.querySelectorAll(".weight-input").forEach((input) => {
+    input.addEventListener("change", (e) => {
+      const setKey = e.target.dataset.setKey;
+      const user = e.target.dataset.user;
+      const val = e.target.value;
+
+      if (!setWeights[setKey]) {
+        setWeights[setKey] = { facu: "", alma: "" };
+      }
+      setWeights[setKey][user] = val;
+
+      localStorage.setItem("gymRoutineWeights", JSON.stringify(setWeights));
+    });
+
+    // Auto-select on focus
+    input.addEventListener("focus", (e) => e.target.select());
+    // Stop propagation of clicks to prevent triggering exercise completion or other bubbling
+    input.addEventListener("click", (e) => e.stopPropagation());
   });
 
   // Re-init icons for newly added elements
@@ -2312,6 +2426,455 @@ setTimeout(
   () => logToScreen("🚀 Sistema v2.1 Cargado. Listo para tests.", "success"),
   500,
 );
+
+// --- EXPORT DATA ---
+const exportBtn = document.getElementById("export-data-btn");
+if (exportBtn) {
+  exportBtn.addEventListener("click", () => {
+    const dataStr = JSON.stringify(
+      {
+        gymRoutineSets: JSON.parse(localStorage.getItem("gymRoutineSets")),
+        gymRoutineWeights: JSON.parse(
+          localStorage.getItem("gymRoutineWeights"),
+        ),
+        gymRoutineHistory: JSON.parse(
+          localStorage.getItem("gymRoutineHistory"),
+        ),
+      },
+      null,
+      2,
+    );
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `backup_gym_${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+  });
+}
+
+// --- PLATE CALCULATOR ---
+function openCalculatorModal() {
+  const modal = document.getElementById("calculator-modal");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  document.getElementById("calc-weight-input").focus();
+}
+
+function closeCalculatorModal() {
+  const modal = document.getElementById("calculator-modal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+function calculatePlates(val) {
+  const weight = parseFloat(val);
+  const input = document.getElementById("calc-weight-input");
+
+  // Update input value if called via button
+  if (input.value != weight) input.value = weight;
+
+  const display = document.getElementById("plate-display");
+  const text = document.getElementById("plate-text");
+
+  // Reset Display
+  display.innerHTML =
+    '<div class="h-4 w-full bg-slate-600 absolute z-0 rounded-full"></div><span class="text-slate-600 text-xs font-bold absolute -top-4">LADO ÚNICO</span>'; // Keep bar
+  text.textContent = "Barra vacía (20kg)";
+
+  if (!weight || weight <= 20) {
+    if (weight < 20 && weight > 0) text.textContent = "Menos de la barra...";
+    return;
+  }
+
+  const weightPerSide = (weight - 20) / 2;
+  let remaining = weightPerSide;
+
+  const plates = [
+    { w: 25, color: "bg-red-600", h: "h-32" }, // Rojo
+    { w: 20, color: "bg-blue-600", h: "h-32" }, // Azul
+    { w: 15, color: "bg-yellow-500", h: "h-24" }, // Amarillo
+    { w: 10, color: "bg-green-600", h: "h-20" }, // Verde
+    { w: 5, color: "bg-white", h: "h-14" }, // Blanco
+    { w: 2.5, color: "bg-slate-400", h: "h-10" }, // Gris
+    { w: 1.25, color: "bg-slate-600", h: "h-8" }, // Negro chico
+  ];
+
+  const needed = [];
+
+  plates.forEach((p) => {
+    while (remaining >= p.w) {
+      needed.push(p);
+      remaining -= p.w;
+    }
+  });
+
+  // Render Plates
+  let html =
+    '<div class="h-4 w-full bg-slate-600 absolute z-0 rounded-full"></div><span class="text-slate-600 text-xs font-bold absolute -top-4">LADO ÚNICO</span>'; // Reset again to be safe
+
+  // Center alignment wrapper
+  html += '<div class="flex items-center gap-1 z-10">';
+
+  // Bumper/Inside Collar
+  html += '<div class="w-2 h-10 bg-slate-400 rounded-sm"></div>';
+
+  needed.forEach((p) => {
+    html += `<div class="${p.h} w-4 ${p.color} rounded-sm border-x border-black/20 shadow-sm" title="${p.w}kg"></div>`;
+  });
+
+  html += "</div>";
+
+  display.innerHTML = html;
+
+  // Update Text
+  const plateText = needed.map((p) => p.w).join(" + ");
+  text.innerHTML = `<span class="text-blue-400 font-bold">${weightPerSide}kg</span> por lado: [ ${plateText} ]`;
+}
+
+// Global
+window.openCalculatorModal = openCalculatorModal;
+window.closeCalculatorModal = closeCalculatorModal;
+window.calculatePlates = calculatePlates;
+
+// --- 1RM CALCULATOR ---
+function calculate1RM() {
+  const w = parseFloat(document.getElementById("rm-weight").value) || 0;
+  const r = parseFloat(document.getElementById("rm-reps").value) || 0;
+  const resultDisplay = document.getElementById("rm-result");
+
+  if (w > 0 && r > 0) {
+    // Epley Formula
+    const oneRM = Math.round(w * (1 + r / 30));
+    resultDisplay.innerHTML = `${oneRM} <span class="text-sm text-emerald-600">kg</span>`;
+  } else {
+    resultDisplay.innerHTML = `0 <span class="text-sm text-emerald-600">kg</span>`;
+  }
+}
+window.calculate1RM = calculate1RM;
+
+// --- STREAK LOGIC ---
+// --- GAMIFICATION SYSTEM ---
+function updateGamificationUI() {
+  calculateUserStreak("facu", 5);
+  calculateUserStreak("alma", 3);
+
+  // Update Header UI
+  // We need to inject or update the streak display container
+  const container = document.getElementById("streak-display");
+  if (container) {
+    container.classList.remove("hidden");
+    container.className = "mt-3 flex gap-4 justify-center";
+
+    container.innerHTML = `
+            <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer" onclick="openShopModal('facu')">
+                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Facu</span>
+                <div class="flex items-center gap-1">
+                    <i data-lucide="flame" class="w-3 h-3 ${gamification.facu.streak > 0 ? "text-orange-500 fill-orange-500" : "text-slate-600"}"></i>
+                    <span class="text-xs font-bold text-slate-200">${gamification.facu.streak}</span>
+                </div>
+                <div class="w-px h-3 bg-slate-600 mx-1"></div>
+                <div class="flex items-center gap-1">
+                    <i data-lucide="gem" class="w-3 h-3 text-emerald-400"></i>
+                    <span class="text-xs font-bold text-slate-200">${gamification.facu.points}</span>
+                </div>
+                ${gamification.facu.freezes > 0 ? `<div class="flex items-center"><i data-lucide="shield-check" class="w-3 h-3 text-cyan-400 ml-1"></i><span class="text-[10px] text-cyan-400 font-bold ml-0.5">${gamification.facu.freezes}</span></div>` : ""}
+            </div>
+
+            <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-pink-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer" onclick="openShopModal('alma')">
+                <span class="text-[10px] font-bold text-pink-400 uppercase tracking-wider">Alma</span>
+                <div class="flex items-center gap-1">
+                    <i data-lucide="flame" class="w-3 h-3 ${gamification.alma.streak > 0 ? "text-orange-500 fill-orange-500" : "text-slate-600"}"></i>
+                    <span class="text-xs font-bold text-slate-200">${gamification.alma.streak}</span>
+                </div>
+                <div class="w-px h-3 bg-slate-600 mx-1"></div>
+                <div class="flex items-center gap-1">
+                    <i data-lucide="gem" class="w-3 h-3 text-emerald-400"></i>
+                    <span class="text-xs font-bold text-slate-200">${gamification.alma.points}</span>
+                </div>
+                ${gamification.alma.freezes > 0 ? `<div class="flex items-center"><i data-lucide="shield-check" class="w-3 h-3 text-cyan-400 ml-1"></i><span class="text-[10px] text-cyan-400 font-bold ml-0.5">${gamification.alma.freezes}</span></div>` : ""}
+            </div>
+        `;
+    lucide.createIcons();
+  }
+}
+
+function calculateUserStreak(user, targetDays) {
+  const dates = Object.keys(trainingHistory);
+  // Group by weeks
+  const weeksMap = {};
+  const getWeek = (d) => {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  };
+
+  dates.forEach((date) => {
+    if (trainingHistory[date][user]) {
+      // Fix: Parse manually to avoid UTC timezone shift issues (e.g. 2026-01-19 becoming Jan 18 in Argentina)
+      const [y, m, d] = date.split("-").map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const w = getWeek(dateObj);
+      weeksMap[w] = (weeksMap[w] || 0) + 1;
+    }
+  });
+
+  let streakDays = 0;
+  let stateChanged = false;
+
+  // START FROM THIS WEEK (2026-W04)
+  // We treat weeks before this as non-existent for streak purposes
+  const START_WEEK = "2026-W04"; // Hardcoded start
+  const currentWeekKey = getWeek(new Date());
+
+  // 1. Add days from Current Week (if >= START_WEEK)
+  if (currentWeekKey >= START_WEEK) {
+    streakDays += weeksMap[currentWeekKey] || 0;
+  }
+
+  // If current week is START_WEEK, we are done checking backwards from it.
+  if (currentWeekKey <= START_WEEK) {
+    gamification[user].streak = streakDays;
+    return;
+  }
+
+  // 2. Go backwards from previous week
+  for (let i = 1; i <= 52; i++) {
+    let d = new Date();
+    d.setDate(d.getDate() - i * 7);
+    const weekKey = getWeek(d);
+
+    // Stop if we went past start date
+    if (weekKey < START_WEEK) break;
+
+    const count = weeksMap[weekKey] || 0;
+    const isFrozen = gamification[user].frozenWeeks.includes(weekKey);
+
+    // Check compliance
+    if (count >= targetDays || isFrozen) {
+      streakDays += count;
+    } else {
+      // Missed this week! Check Freezes available?
+      if (gamification[user].freezes > 0) {
+        gamification[user].freezes--;
+        gamification[user].frozenWeeks.push(weekKey);
+        stateChanged = true;
+        streakDays += count;
+      } else {
+        break;
+      }
+    }
+
+    if (weekKey === START_WEEK) break;
+  }
+
+  gamification[user].streak = streakDays;
+  if (stateChanged) saveToCloud();
+}
+
+function buyFreeze(user) {
+  const COST = 500;
+  if (gamification[user].points >= COST) {
+    gamification[user].points -= COST;
+    gamification[user].freezes++;
+    saveToCloud();
+    updateGamificationUI();
+    // Update Shop UI if open
+    openShopModal(user);
+    showToast("shield-check", "text-cyan-400", "¡Protector de Racha comprado!");
+  } else {
+    showToast("ban", "text-red-400", "Puntos insuficientes (Req: 500)");
+  }
+}
+
+window.updateGamificationUI = updateGamificationUI;
+window.buyFreeze = buyFreeze;
+// Call on init
+window.updateStreak = updateGamificationUI;
+
+// --- SHOP MODAL ---
+function openShopModal(user) {
+  const modal = document.getElementById("shop-modal");
+  const title = document.getElementById("shop-user-title");
+  const btn = document.getElementById("shop-buy-btn");
+
+  const points = gamification[user].points;
+  title.textContent = `${user.toUpperCase()} - ${points} GEMAS`;
+
+  btn.onclick = () => buyFreeze(user);
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  lucide.createIcons();
+}
+
+function closeShopModal() {
+  const modal = document.getElementById("shop-modal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+window.openShopModal = openShopModal;
+window.closeShopModal = closeShopModal;
+function closeHistoryDetailsModal() {
+  const modal = document.getElementById("history-details-modal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+function showExerciseHistory(exerciseName) {
+  const modal = document.getElementById("history-details-modal");
+  const title = document.getElementById("hist-modal-title");
+  const content = document.getElementById("hist-modal-content");
+
+  title.textContent = exerciseName;
+  content.innerHTML =
+    '<div class="flex justify-center p-4"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>';
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  // Logic to find history
+  setTimeout(() => {
+    let historyItems = [];
+
+    // 1. Find the Indices for this exercise to generate keys
+    let targetTab = -1;
+    let targetExIdx = -1;
+    let setsCount = 0;
+
+    routineData.forEach((day, tIdx) => {
+      day.exercises.forEach((ex, eIdx) => {
+        if (ex.name === exerciseName) {
+          targetTab = tIdx;
+          targetExIdx = eIdx;
+          setsCount = parseInt(ex.sets) || 3;
+        }
+      });
+    });
+
+    if (targetTab === -1) {
+      content.innerHTML =
+        '<div class="text-center text-slate-500">No se encontró el ejercicio.</div>';
+      return;
+    }
+
+    // 1.5 CHECK CURRENT SESSION (TODAY/NOW)
+    let todayHasData = false;
+    let todayFacuWeights = [];
+    let todayAlmaWeights = [];
+    for (let s = 0; s < setsCount; s++) {
+      const key = `${targetTab}-${targetExIdx}-${s}`;
+      const w = setWeights[key];
+      if (w) {
+        if (w.facu) {
+          todayFacuWeights.push(w.facu);
+          todayHasData = true;
+        }
+        if (w.alma) {
+          todayAlmaWeights.push(w.alma);
+          todayHasData = true;
+        }
+      }
+    }
+
+    if (todayHasData) {
+      historyItems.push({
+        date: "Hoy (Progreso)",
+        facu: todayFacuWeights.join(" - "),
+        alma: todayAlmaWeights.join(" - "),
+        isToday: true, // Optional flag for styling
+      });
+    }
+
+    // 2. Scan History
+    // Sort dates descending
+    const dates = Object.keys(trainingHistory).sort(
+      (a, b) => new Date(b) - new Date(a),
+    );
+
+    dates.forEach((date) => {
+      const dayRecord = trainingHistory[date];
+      if (!dayRecord || !dayRecord.weights) return;
+
+      // Check if we have data for this exercise
+      let hasData = false;
+      let facuWeights = [];
+      let almaWeights = [];
+
+      for (let s = 0; s < setsCount; s++) {
+        const key = `${targetTab}-${targetExIdx}-${s}`;
+        const w = dayRecord.weights[key];
+        if (w) {
+          if (w.facu) {
+            facuWeights.push(w.facu);
+            hasData = true;
+          }
+          if (w.alma) {
+            almaWeights.push(w.alma);
+            hasData = true;
+          }
+        }
+      }
+
+      if (hasData) {
+        // Format Date
+        // Fix: Parse manually to avoid timezone shift
+        const [y, m, d] = date.split("-").map(Number);
+        const dateObj = new Date(y, m - 1, d);
+
+        const dateStr = dateObj.toLocaleDateString("es-AR", {
+          day: "numeric",
+          month: "short",
+        });
+
+        historyItems.push({
+          date: dateStr,
+          facu: facuWeights.join(" - "),
+          alma: almaWeights.join(" - "),
+        });
+      }
+    });
+
+    // 3. Render
+    if (historyItems.length === 0) {
+      content.innerHTML =
+        '<div class="text-center text-slate-500 py-8">No hay registros de peso anteriores para este ejercicio.</div>';
+    } else {
+      let html = `<div class="space-y-3">`; // Add container with spacing
+      historyItems.forEach((item) => {
+        // Highlight "Today" item
+        const borderClass = item.isToday
+          ? "border-emerald-500/50 bg-emerald-900/10"
+          : "border-slate-800 bg-slate-950/50";
+        const dateColor = item.isToday ? "text-emerald-400" : "text-slate-400";
+
+        html += `
+                <div class="${borderClass} p-4 rounded-xl border flex items-center justify-between transition-all">
+                    <div class="${dateColor} font-bold text-sm w-20">${item.date}</div>
+                    <div class="flex-1 px-2 border-l border-slate-700 ml-2 grid grid-cols-2 gap-2">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-blue-500 font-bold uppercase">Facu</span>
+                            <span class="text-slate-200 font-mono text-sm">${item.facu || "-"}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-pink-500 font-bold uppercase">Alma</span>
+                            <span class="text-slate-200 font-mono text-sm">${item.alma || "-"}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+      });
+      html += `</div>`;
+      content.innerHTML = html;
+    }
+  }, 100); // Small delay for rendering
+}
+
+// Global
+window.closeHistoryDetailsModal = closeHistoryDetailsModal;
+window.showExerciseHistory = showExerciseHistory;
 
 // --- MUSCLE MAP MODAL ---
 function openMuscleMapModal(primary, secondary) {
