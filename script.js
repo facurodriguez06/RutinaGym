@@ -2469,10 +2469,17 @@ if (exportBtn) {
 
 // --- PLATE CALCULATOR ---
 function openCalculatorModal() {
+  savedScrollY = window.scrollY; // Capture current scroll position
   const modal = document.getElementById("calculator-modal");
   modal.classList.remove("hidden");
   modal.classList.add("flex");
-  document.body.classList.add("overflow-hidden"); // Lock background scroll
+
+  // Robust Mobile Scroll Lock
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${savedScrollY}px`;
+  document.body.style.width = "100%";
+  document.body.classList.add("overflow-hidden");
+
   document.getElementById("calc-weight-input").focus();
 }
 
@@ -2480,7 +2487,13 @@ function closeCalculatorModal() {
   const modal = document.getElementById("calculator-modal");
   modal.classList.add("hidden");
   modal.classList.remove("flex");
-  document.body.classList.remove("overflow-hidden"); // Unlock background scroll
+
+  // Release Scroll Lock & Restore Position
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.width = "";
+  document.body.classList.remove("overflow-hidden");
+  window.scrollTo(0, savedScrollY);
 }
 
 function calculatePlates(val) {
