@@ -355,7 +355,11 @@ const routineData = [
 ];
 
 // --- STATE ---
-let activeTab = 0;
+// Auto-select Day
+const currentDayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+// Mon(1) -> 0, Fri(5) -> 4. Saturday(6)/Sunday(0) -> 0 (Monday)
+let activeTab =
+  currentDayOfWeek >= 1 && currentDayOfWeek <= 5 ? currentDayOfWeek - 1 : 0;
 
 // Auto-reset daily logic
 const todayStr = new Date().toDateString();
@@ -467,6 +471,11 @@ let gamification = JSON.parse(localStorage.getItem("gymGamification")) || {
     gamification[u] = { points: 0, freezes: 0, frozenWeeks: [] };
   if (!gamification[u].frozenWeeks) gamification[u].frozenWeeks = [];
 });
+
+// Optimization: Update Render immediately with local data (don't wait for cloud/init)
+if (typeof updateGamificationUI === "function") {
+  updateGamificationUI();
+}
 
 async function saveToCloud() {
   // Always save locally first
