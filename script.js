@@ -1625,6 +1625,11 @@ function init() {
   document.getElementById("current-date").textContent =
     new Date().toLocaleDateString("es-AR", options);
 
+  // Initialize Gamification / Streak Display Immediately
+  if (typeof updateGamificationUI === "function") {
+    updateGamificationUI();
+  }
+
   renderTabs();
   renderContent();
   lucide.createIcons();
@@ -2564,7 +2569,8 @@ function updateGamificationUI() {
   const container = document.getElementById("streak-display");
   if (container) {
     container.classList.remove("hidden");
-    container.className = "mt-3 flex gap-4 justify-center";
+    // Updated alignment: Left aligned (justify-start) with indentation (ml-7/md:ml-8) to match Title text
+    container.className = "mt-3 flex gap-4 ml-7 md:ml-8 justify-start";
 
     container.innerHTML = `
             <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer" onclick="openShopModal('facu')">
