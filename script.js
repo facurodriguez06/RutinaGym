@@ -2472,6 +2472,7 @@ function openCalculatorModal() {
   const modal = document.getElementById("calculator-modal");
   modal.classList.remove("hidden");
   modal.classList.add("flex");
+  document.body.classList.add("overflow-hidden"); // Lock background scroll
   document.getElementById("calc-weight-input").focus();
 }
 
@@ -2479,6 +2480,7 @@ function closeCalculatorModal() {
   const modal = document.getElementById("calculator-modal");
   modal.classList.add("hidden");
   modal.classList.remove("flex");
+  document.body.classList.remove("overflow-hidden"); // Unlock background scroll
 }
 
 function calculatePlates(val) {
