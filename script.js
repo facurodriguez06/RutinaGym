@@ -285,10 +285,10 @@ const routineData = [
   },
   {
     day: "Viernes",
-    title: "Juntos - Full Body",
+    title: "Juntos - Full Body - VERSIÓN FINAL CON BONUS",
     exercises: [
       {
-        name: "Peso Muerto Rumano (Mancuernas/Barra)",
+        name: "Peso Muerto Rumano (Manc/Barra)",
         sets: "3",
         reps: "10-12",
         rir: "RIR 2",
@@ -313,7 +313,7 @@ const routineData = [
         reps: "15-20",
         rir: "RIR 0",
         notes:
-          "Reemplazo Zancadas. Aguanta 1 seg arriba con piernas rectas. Descanso: 60 seg.",
+          "Aguanta 1 seg arriba con piernas rectas. Quema, pero sirve. Descanso: 60 seg.",
         muscles: { primary: ["quads"], secondary: [] },
       },
       {
@@ -322,7 +322,7 @@ const routineData = [
         reps: "12-15",
         rir: "RIR 0",
         notes:
-          "Nuevo. Empuja con el talón hacia el techo/atrás. Aprieta el glúteo al final. Descanso: 60 seg.",
+          "Pecho apoyado. Empuja con el talón. Sin arquear lumbar. Descanso: 60 seg.",
         muscles: { primary: ["glutes"], secondary: ["hamstrings"] },
       },
       {
@@ -330,8 +330,7 @@ const routineData = [
         sets: "3",
         reps: "15-20",
         rir: "RIR 1",
-        notes:
-          "Salud de hombros y postura. Cuerda a la frente. Descanso: 60 seg.",
+        notes: "Salud de hombros. Cuerda a la frente. Descanso: 60 seg.",
         muscles: { primary: ["shoulders", "traps"], secondary: [] },
       },
       {
@@ -349,6 +348,15 @@ const routineData = [
         rir: "RIR 0",
         notes: "Controla la bajada para proteger espalda. Descanso: 60 seg.",
         muscles: { primary: ["abs"], secondary: ["obliques"] },
+      },
+      {
+        name: "BONUS A ELECCIÓN (Ver abajo)",
+        sets: "3",
+        reps: "12-15",
+        rir: "RIR 0",
+        notes:
+          "El 'postre' de la rutina. Disfrútenlo. Descanso: 60 seg. ALMA: Curl Manc. Alternado (palmas al techo). FACU: Press Inclinado Manc. (banco 30-45°, profundo).",
+        muscles: { primary: ["biceps", "chest"], secondary: [] },
       },
     ],
   },
