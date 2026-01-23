@@ -79,6 +79,16 @@
                     <i data-lucide="calendar" class="w-5 h-5 group-hover:text-violet-400 transition-colors"></i>
                     <span class="font-medium">Historial</span>
                 </button>
+                <button onclick="navigateTo('stats')"
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all group">
+                    <i data-lucide="line-chart" class="w-5 h-5 group-hover:text-yellow-400 transition-colors"></i>
+                    <span class="font-medium">Progreso</span>
+                </button>
+                <button onclick="navigateTo('achievements')"
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all group">
+                    <i data-lucide="trophy" class="w-5 h-5 group-hover:text-amber-400 transition-colors"></i>
+                    <span class="font-medium">Logros</span>
+                </button>
                 <button onclick="navigateTo('water')"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all group">
                     <div class="relative">
@@ -223,6 +233,47 @@
 
             </div> <!-- Close Routine Main Content -->
         </div> <!-- Close Routine View -->
+
+        <!-- STATS VIEW (CHARTS) -->
+        <div id="view-stats" class="hidden animate-fade-in pb-24 md:pb-8">
+            <header class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1
+                        class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-1">
+                        Tu Progreso
+                    </h1>
+                    <p class="text-slate-400 text-sm">Visualiza tus mejores marcas</p>
+                </div>
+            </header>
+
+            <div id="charts-container" class="space-y-8">
+                <!-- Charts will be injected here -->
+                <div class="flex flex-col items-center justify-center py-12 text-slate-500">
+                    <i data-lucide="bar-chart-2" class="w-12 h-12 mb-4 opacity-50"></i>
+                    <p>Cargando gráficos...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACHIEVEMENTS VIEW -->
+        <div id="view-achievements" class="hidden animate-fade-in pb-24 md:pb-8">
+            <header class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1
+                        class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-600 mb-1">
+                        Logros
+                    </h1>
+                    <p class="text-slate-400 text-sm">Medallas desbloqueadas</p>
+                </div>
+                <div class="bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                    <span class="text-xs font-bold text-amber-400" id="total-achievements-count">0 / 0</span>
+                </div>
+            </header>
+
+            <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Badges injected here -->
+            </div>
+        </div>
 
         <!-- WATER VIEW (AquaFlow Dual) -->
         <div id="view-water" class="hidden animate-slide-up pb-20">

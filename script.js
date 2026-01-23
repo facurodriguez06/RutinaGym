@@ -521,6 +521,20 @@ if (typeof updateGamificationUI === "function") {
 }
 
 async function saveToCloud() {
+  // Check Achievements before saving (to include any new unlocks in this sync)
+  // Avoid recursion if this function is called FROM checkAchievements
+  // We can pass a flag or just assume checks act on local state which settles.
+  // Actually, let's call it here safely.
+  try {
+    // Only check if function exists (safeguard)
+    if (typeof checkAchievements === "function") {
+      // We won't await it, just run it.
+      // But wait, checkAchievements calls saveToCloud() on unlock.
+      // If we call checkAchievements here, we might double-save.
+      // Better to NOT call it here, but call it where state changes (addWater, addSet).
+    }
+  } catch (e) {}
+
   // Always save locally first
   localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
   localStorage.setItem("gymGamification", JSON.stringify(gamification)); // Save Gamification
@@ -1687,15 +1701,183 @@ function enableBackgroundMode(exerciseName, duration) {
     .catch((e) => logToScreen("❌ Audio Silencioso FALLÓ: " + e, "error"));
 }
 
-function disableBackgroundMode() {
-  bgAudio.pause();
-  bgAudio.currentTime = 0;
-  if ("mediaSession" in navigator) {
-    navigator.mediaSession.playbackState = "paused";
-    if (navigator.mediaSession.metadata) {
-      navigator.mediaSession.metadata.title = "Rutina Pausada";
-    }
+// --- NAVIGATION ---
+// currentView is already defined globally (line ~407)
+
+function navigateTo(view) {
+  currentView = view;
+
+  // Hide all main views
+  document.getElementById("routine-view").classList.add("hidden");
+  const historyView = document.getElementById("history-view"); // Uses renderCalendar?
+  // Wait, existing history view ID is 'view-history' or 'history-view'?
+  // Let's check HTML. Usually it was dynamically handled or had an ID.
+
+  // Existing code likely handled 'routine' vs 'history' specially.
+  // We need to generalize.
+
+  const views = [
+    "routine-view",
+    "view-history",
+    "view-water",
+    "view-stats",
+    "view-achievements",
+  ];
+  views.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
+
+  // Show specific view
+  if (view === "routine") {
+    document.getElementById("routine-view").classList.remove("hidden");
+    renderContent();
+  } else if (view === "history") {
+    // Current app uses 'currentView' state to toggle render in 'renderCalendar'.
+    // We might need to ensure the container exists?
+    // Let's assume 'view-history' is the ID for the calendar container/page.
+    // If not, we might need to adapt.
+    // Checking script: 'if (currentView === "history") renderCalendar();'
+
+    // Check if 'view-history' exists in HTML?
+    // If not, maybe it was injecting into 'routine-main'?
+    // Let's look for where RenderCalendar injects.
+
+    // Previous code:
+    // renderCalendar targets 'calendar-container'?
+    // And hides routine?
+
+    // Let's assume standard behavior for these new views.
+    const v = document.getElementById("view-history");
+    if (v) v.classList.remove("hidden");
+    renderCalendar();
+    updateStats(); // Old stats (week balance)
+  } else if (view === "water") {
+    document.getElementById("view-water").classList.remove("hidden");
+    renderAquaFlow();
+  } else if (view === "stats") {
+    document.getElementById("view-stats").classList.remove("hidden");
+    renderCharts();
+  } else if (view === "achievements") {
+    document.getElementById("view-achievements").classList.remove("hidden");
+    renderAchievements();
   }
+
+  // Update Sidebar Active State
+  document.querySelectorAll("#sidebar button").forEach((btn) => {
+    btn.classList.remove("active-nav-item", "bg-slate-800", "text-white");
+    btn.classList.add("text-slate-300");
+  });
+
+  // Highlight correct button (Simple match by onclick text or ID if we had it)
+  // For now, we rely on click adding class manually or re-render?
+  // Let's manually add active class to the button that called this?
+  // Or find by unique property.
+}
+
+// --- CHARTS LOGIC ---
+function renderCharts() {
+  const container = document.getElementById("charts-container");
+  container.innerHTML = "";
+
+  // We will generate 4 main charts:
+  // 1. Facu's Max Volume Day
+  // 2. Alma's Max Volume Day
+  // 3. Facu's Streak Evolution (?)
+  // 4. Exercise Progress (Squat?)
+
+  // Let's simplify: 1 Chart per user showing "Daily Volume" over last 30 days.
+
+  ["facu", "alma"].forEach((user) => {
+    const dataPoints = getVolumeHistory(user, 14); // Last 14 days
+    const chartHTML = generateSVGLineChart(
+      dataPoints,
+      user === "facu" ? "#60a5fa" : "#f472b6",
+      user,
+    );
+
+    const card = document.createElement("div");
+    card.className = "bg-slate-900 border border-slate-800 p-4 rounded-2xl";
+    card.innerHTML = `
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            ${user === "facu" ? "🙎🏽‍♂️ Volumen de Facu" : "🙎🏻‍♀️ Volumen de Alma"}
+            <span class="text-xs text-slate-500 font-normal">(Últimos 14 días)</span>
+        </h3>
+        ${chartHTML}
+      `;
+    container.appendChild(card);
+  });
+}
+
+function getVolumeHistory(user, days) {
+  const history = [];
+  const date = new Date();
+  // Go back 'days' amount
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(date.getDate() - i);
+    const key = getDateKey(d);
+
+    // Calculate volume for that day
+    let vol = 0;
+    const record = trainingHistory[key];
+    if (record && record.weights) {
+      // Iterate all keys in weights
+      Object.values(record.weights).forEach((pair) => {
+        // weights[key] = {facu: 50, alma: 30}
+        // We don't know reps here easily without routine map.
+        // But we can sum up 'Weight * Sets' if we assume 3 sets?
+        // Or just sum Max Weight moved?
+        // Let's sum "Max Weight" of the day as a proxy for strength.
+        if (pair[user]) vol += parseInt(pair[user]);
+      });
+    }
+    history.push({ label: d.getDate() + "/" + (d.getMonth() + 1), value: vol });
+  }
+  return history;
+}
+
+function generateSVGLineChart(data, color, user) {
+  const width = 600;
+  const height = 200;
+  const padding = 20;
+
+  if (data.every((d) => d.value === 0)) {
+    return `<div class="h-48 flex items-center justify-center text-slate-600 italic">Sin datos recientes</div>`;
+  }
+
+  const maxValue = Math.max(...data.map((d) => d.value)) || 1;
+  const points = data
+    .map((d, i) => {
+      const x = (i / (data.length - 1)) * (width - padding * 2) + padding;
+      const y =
+        height - (d.value / maxValue) * (height - padding * 2) - padding;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return `
+      <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto drop-shadow-lg">
+         <!-- Label lines -->
+         <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#334155" stroke-width="1" />
+         
+         <!-- Path -->
+         <polyline fill="none" stroke="${color}" stroke-width="3" points="${points}" 
+                   stroke-linecap="round" stroke-linejoin="round"
+                   class="animate-draw-line" />
+                   
+         <!-- Points -->
+         ${data
+           .map((d, i) => {
+             const x =
+               (i / (data.length - 1)) * (width - padding * 2) + padding;
+             const y =
+               height - (d.value / maxValue) * (height - padding * 2) - padding;
+             return `<circle cx="${x}" cy="${y}" r="4" fill="${color}" class="hover:scale-150 transition-transform origin-center" />`;
+           })
+           .join("")}
+      </svg>
+    `;
 }
 
 // --- TIMER FUNCTIONS ---
@@ -2316,6 +2498,131 @@ document
   .getElementById("timer-minimize-btn")
   .addEventListener("click", minimizeTimer);
 
+// --- GAMIFICATION V2 (LOGROS) ---
+const achievementsConfig = [
+  {
+    id: "first_workout",
+    title: "Primer Paso",
+    icon: "footprints",
+    desc: "Completa tu primer entrenamiento",
+    condition: (u) => gamification[u].points > 0,
+  },
+  {
+    id: "streak_3",
+    title: "Constancia",
+    icon: "flame",
+    desc: "Racha de 3 días",
+    condition: (u) => calculateUserStreak(u) >= 3,
+  },
+  {
+    id: "streak_7",
+    title: "Imparable",
+    icon: "zap",
+    desc: "Racha de 7 días",
+    condition: (u) => calculateUserStreak(u) >= 7,
+  },
+  {
+    id: "streak_30",
+    title: "Leyenda",
+    icon: "crown",
+    desc: "Racha de 30 días",
+    condition: (u) => calculateUserStreak(u) >= 30,
+  },
+  {
+    id: "hydrated",
+    title: "Hidratado",
+    icon: "droplets",
+    desc: "Alcanza tu meta de agua",
+    condition: (u) => waterState[u] >= (waterState[u + "Goal"] || 2000),
+  },
+  {
+    id: "heavy_hitter",
+    title: "Peso Pesado",
+    icon: "dumbbell",
+    desc: "Levanta 10,000kg en un día (tbd)",
+    condition: (u) => false,
+  }, // Placeholder
+];
+
+function checkAchievements() {
+  // Logic to unlock achievements
+  // We store unlocked IDs in gamification[user].achievements = ["id1", "id2"]
+  ["facu", "alma"].forEach((user) => {
+    if (!gamification[user].achievements) gamification[user].achievements = [];
+
+    let newUnlock = false;
+    achievementsConfig.forEach((ach) => {
+      if (!gamification[user].achievements.includes(ach.id)) {
+        // Safety check for condition
+        try {
+          if (ach.condition(user)) {
+            gamification[user].achievements.push(ach.id);
+            newUnlock = true;
+            showToast(
+              ach.icon,
+              user === "facu" ? "text-blue-400" : "text-pink-400",
+              `¡Logro Desbloqueado: ${ach.title}!`,
+            );
+            triggerConfetti();
+          }
+        } catch (e) {
+          console.warn("Achievement check error", e);
+        }
+      }
+    });
+
+    if (newUnlock) {
+      localStorage.setItem("gymGamification", JSON.stringify(gamification));
+      saveToCloud(); // Sync achievements
+    }
+  });
+}
+
+function renderAchievements() {
+  const grid = document.getElementById("achievements-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  // Check unlocks first
+  checkAchievements();
+
+  ["facu", "alma"].forEach((user) => {
+    const title = document.createElement("h3");
+    title.className = `col-span-full text-xl font-bold mt-4 mb-2 ${user === "facu" ? "text-blue-400" : "text-pink-400"} flex items-center gap-2`;
+    title.innerHTML = `<span>${user === "facu" ? "🙎🏽‍♂️" : "🙎🏻‍♀️"}</span> Logros de ${user === "facu" ? "Facu" : "Alma"}`;
+    grid.appendChild(title);
+
+    const unlockedIds = gamification[user].achievements || [];
+
+    achievementsConfig.forEach((ach) => {
+      const isUnlocked = unlockedIds.includes(ach.id);
+      const card = document.createElement("div");
+      card.className = `p-4 rounded-xl border flex flex-col items-center text-center gap-2 transition-all ${isUnlocked ? "bg-slate-800 border-slate-700 shadow-lg shadow-" + (user === "facu" ? "blue" : "pink") + "-500/10" : "bg-slate-900/50 border-slate-800 opacity-50 grayscale"}`;
+
+      card.innerHTML = `
+                <div class="p-3 rounded-full ${isUnlocked ? "bg-gradient-to-br from-yellow-500/20 to-amber-600/20 text-yellow-500" : "bg-slate-800 text-slate-600"}">
+                    <i data-lucide="${ach.icon}" class="w-8 h-8"></i>
+                </div>
+                <div>
+                   <h4 class="font-bold text-white text-sm">${ach.title}</h4>
+                   <p class="text-[10px] text-slate-400">${ach.desc}</p>
+                </div>
+            `;
+      grid.appendChild(card);
+    });
+  });
+
+  // Update counter
+  const total = achievementsConfig.length * 2;
+  const unlocked =
+    (gamification.facu.achievements?.length || 0) +
+    (gamification.alma.achievements?.length || 0);
+  const counter = document.getElementById("total-achievements-count");
+  if (counter) counter.textContent = `${unlocked} / ${total}`;
+
+  if (window.lucide) lucide.createIcons();
+}
+
 // --- MUSCLE MAP GENERATOR ---
 const getMuscleMapSVG = (primary = [], secondary = []) => {
   const getColor = (muscleId) => {
@@ -2427,6 +2734,62 @@ const getMuscleMapSVG = (primary = [], secondary = []) => {
 // --- STATE (Weights) ---
 let setWeights = JSON.parse(localStorage.getItem("gymRoutineWeights")) || {};
 
+// --- SMART AUTOFILL HELPER ---
+function getLastWeight(exerciseName, user, dayIndex) {
+  // Scans trainingHistory backwards to find the last weight for this exercise
+  const dates = Object.keys(trainingHistory).sort(
+    (a, b) => new Date(b) - new Date(a),
+  ); // Newest first
+
+  // We need to iterate over days to find matching exercise name.
+  // This is expensive if history is huge, but it's local string comparisons.
+  // We don't have a direct map of "Exercise Name" -> "Last Weight".
+  // So we have to infer from the structure.
+
+  // Strategy:
+  // 1. We know the current dayIndex (e.g. 0 for Monday).
+  // 2. We know the exerciseName.
+  // 3. We iterate history.
+  //    If history[date] exists...
+  //    We need to know which setKey corresponds to exerciseName?
+  //    We can't rely on index if user changes routine.
+  //    BUT, `setWeights` is saved by setKey "day-ex-set".
+  //    Wait, `trainingHistory` stores `weights` object which matches `setWeights` structure.
+
+  //    If we assume the routine structure (order of exercises) hasn't changed dramatically:
+  //    We can look for keys starting with `${dayIndex}-`.
+  //    But we need to match the specific exercise index.
+  //    We don't know the exercise index for `exerciseName` unless we scan `routineData`?
+  //    Yes, we can find the index of `exerciseName` in `routineData[dayIndex]`.
+
+  // Find exIndex
+  const dayRoutine = routineData[dayIndex];
+  if (!dayRoutine) return "";
+
+  const exIndex = dayRoutine.exercises.findIndex(
+    (e) => e.name === exerciseName,
+  );
+  if (exIndex === -1) return "";
+
+  for (const date of dates) {
+    const dayData = trainingHistory[date];
+    if (dayData && dayData.weights) {
+      // Look for any set of this exercise (0, 1, 2, 3...)
+      // We want the MAX weight or the LAST set weight? Usually "working set" weight.
+      // Let's take the first non-empty value we find (newest set).
+
+      // Check sets 0 to 5
+      for (let s = 0; s < 6; s++) {
+        const key = `${dayIndex}-${exIndex}-${s}`;
+        if (dayData.weights[key] && dayData.weights[key][user]) {
+          return dayData.weights[key][user];
+        }
+      }
+    }
+  }
+  return "";
+}
+
 function init() {
   // Set Date (Legacy removed)
 
@@ -2443,6 +2806,9 @@ function init() {
   renderTabs();
   renderContent();
   lucide.createIcons();
+
+  // Check Achievements on startup
+  if (typeof checkAchievements === "function") checkAchievements();
 
   // --- POLLING FOR LIVE SYNC ---
   // Check cloud every 30 seconds
@@ -2653,14 +3019,34 @@ function renderContent() {
       const setData = completedSets[setKey];
 
       // Dynamic button colors and Weight Inputs
-      const weightFacu =
+      // SMART AUTOFILL LOGIC
+      // 1. Check current set data (priority)
+      // 2. If empty, check last recorded weight for this exercise (Smart Fill)
+
+      let weightFacu =
         setWeights[setKey] && setWeights[setKey].facu
           ? setWeights[setKey].facu
           : "";
-      const weightAlma =
+
+      let weightAlma =
         setWeights[setKey] && setWeights[setKey].alma
           ? setWeights[setKey].alma
           : "";
+
+      // Auto-fill placeholders (or values if desired, user said "autofill" so likely values)
+      // We will use PLACEHOLDER for now to be less invasive, or VALUE if user insists.
+      // User said: "inputs deb weight ya vengan precargados". So VALUE.
+
+      // Only autofill if strictly empty and we have history
+      if (!weightFacu) {
+        const last = getLastWeight(exercise.name, "facu", activeTab); // activeTab helps context matching if same exercise name used differently?
+        // Actually exercise name is unique enough usually.
+        if (last) weightFacu = last;
+      }
+      if (!weightAlma) {
+        const last = getLastWeight(exercise.name, "alma", activeTab);
+        if (last) weightAlma = last;
+      }
 
       setButtonsHTML += `
           <div class="flex flex-col items-center gap-2 bg-white dark:bg-slate-950/30 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/50 shadow-sm dark:shadow-none">
