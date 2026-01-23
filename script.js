@@ -1172,34 +1172,51 @@ function addWater(user, amount) {
   saveWaterState();
 
   // SYNC WITH TRAINING HISTORY (for calendar display)
-  const todayKey = getDateKey(new Date());
-  if (!trainingHistory[todayKey]) {
-    trainingHistory[todayKey] = { alma: false, facu: false, weights: {} };
-  }
-  if (!trainingHistory[todayKey].water) {
-    trainingHistory[todayKey].water = {};
-  }
-  trainingHistory[todayKey].water.facu = waterState.facu;
-  trainingHistory[todayKey].water.alma = waterState.alma;
-  localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+  try {
+    const todayKey = getDateKey(new Date());
+    if (!trainingHistory[todayKey]) {
+      trainingHistory[todayKey] = { alma: false, facu: false, weights: {} };
+    }
+    if (!trainingHistory[todayKey].water) {
+      trainingHistory[todayKey].water = {};
+    }
+    trainingHistory[todayKey].water.facu = waterState.facu;
+    trainingHistory[todayKey].water.alma = waterState.alma;
+    localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
 
-  // TRIGGER CLOUD SYNC IMMEDIATELY
-  saveToCloud();
+    // TRIGGER CLOUD SYNC IMMEDIATELY
+    saveToCloud();
+  } catch (e) {
+    console.error("Error syncing water:", e);
+  }
 
   // Visuals
-  if (amount > 0) {
-    animateShake(user);
+  try {
+    if (amount > 0) {
+      animateShake(user);
 
-    // Check Goal
-    const newPercent = waterState[user] / goal;
-    if (oldPercent < 1 && newPercent >= 1) {
-      triggerConfetti();
+      // Check Goal
+      const newPercent = waterState[user] / goal;
+      const oldPercent = Math.max(0, waterState[user] - amount) / goal; // Approx existing logic
+      if (oldPercent < 1 && newPercent >= 1) {
+        triggerConfetti();
+      }
     }
+  } catch (e) {
+    console.warn("Anim error", e);
   }
 
   console.log(`[DEBUG] Calling renderAquaFlow from addWater`);
   renderAquaFlow();
   renderWaterHistory();
+}
+
+// --- HELPERS ---
+function getDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function renderWaterHistory() {
