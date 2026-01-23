@@ -581,7 +581,24 @@ loadFromCloud().then(() => {
     renderCalendar();
     updateStats();
   }
-  updateStreak();
+  // Refresh Gamification UI (Streaks, Points)
+  if (typeof updateGamificationUI === "function") {
+    updateGamificationUI();
+  }
+
+  // Refresh Achievements Logic
+  if (typeof checkAchievements === "function") {
+    checkAchievements();
+  }
+
+  // Refresh Charts/Achievements Views if active
+  if (currentView === "stats" && typeof renderCharts === "function")
+    renderCharts();
+  if (
+    currentView === "achievements" &&
+    typeof renderAchievements === "function"
+  )
+    renderAchievements();
 });
 
 // --- THEME STATE ---
@@ -4221,10 +4238,10 @@ window.closeMuscleMapModal = closeMuscleMapModal;
 // Init App
 
 function markDayCompleted() {
-    console.log("Marking day as completed...");
-    playTimerEnd();
-    checkAchievements();
-    saveToCloud();
+  console.log("Marking day as completed...");
+  playTimerEnd();
+  checkAchievements();
+  saveToCloud();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener("DOMContentLoaded", init);
