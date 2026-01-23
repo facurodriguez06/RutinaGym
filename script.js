@@ -581,6 +581,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // --- VIEW FUNCTIONS ---
+let scrollPosition = 0;
+
 function toggleSidebar() {
   const sidebar = document.getElementById("sidebar");
   const overlay = document.getElementById("sidebar-overlay");
@@ -590,14 +592,21 @@ function toggleSidebar() {
     sidebar.classList.add("-translate-x-full");
     overlay.classList.remove("opacity-100");
     setTimeout(() => overlay.classList.add("hidden"), 300);
-    // Unlock body scroll
-    document.body.style.overflow = "";
+    // Unlock body scroll (restore position)
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.width = "";
+    window.scrollTo(0, scrollPosition);
   } else {
+    // Save scroll position before locking
+    scrollPosition = window.pageYOffset;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollPosition}px`;
+    document.body.style.width = "100%";
+
     overlay.classList.remove("hidden");
     setTimeout(() => overlay.classList.add("opacity-100"), 10);
     sidebar.classList.remove("-translate-x-full");
-    // Lock body scroll to prevent background scrolling
-    document.body.style.overflow = "hidden";
   }
 }
 
