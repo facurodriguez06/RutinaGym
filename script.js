@@ -775,6 +775,10 @@ function markDayCompleted(who) {
     pointsMsg = ` (+${POINTS_PER_WORKOUT} pts c/u)`;
   }
 
+  if (typeof checkAchievements === "function") {
+    checkAchievements();
+  }
+
   saveToCloud();
   updateGamificationUI();
 
@@ -1874,9 +1878,14 @@ function generateSVGLineChart(data, color, user) {
     .join(" ");
 
   return `
-      <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto drop-shadow-lg">
+      <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto drop-shadow-lg" style="overflow: visible;">
+         <!-- Axis Labels -->
+         <text x="${padding}" y="${padding - 5}" fill="#94a3b8" font-size="10" font-weight="bold">Volumen (kg)</text>
+         <text x="${width - padding}" y="${height + 15}" fill="#94a3b8" font-size="10" text-anchor="end" font-weight="bold">Días</text>
+
          <!-- Label lines -->
          <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#334155" stroke-width="1" />
+         <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#334155" stroke-width="1" />
          
          <!-- Path -->
          <polyline fill="none" stroke="${color}" stroke-width="3" points="${points}" 
@@ -1890,7 +1899,7 @@ function generateSVGLineChart(data, color, user) {
                (i / (data.length - 1)) * (width - padding * 2) + padding;
              const y =
                height - (d.value / maxValue) * (height - padding * 2) - padding;
-             return `<circle cx="${x}" cy="${y}" r="4" fill="${color}" class="hover:scale-150 transition-transform origin-center" />`;
+             return `<circle cx="${x}" cy="${y}" r="4" fill="${color}" class="hover:scale-150 transition-transform origin-center"><title>${d.value} kg</title></circle>`;
            })
            .join("")}
       </svg>
@@ -2546,11 +2555,95 @@ const achievementsConfig = [
     condition: (u) => calculateUserStreak(u) >= 30,
   },
   {
+    id: "streak_60",
+    title: "Dios del Gym",
+    icon: "award",
+    desc: "Racha de 60 días",
+    condition: (u) => calculateUserStreak(u) >= 60,
+  },
+  {
     id: "hydrated",
     title: "Hidratado",
     icon: "droplets",
-    desc: "Alcanza tu meta de agua",
+    desc: "Alcanza tu meta diaria de agua",
     condition: (u) => waterState[u] >= (waterState[u + "Goal"] || 2000),
+  },
+  {
+    id: "hydrated_master",
+    title: "Poseón",
+    icon: "waves",
+    desc: "Bebe 4 litros en un día",
+    condition: (u) => waterState[u] >= 4000,
+  },
+  {
+    id: "volume_10k",
+    title: "10 Toneladas",
+    icon: "dumbbell",
+    desc: "Levanta 10,000kg en total (acumulado histórico)",
+    condition: (u) => getTotalLiftedVolume(u) >= 10000,
+  },
+  {
+    id: "volume_50k",
+    title: "Hércules",
+    icon: "biceps-flexed",
+    desc: "Levanta 50,000kg en total",
+    condition: (u) => getTotalLiftedVolume(u) >= 50000,
+  },
+  {
+    id: "active_10",
+    title: "Constante",
+    icon: "activity",
+    desc: "Completa 10 entrenamientos",
+    condition: (u) => getTotalWorkouts(u) >= 10,
+  },
+  {
+    id: "active_50",
+    title: "Veterano",
+    icon: "medal",
+    desc: "Completa 50 entrenamientos",
+    condition: (u) => getTotalWorkouts(u) >= 50,
+  },
+  {
+    id: "early_bird",
+    title: "Madrugador",
+    icon: "sunrise",
+    desc: "Entrena antes de las 9 AM",
+    condition: (u) => {
+      const h = new Date().getHours();
+      return (
+        h < 9 &&
+        trainingHistory[getDateKey(new Date())] &&
+        trainingHistory[getDateKey(new Date())][u]
+      );
+    },
+  },
+  {
+    id: "night_owl",
+    title: "Noctámbulo",
+    icon: "moon",
+    desc: "Entrena después de las 9 PM",
+    condition: (u) => {
+      const h = new Date().getHours();
+      return (
+        h >= 21 &&
+        trainingHistory[getDateKey(new Date())] &&
+        trainingHistory[getDateKey(new Date())][u]
+      );
+    },
+  },
+  {
+    id: "weekend_warrior",
+    title: "Finde Warrior",
+    icon: "calendar-check",
+    desc: "Entrena un Sábado o Domingo",
+    condition: (u) => {
+      const d = new Date().getDay();
+      return (
+        (d === 0 || d === 6) &&
+        trainingHistory[getDateKey(new Date())] &&
+        trainingHistory[getDateKey(new Date())][u]
+      );
+    },
   },
   {
     id: "heavy_hitter",
@@ -2560,6 +2653,37 @@ const achievementsConfig = [
     condition: (u) => false,
   }, // Placeholder
 ];
+
+// --- ACHIEVEMENT HELPERS ---
+function getTotalWorkouts(user) {
+  let count = 0;
+  Object.values(trainingHistory).forEach((day) => {
+    if (day[user]) count++;
+  });
+  return count;
+}
+
+function getTotalLiftedVolume(user) {
+  let total = 0;
+  Object.values(trainingHistory).forEach((day) => {
+    if (day.weights) {
+      // weights keys are "dayIndex-exIndex-setIndex"
+      // values are like { facu: 50, alma: 30 }
+      Object.values(day.weights).forEach((weightObj) => {
+        if (weightObj[user]) {
+          // We need reps to calculate volume!
+          // Currently history only stores WEIGHT used.
+          // To acturately calculate TOTAL volume we need Sets x Reps x Weight.
+          // But we don't store exact Reps done per historical set, only the default "10" or "8-10" in routine data.
+          // APPROXIMATION: Use 10 reps as standard for volume calc, or just sum "Kg Lifted" as a "Max Effort Accumulator".
+          // Let's assume 10 reps per set for gamification purposes.
+          total += (parseInt(weightObj[user]) || 0) * 10;
+        }
+      });
+    }
+  });
+  return total;
+}
 
 function checkAchievements() {
   // Logic to unlock achievements
@@ -3862,19 +3986,48 @@ function calculateUserStreak(user, targetDays) {
     gamification[user].frozenDays = [];
   }
 
+  // --- NORMALIZE HISTORY KEYS ---
+  // Create a Set of "YYYY-MM-DD" strings for every day the user has trained
   const userDates = new Set();
-  Object.keys(trainingHistory).forEach((date) => {
-    if (trainingHistory[date][user]) {
-      userDates.add(date);
+
+  Object.keys(trainingHistory).forEach((key) => {
+    if (trainingHistory[key][user]) {
+      // Attempt to parse the key. It could be "YYYY-MM-DD" or "DateString"
+      // We'll use our helper getDateKey to ensure standard format
+      const dateObj = new Date(key);
+      if (!isNaN(dateObj)) {
+        // Valid date
+        // Fix: new Date("2025-01-22") might be interpreted as UTC and shift day?
+        // "2025-01-22" is UTC at midnight -> Previous day in local time?
+        // "Fri Jan 23 2026" is local midnight?
+
+        // To be safe with "YYYY-MM-DD" strings, we should append "T00:00:00" or simple split if it matches pattern
+        // But checking if it matches YYYY-MM-DD regex is safer.
+
+        const ymdRegex = /^\d{4}-\d{2}-\d{2}$/;
+        let normalizedKey = "";
+
+        if (ymdRegex.test(key)) {
+          // It's already YYYY-MM-DD. Trust it.
+          normalizedKey = key;
+        } else {
+          // It's likely "Mon Jan 22 2026" or similar. Parse and converting.
+          // NOTE: new Date("YYYY-MM-DD") is UTC. new Date("Mon ...") is Local.
+          // getDateKey uses local .getDate().
+          // We need to match how the key was created.
+          // If key is "Mon Jan..." it was created with local time.
+          // getDateKey(new Date("Mon Jan...")) will preserve local time.
+          normalizedKey = getDateKey(dateObj);
+        }
+
+        if (normalizedKey) userDates.add(normalizedKey);
+      }
     }
   });
 
   // Helpers
   const formatDateKey = (date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
+    return getDateKey(date); // Reuse global helper
   };
 
   let streak = 0;
@@ -4236,12 +4389,5 @@ window.openMuscleMapModal = openMuscleMapModal;
 window.closeMuscleMapModal = closeMuscleMapModal;
 
 // Init App
-
-function markDayCompleted() {
-  console.log("Marking day as completed...");
-  playTimerEnd();
-  checkAchievements();
-  saveToCloud();
-}
 
 document.addEventListener("DOMContentLoaded", init);
