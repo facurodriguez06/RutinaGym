@@ -4227,3 +4227,5 @@ try {
   logToScreen("❌ ERROR CRÍTICO AL INICIAR: " + e.message, "error");
   alert("Error crítico: " + e.message); // Emergency alert
 }
+.  
+ 
