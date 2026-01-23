@@ -590,11 +590,14 @@ function toggleSidebar() {
     sidebar.classList.add("-translate-x-full");
     overlay.classList.remove("opacity-100");
     setTimeout(() => overlay.classList.add("hidden"), 300);
+    // Unlock body scroll
+    document.body.style.overflow = "";
   } else {
     overlay.classList.remove("hidden");
-    // small delay to allow display block to apply before opacity transition
     setTimeout(() => overlay.classList.add("opacity-100"), 10);
     sidebar.classList.remove("-translate-x-full");
+    // Lock body scroll to prevent background scrolling
+    document.body.style.overflow = "hidden";
   }
 }
 
