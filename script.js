@@ -9,7 +9,7 @@ const routineData = [
         sets: "3",
         reps: "8-10",
         rir: "RIR 2",
-        notes: "El ejercicio rey. Prioricen la profundidad. Descanso: 20 seg.",
+        notes: "El ejercicio rey. Prioricen la profundidad. Descanso: 3 min.",
         muscles: {
           primary: ["quads", "glutes"],
           secondary: ["hamstrings", "lower_back"],
@@ -550,44 +550,98 @@ function applyTheme() {
 
   if (currentTheme === "light") {
     body.classList.add("light");
-    icon.setAttribute("data-lucide", "sun");
+    if (icon) icon.setAttribute("data-lucide", "sun");
   } else {
     body.classList.remove("light");
-    icon.setAttribute("data-lucide", "moon");
+    if (icon) icon.setAttribute("data-lucide", "moon");
   }
   lucide.createIcons();
 }
 
 // Apply saved theme on load
+// Apply saved theme on load
 document.addEventListener("DOMContentLoaded", () => {
   applyTheme();
+
+  // Format Date for Header
+  const dateResult = document.getElementById("header-full-date"); // New ID
+  if (dateResult) {
+    const now = new Date();
+    const options = {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    };
+    // "jueves, 22 de enero de 2026"
+    const formatted = now.toLocaleDateString("es-ES", options);
+    // TO UPPERCASE: "JUEVES, 22 DE ENERO DE 2026"
+    dateResult.textContent = formatted.toUpperCase();
+  }
 });
 
 // --- VIEW FUNCTIONS ---
-function setView(view) {
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  const isOpen = !sidebar.classList.contains("-translate-x-full");
+
+  if (isOpen) {
+    sidebar.classList.add("-translate-x-full");
+    overlay.classList.remove("opacity-100");
+    setTimeout(() => overlay.classList.add("hidden"), 300);
+  } else {
+    overlay.classList.remove("hidden");
+    // small delay to allow display block to apply before opacity transition
+    setTimeout(() => overlay.classList.add("opacity-100"), 10);
+    sidebar.classList.remove("-translate-x-full");
+  }
+}
+
+function navigateTo(view) {
   currentView = view;
   const routineView = document.getElementById("routine-view");
   const historyView = document.getElementById("history-view");
-  const routineBtn = document.getElementById("view-routine-btn");
-  const historyBtn = document.getElementById("view-history-btn");
+  const waterView = document.getElementById("view-water"); // New dedicated view
 
+  // Hide all
+  routineView.classList.add("hidden");
+  historyView.classList.add("hidden");
+  if (waterView) waterView.classList.add("hidden");
+
+  // Show selected
   if (view === "routine") {
     routineView.classList.remove("hidden");
-    historyView.classList.add("hidden");
-    routineBtn.className =
-      "px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 bg-emerald-500 text-white";
-    historyBtn.className =
-      "px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 text-slate-400 hover:text-white";
-  } else {
-    routineView.classList.add("hidden");
+  } else if (view === "history") {
     historyView.classList.remove("hidden");
-    historyBtn.className =
-      "px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 bg-emerald-500 text-white";
-    routineBtn.className =
-      "px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 text-slate-400 hover:text-white";
     renderCalendar();
     updateStats();
+  } else if (view === "water") {
+    if (waterView) {
+      waterView.classList.remove("hidden");
+      calculateAndRenderWaterGoal(); // Ensure fresh data
+    }
   }
+
+  // Update Sidebar Active State
+  const navItems = document.querySelectorAll("#sidebar nav button");
+  navItems.forEach((btn) => {
+    if (btn.onclick && btn.onclick.toString().includes(`'${view}'`)) {
+      btn.classList.add("bg-slate-800", "text-white");
+      btn.classList.remove("text-slate-300");
+      // Add marker or highlight icon color if needed
+    } else {
+      btn.classList.remove("bg-slate-800", "text-white");
+      btn.classList.add("text-slate-300");
+    }
+  });
+
+  // Close Sidebar on Mobile
+  const sidebar = document.getElementById("sidebar");
+  if (!sidebar.classList.contains("-translate-x-full")) {
+    toggleSidebar();
+  }
+
   lucide.createIcons();
 }
 
@@ -746,6 +800,16 @@ function renderCalendar() {
       }
     }
 
+    // Water icon if water was logged
+    let waterIcon = "";
+    if (
+      history &&
+      history.water &&
+      (history.water.facu > 0 || history.water.alma > 0)
+    ) {
+      waterIcon = '<i data-lucide="droplets" class="w-3 h-3 text-sky-400"></i>';
+    }
+
     const todayRing = isToday
       ? "ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900"
       : "";
@@ -756,7 +820,7 @@ function renderCalendar() {
                         <span class="text-sm font-medium ${
                           isToday ? "text-emerald-400" : "text-slate-300"
                         }">${day}</span>
-                        ${icon}
+                        <div class="flex gap-0.5">${icon}${waterIcon}</div>
                     </div>
                 `;
   }
@@ -774,9 +838,43 @@ function toggleDayModal(dateKey) {
     else if (history.facu) status = "Solo Facu";
   }
 
+  // Water status
+  let waterStatus = "";
+  if (history && history.water) {
+    const facuWater = history.water.facu || 0;
+    const almaWater = history.water.alma || 0;
+
+    if (facuWater > 0 || almaWater > 0) {
+      waterStatus = `<div class="mt-3 pt-3 border-t border-slate-700">
+        <div class="flex items-center gap-2 mb-2">
+          <i data-lucide="droplets" class="w-4 h-4 text-sky-400"></i>
+          <span class="text-xs font-bold text-slate-400">HIDRATACIÓN</span>
+        </div>
+        <div class="flex gap-4 text-sm">
+          ${
+            facuWater > 0
+              ? `<div class="flex items-center gap-1">
+            <span>🙎🏽‍♂️</span>
+            <span class="${facuWater >= 2500 ? "text-emerald-400" : "text-sky-300"}">${facuWater >= 2500 ? "✅ Meta" : facuWater + "ml"}</span>
+          </div>`
+              : ""
+          }
+          ${
+            almaWater > 0
+              ? `<div class="flex items-center gap-1">
+            <span>🙎🏻‍♀️</span>
+            <span class="${almaWater >= 2000 ? "text-emerald-400" : "text-pink-300"}">${almaWater >= 2000 ? "✅ Meta" : almaWater + "ml"}</span>
+          </div>`
+              : ""
+          }
+        </div>
+      </div>`;
+    }
+  }
+
   // Show custom modal
   document.getElementById("day-modal-title").textContent = dateStr;
-  document.getElementById("day-modal-status").textContent = status;
+  document.getElementById("day-modal-status").innerHTML = status + waterStatus;
   selectedDateKey = dateKey;
 
   const modal = document.getElementById("day-modal");
@@ -787,6 +885,613 @@ function toggleDayModal(dateKey) {
 
 let selectedDateKey = null;
 
+// --- WEATHER & WATER LOGIC ---
+
+// Persistent User Data (Weights, Heights, Ages)
+let userProfile = JSON.parse(localStorage.getItem("gymUserProfile")) || {
+  facu: { weight: 80, height: 175, age: 23 },
+  alma: { weight: 60, height: 165, age: 23 },
+};
+
+// Ensure fields exist (migration from old data)
+if (!userProfile.facu.height) userProfile.facu.height = 175;
+if (!userProfile.alma.height) userProfile.alma.height = 165;
+if (!userProfile.facu.age) userProfile.facu.age = 23;
+if (!userProfile.alma.age) userProfile.alma.age = 23;
+
+// Water State
+let waterState = JSON.parse(localStorage.getItem("water_tracker_state")) || {
+  facu: 0,
+  alma: 0,
+  facuGoal: 2500,
+  almaGoal: 2000,
+  history: [],
+  date: new Date().toDateString(),
+};
+
+// Reset if new day
+if (waterState.date !== new Date().toDateString()) {
+  waterState.facu = 0;
+  waterState.alma = 0;
+  waterState.history = [];
+  waterState.date = new Date().toDateString();
+  saveWaterState(); // Safe to call if defined, or we define it below
+}
+
+let currentTemp = 25; // Default fallback
+
+async function fetchWeather() {
+  try {
+    // Uses wttr.in JSON API which is generally accurate
+    const res = await fetch("https://wttr.in/Mendoza?format=j1");
+    if (res.ok) {
+      const data = await res.json();
+      // wttr.in structure: data.current_condition[0].temp_C
+      if (data.current_condition && data.current_condition.length > 0) {
+        currentTemp = parseInt(data.current_condition[0].temp_C);
+        updateWeatherUI();
+      }
+    }
+  } catch (e) {
+    console.warn("Weather fetch failed", e);
+  }
+}
+
+function updateWeatherUI() {
+  // NEW ID IS IN HEADER
+  const el = document.getElementById("weather-temp-header");
+  const container = document.getElementById("header-weather");
+
+  if (el) {
+    el.textContent = `${currentTemp}°C`;
+    if (container) container.classList.remove("hidden");
+  }
+  // calculateAndRenderWaterGoal(); // This is now handled by initAquaFlow and renderAquaFlow
+}
+
+// --- AQUAFLOW LOGIC ---
+
+const TANK_HEIGHT_SVG = 605; // Matches SVG ViewBox Height
+
+// Smart Water Goal Calculator
+function calculateSmartWaterGoal(user) {
+  const profile = userProfile[user];
+  const weight = profile.weight || 70;
+  const height = profile.height || 170;
+  const age = profile.age || 25;
+
+  // Base: 35ml per kg of body weight
+  let goal = weight * 35;
+
+  // Height adjustment: +100ml if taller than 170cm
+  if (height > 170) {
+    goal += 100;
+  }
+
+  // Age adjustment: +100ml if under 30 (more active metabolism)
+  if (age < 30) {
+    goal += 100;
+  } else if (age > 50) {
+    goal -= 100;
+  }
+
+  // Temperature bonus
+  if (currentTemp > 30) {
+    goal += 500;
+  } else if (currentTemp > 25) {
+    goal += 300;
+  }
+
+  // Training day bonus: check if today is a training day
+  const today = getDateKey(new Date());
+  const history = trainingHistory[today];
+  if (history && history[user]) {
+    goal += 400;
+  }
+
+  // Round to nearest 50
+  goal = Math.round(goal / 50) * 50;
+
+  // Clamp between 1500 and 4500
+  return Math.max(1500, Math.min(4500, goal));
+}
+
+function initAquaFlow() {
+  // Calculate smart goals based on profile and conditions
+  waterState.facuGoal = calculateSmartWaterGoal("facu");
+  waterState.almaGoal = calculateSmartWaterGoal("alma");
+  saveWaterState();
+
+  renderAquaFlow();
+  startBubbleEngine("facu");
+  startBubbleEngine("alma");
+
+  // Set Slider Values
+  const sliderFacu = document.getElementById("goal-input-facu");
+  const sliderAlma = document.getElementById("goal-input-alma");
+  if (sliderFacu) {
+    sliderFacu.value = waterState.facuGoal;
+    sliderFacu.addEventListener("input", (e) => {
+      waterState.facuGoal = parseInt(e.target.value);
+      saveWaterState();
+      renderAquaFlow();
+    });
+  }
+  if (sliderAlma) {
+    sliderAlma.value = waterState.almaGoal;
+    sliderAlma.addEventListener("input", (e) => {
+      waterState.almaGoal = parseInt(e.target.value);
+      saveWaterState();
+      renderAquaFlow();
+    });
+  }
+}
+
+function calculateAndRenderWaterGoal() {
+  // Redirect to new renderer
+  renderAquaFlow();
+  renderWaterHistory();
+}
+
+function renderAquaFlow() {
+  renderUserWater("facu");
+  renderUserWater("alma");
+}
+
+function renderUserWater(user) {
+  console.log(`[DEBUG] renderUserWater called for ${user}`);
+  const current = waterState[user] || 0;
+  const goal = waterState[`${user}Goal`] || 2500;
+  console.log(`[DEBUG] Code State: current=${current}, goal=${goal}`);
+
+  // Update Text
+  const percent = Math.min(100, Math.floor((current / goal) * 100));
+  const percentEl = document.getElementById(`percent-${user}`);
+  const amountEl = document.getElementById(`amount-${user}`);
+  const goalTextEl = document.getElementById(`goal-text-${user}`);
+
+  console.log(
+    `[DEBUG] Elements found? percent=${!!percentEl}, amount=${!!amountEl}`,
+  );
+
+  if (percentEl) percentEl.textContent = `${percent}%`;
+  if (amountEl) amountEl.textContent = `${current} / ${goal} ml`;
+  if (goalTextEl) goalTextEl.textContent = `${goal} ml`;
+
+  // Update SVG Water Level
+  // visualPercent clamped to 1 (100%) so it doesn't overflow visually
+  const visualPercent = Math.min(1, current / goal);
+  const newY = TANK_HEIGHT_SVG - visualPercent * TANK_HEIGHT_SVG;
+  console.log(`[DEBUG] NewY: ${newY}`);
+
+  const rect = document.getElementById(`water-rect-${user}`);
+  console.log(`[DEBUG] Rect found? ${!!rect}`);
+  if (rect) {
+    rect.setAttribute("y", newY);
+  }
+}
+
+// Override addWater to handle new signature
+// Old: addWater(amount) -> implied Facu? No, original app didn't specify user clearly in addWater,
+// actually the previous code had specific buttons? Let's check.
+// The new HTML uses addWater('facu', 250).
+
+// We need to keep a compatible signature or update all calls.
+// The HTML calls `addWater('facu', 250)`, so we update global addWater.
+
+// Override addWater to handle new signature
+// Override addWater to handle new signature
+function addWater(user, amount) {
+  console.log(`[DEBUG] addWater called for ${user}, amount: ${amount}`);
+  if (!amount || amount === 0) return;
+
+  const current = waterState[user] || 0;
+  const goal = waterState[`${user}Goal`] || 2500;
+  const oldPercent = current / goal;
+
+  // Update State
+  waterState[user] = Math.max(0, current + amount);
+
+  // Add to History
+  if (!waterState.history) waterState.history = [];
+  waterState.history.unshift({
+    user: user,
+    amount: amount,
+    time: new Date().toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  });
+  // Keep last 20 entries
+  if (waterState.history.length > 20) waterState.history.pop();
+
+  saveWaterState();
+
+  // SYNC WITH TRAINING HISTORY (for calendar display)
+  const todayKey = getDateKey(new Date());
+  if (!trainingHistory[todayKey]) {
+    trainingHistory[todayKey] = { alma: false, facu: false, weights: {} };
+  }
+  if (!trainingHistory[todayKey].water) {
+    trainingHistory[todayKey].water = {};
+  }
+  trainingHistory[todayKey].water.facu = waterState.facu;
+  trainingHistory[todayKey].water.alma = waterState.alma;
+  localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+
+  // Visuals
+  if (amount > 0) {
+    animateShake(user);
+
+    // Check Goal
+    const newPercent = waterState[user] / goal;
+    if (oldPercent < 1 && newPercent >= 1) {
+      triggerConfetti();
+    }
+  }
+
+  console.log(`[DEBUG] Calling renderAquaFlow from addWater`);
+  renderAquaFlow();
+  renderWaterHistory();
+}
+
+function renderWaterHistory() {
+  const container = document.getElementById("water-history-list");
+  if (!container) return; // Need to create this in HTML first
+
+  container.innerHTML = "";
+  const history = waterState.history || [];
+
+  if (history.length === 0) {
+    container.innerHTML =
+      '<p class="text-slate-500 text-xs italic text-center">Sin registros hoy</p>';
+    return;
+  }
+
+  history.forEach((entry) => {
+    const item = document.createElement("div");
+    item.className =
+      "flex justify-between items-center bg-slate-800/50 p-2 rounded-lg text-xs";
+    const color = entry.user === "facu" ? "text-blue-400" : "text-pink-400";
+    const icon = entry.user === "facu" ? "🙎🏽‍♂️" : "🙎🏻‍♀️";
+    item.innerHTML = `
+            <span class="flex items-center gap-2 ${color}">
+                <span>${icon}</span>
+                <span class="font-bold">${entry.user === "facu" ? "Facu" : "Alma"}</span>
+            </span>
+            <span class="text-white font-mono">${entry.amount > 0 ? "+" : ""}${entry.amount}ml</span>
+            <span class="text-slate-500">${entry.time}</span>
+        `;
+    container.appendChild(item);
+  });
+}
+
+function saveWaterState() {
+  localStorage.setItem("water_tracker_state", JSON.stringify(waterState));
+}
+
+function resetDay(user) {
+  // Reset water for this user
+  waterState[user] = 0;
+
+  // Also clear history entries for this user
+  if (waterState.history) {
+    waterState.history = waterState.history.filter(
+      (entry) => entry.user !== user,
+    );
+  }
+
+  saveWaterState();
+  renderAquaFlow();
+  renderWaterHistory();
+
+  // Show friendly toast instead of browser alert
+  const userName = user === "facu" ? "Facu" : "Alma";
+  const iconColor = user === "facu" ? "text-blue-400" : "text-pink-400";
+  showToast("rotate-ccw", iconColor, `Consumo de ${userName} reiniciado`);
+}
+
+// Animations
+function animateStream(user) {
+  const stream = document.getElementById(`water-stream-${user}`);
+  const bottle = document.getElementById(`bottle-container-${user}`);
+  if (!stream || !bottle) return;
+
+  // Approx height logic
+  const goal = waterState[`${user}Goal`] || 2500;
+  const current = waterState[user] || 0;
+  const percent = Math.min(1, current / goal);
+
+  const waterHeightPx = bottle.offsetHeight * percent;
+  const dropDistance = bottle.offsetHeight - waterHeightPx + 15;
+
+  stream.style.height = `${dropDistance}px`;
+  stream.classList.add("active");
+
+  setTimeout(() => {
+    stream.classList.remove("active");
+    stream.style.height = "0";
+  }, 600);
+}
+
+function animateShake(user) {
+  const b = document.getElementById(`bottle-container-${user}`);
+  if (b) {
+    b.classList.remove("shaking");
+    void b.offsetWidth; // trigger reflow
+    b.classList.add("shaking");
+  }
+}
+
+function startBubbleEngine(user) {
+  const group = document.getElementById(`bubbles-group-${user}`);
+  if (!group) return;
+
+  setInterval(
+    () => {
+      // Only if water exists
+      if ((waterState[user] || 0) > 0) {
+        const bubble = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "circle",
+        );
+        const x = Math.random() * 100 + 40;
+        const r = Math.random() * 5 + 2;
+        const startY = 600;
+
+        bubble.setAttribute("cx", x);
+        bubble.setAttribute("cy", startY);
+        bubble.setAttribute("r", r);
+        bubble.classList.add("svg-bubble");
+
+        group.appendChild(bubble);
+        setTimeout(() => bubble.remove(), 4000);
+      }
+    },
+    1500 + Math.random() * 1000,
+  ); // Randomize
+}
+
+function triggerConfetti() {
+  const canvas = document.getElementById("confetti-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  // Simple confetti
+  let particles = [];
+  const colors = ["#0ea5e9", "#ec4899", "#fcd34d"];
+
+  for (let i = 0; i < 100; i++) {
+    particles.push({
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * 15,
+      vy: (Math.random() - 0.5) * 15 - 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 100,
+    });
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let active = false;
+    particles.forEach((p) => {
+      if (p.life > 0) {
+        active = true;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.5;
+        p.life--;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    if (active) requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+// --- PROFILE MODAL FUNCTIONS ---
+function openProfileModal() {
+  document.getElementById("profile-weight-facu").value =
+    userProfile.facu.weight;
+  document.getElementById("profile-weight-alma").value =
+    userProfile.alma.weight;
+  document.getElementById("profile-height-facu").value =
+    userProfile.facu.height;
+  document.getElementById("profile-height-alma").value =
+    userProfile.alma.height;
+  document.getElementById("profile-age-facu").value = userProfile.facu.age;
+  document.getElementById("profile-age-alma").value = userProfile.alma.age;
+
+  const modal = document.getElementById("profile-modal");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  setTimeout(() => {
+    modal.classList.remove("opacity-0");
+    modal.querySelector("div").classList.remove("scale-95");
+  }, 10);
+
+  lucide.createIcons();
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById("profile-modal");
+  modal.classList.add("opacity-0");
+  modal.querySelector("div").classList.add("scale-95");
+  setTimeout(() => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }, 300);
+}
+
+function saveProfile() {
+  const wFacu = document.getElementById("profile-weight-facu").value;
+  const wAlma = document.getElementById("profile-weight-alma").value;
+  const hFacu = document.getElementById("profile-height-facu").value;
+  const hAlma = document.getElementById("profile-height-alma").value;
+  const aFacu = document.getElementById("profile-age-facu").value;
+  const aAlma = document.getElementById("profile-age-alma").value;
+
+  if (wFacu) userProfile.facu.weight = parseInt(wFacu);
+  if (wAlma) userProfile.alma.weight = parseInt(wAlma);
+  if (hFacu) userProfile.facu.height = parseInt(hFacu);
+  if (hAlma) userProfile.alma.height = parseInt(hAlma);
+  if (aFacu) userProfile.facu.age = parseInt(aFacu);
+  if (aAlma) userProfile.alma.age = parseInt(aAlma);
+
+  localStorage.setItem("gymUserProfile", JSON.stringify(userProfile));
+
+  // Recalculate water goals based on new profile
+  waterState.facuGoal = calculateSmartWaterGoal("facu");
+  waterState.almaGoal = calculateSmartWaterGoal("alma");
+  saveWaterState();
+
+  renderAquaFlow();
+  closeProfileModal();
+  showToast(
+    "user-cog",
+    "text-violet-400",
+    "Perfil actualizado - metas de agua recalculadas",
+  );
+}
+
+// --- ADVANCED STATS LOGIC ---
+function renderAdvancedStats() {
+  const now = new Date();
+
+  // 1. Weekly Progress (Mon-Sun) - KEPT AS FREQUENCY (Goal: Facu 5, Alma 3)
+  const day = now.getDay(); // 0 (Sun) - 6 (Sat)
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  const monday = new Date(now.setDate(diff));
+
+  let almaWeekCount = 0;
+  let facuWeekCount = 0;
+
+  // Iterate 7 days from Monday
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const k = getDateKey(d);
+    if (trainingHistory[k]) {
+      if (trainingHistory[k].alma) almaWeekCount++;
+      if (trainingHistory[k].facu) facuWeekCount++;
+    }
+  }
+
+  // Update Week UI
+  const weekAlmaEl = document.getElementById("week-alma-current");
+  const weekFacuEl = document.getElementById("week-facu-current");
+  if (weekAlmaEl) weekAlmaEl.textContent = almaWeekCount;
+  if (weekFacuEl) weekFacuEl.textContent = facuWeekCount;
+
+  const almaPct = Math.min(100, (almaWeekCount / 3) * 100);
+  const facuPct = Math.min(100, (facuWeekCount / 5) * 100);
+
+  const weekAlmaBar = document.getElementById("week-alma-bar");
+  const weekFacuBar = document.getElementById("week-facu-bar");
+  if (weekAlmaBar) weekAlmaBar.style.width = `${almaPct}%`;
+  if (weekFacuBar) weekFacuBar.style.width = `${facuPct}%`;
+
+  // Badge status
+  const weekBadge = document.getElementById("week-status-badge");
+  if (weekBadge) {
+    if (almaWeekCount >= 3 && facuWeekCount >= 5) {
+      weekBadge.textContent = "¡Objetivo Cumplido!";
+      weekBadge.className =
+        "px-2 py-1 rounded-md bg-emerald-500/20 text-xs font-bold text-emerald-400 border border-emerald-500/50";
+    } else {
+      weekBadge.textContent = "En Progreso";
+      weekBadge.className =
+        "px-2 py-1 rounded-md bg-slate-800 text-xs font-bold text-slate-500 border border-slate-700";
+    }
+  }
+
+  // 2. Month & Year Totals - VOLUME BASED (Kg)
+  let monthVolume = 0;
+  let yearVolume = 0; // In Tonnes likely, or High Kg
+  let totalAlmaYearVol = 0;
+  let totalFacuYearVol = 0;
+
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const currentYearKey = `${now.getFullYear()}`;
+  const AVG_REPS = 10; // Placeholder for volume calc
+
+  Object.keys(trainingHistory).forEach((key) => {
+    // Check if entry belongs to current month/year
+    const isMonth = key.startsWith(currentMonthKey);
+    const isYear = key.startsWith(currentYearKey);
+
+    if (!isYear) return; // optimization: stats are only for this year currently
+
+    const dayWeights = trainingHistory[key].weights || {};
+
+    // Sum volume for this day
+    let dayVolAlma = 0;
+    let dayVolFacu = 0;
+
+    Object.values(dayWeights).forEach((val) => {
+      // val might be string or number? currently stored as string from input
+      /* 
+           Structure check: setWeights[key] = {facu: '20', alma: '10'} 
+           Actually look at how it's stored: trainingHistory[today].weights = { '0-1-0': {facu: '20', alma: '15'} }
+           Wait, setWeights structure is flat: key -> {facu: val, alma: val} ? No.
+           Let's re-verify setWeights structure.
+           Code viewed earlier: setWeights[setKey][user] = val. 
+           So weights object is { "0-0-0": {facu: "10", alma: "5"}, "0-0-1": ... }
+        */
+      if (val.facu) dayVolFacu += (parseFloat(val.facu) || 0) * AVG_REPS;
+      if (val.alma) dayVolAlma += (parseFloat(val.alma) || 0) * AVG_REPS;
+    });
+
+    // Add to aggregators
+    if (isMonth) {
+      monthVolume += dayVolAlma + dayVolFacu;
+    }
+    if (isYear) {
+      yearVolume += dayVolAlma + dayVolFacu;
+      totalAlmaYearVol += dayVolAlma;
+      totalFacuYearVol += dayVolFacu;
+    }
+  });
+
+  // Render Volume Stats
+  // Month: Kg
+  const monthEl = document.getElementById("month-volume");
+  if (monthEl) monthEl.textContent = monthVolume.toLocaleString("es-AR");
+
+  // Year: Tonnes (divide by 1000)
+  const yearEl = document.getElementById("year-volume");
+  if (yearEl) yearEl.textContent = (yearVolume / 1000).toFixed(1);
+
+  // Individual Year Totals: Tonnes
+  const almaYearEl = document.getElementById("total-alma-volume");
+  if (almaYearEl)
+    almaYearEl.textContent = (totalAlmaYearVol / 1000).toFixed(1) + " t";
+
+  const facuYearEl = document.getElementById("total-facu-volume");
+  if (facuYearEl)
+    facuYearEl.textContent = (totalFacuYearVol / 1000).toFixed(1) + " t";
+}
+
+// Hook into existing updateStats
+const originalUpdateStats = updateStats;
+updateStats = function () {
+  originalUpdateStats(); // Call original
+  renderAdvancedStats(); // Update new stats
+  fetchWeather(); // Ensure weather is refreshing
+};
+
+// Initialize on Load
+document.addEventListener("DOMContentLoaded", () => {
+  fetchWeather(); // Get weather immediately
+  calculateAndRenderWaterGoal(); // Render water based on stored/default
+});
 function setDayTraining(who) {
   if (!selectedDateKey) return;
 
@@ -1637,14 +2342,16 @@ const getMuscleMapSVG = (primary = [], secondary = []) => {
 let setWeights = JSON.parse(localStorage.getItem("gymRoutineWeights")) || {};
 
 function init() {
-  // Set Date
-  const options = { weekday: "long", day: "numeric", month: "long" };
-  document.getElementById("current-date").textContent =
-    new Date().toLocaleDateString("es-AR", options);
+  // Set Date (Legacy removed)
 
   // Initialize Gamification / Streak Display Immediately
   if (typeof updateGamificationUI === "function") {
     updateGamificationUI();
+  }
+
+  // Initialize AquaFlow
+  if (typeof initAquaFlow === "function") {
+    initAquaFlow();
   }
 
   renderTabs();
@@ -2601,8 +3308,8 @@ function updateGamificationUI() {
   const container = document.getElementById("streak-display");
   if (container) {
     container.classList.remove("hidden");
-    // Updated alignment: Left aligned (justify-start) with indentation (ml-7/md:ml-8) to match Title text
-    container.className = "mt-3 flex gap-4 ml-7 md:ml-8 justify-start";
+    container.classList.add("flex", "gap-4", "justify-start", "flex-wrap"); // Use flex-wrap just in case
+    // NOTE: We do NOT overwrite className to avoid breaking HTML structure
 
     container.innerHTML = `
             <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer" onclick="openShopModal('facu')">
