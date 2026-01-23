@@ -1,4 +1,4 @@
-// --- DATA ---
+﻿// --- DATA ---
 const routineData = [
   {
     day: "Lunes",
@@ -4219,13 +4219,12 @@ window.openMuscleMapModal = openMuscleMapModal;
 window.closeMuscleMapModal = closeMuscleMapModal;
 
 // Init App
-// Init App
-try {
-  init();
-} catch (e) {
-  console.error("CRITICAL INIT ERROR:", e);
-  logToScreen("❌ ERROR CRÍTICO AL INICIAR: " + e.message, "error");
-  alert("Error crítico: " + e.message); // Emergency alert
+
+function markDayCompleted() {
+    console.log("Marking day as completed...");
+    playTimerEnd();
+    checkAchievements();
+    saveToCloud();
 }
-.  
- 
+
+document.addEventListener('DOMContentLoaded', init);
