@@ -453,6 +453,40 @@ async function loadFromCloud() {
         "gymTrainingHistory",
         JSON.stringify(trainingHistory),
       );
+
+      // --- SYNC HYDRATION FROM CLOUD TO LOCAL ---
+      const todayKey = getDateKey(new Date());
+      if (trainingHistory[todayKey] && trainingHistory[todayKey].water) {
+        // We found water data for today in cloud
+        const cloudWater = trainingHistory[todayKey].water;
+
+        // Merge logic: Trust cloud if it seems valid/newer, OR just overwrite local?
+        // User wants live sync. If Facu adds water, Alma sees it.
+        // So we should trust the cloud record for today.
+
+        let changed = false;
+        if (
+          cloudWater.facu !== undefined &&
+          cloudWater.facu !== waterState.facu
+        ) {
+          waterState.facu = cloudWater.facu;
+          changed = true;
+        }
+        if (
+          cloudWater.alma !== undefined &&
+          cloudWater.alma !== waterState.alma
+        ) {
+          waterState.alma = cloudWater.alma;
+          changed = true;
+        }
+
+        if (changed) {
+          saveWaterState(); // Save to local storage
+          if (typeof renderAquaFlow === "function") renderAquaFlow(); // Update UI
+          console.log("💧 Hidratación sincronizada desde la nube");
+        }
+      }
+
       console.log("✅ Historial cargado desde la nube");
     }
   } catch (error) {
@@ -1148,6 +1182,9 @@ function addWater(user, amount) {
   trainingHistory[todayKey].water.facu = waterState.facu;
   trainingHistory[todayKey].water.alma = waterState.alma;
   localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+
+  // TRIGGER CLOUD SYNC IMMEDIATELY
+  saveToCloud();
 
   // Visuals
   if (amount > 0) {
@@ -2388,6 +2425,21 @@ function init() {
   renderTabs();
   renderContent();
   lucide.createIcons();
+
+  // --- POLLING FOR LIVE SYNC ---
+  // Check cloud every 30 seconds
+  setInterval(() => {
+    if (!document.hidden) {
+      loadFromCloud();
+    }
+  }, 30000);
+
+  // Also check when tab becomes visible
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      loadFromCloud();
+    }
+  });
 }
 
 function renderTabs() {
