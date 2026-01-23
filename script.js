@@ -1520,6 +1520,7 @@ updateStats = function () {
 // Initialize on Load
 document.addEventListener("DOMContentLoaded", () => {
   fetchWeather(); // Get weather immediately
+  setInterval(fetchWeather, 30 * 60 * 1000); // Refresh every 30 minutes
   calculateAndRenderWaterGoal(); // Render water based on stored/default
 });
 function setDayTraining(who) {
@@ -3375,77 +3376,110 @@ function updateGamificationUI() {
 }
 
 function calculateUserStreak(user, targetDays) {
-  const dates = Object.keys(trainingHistory);
-  // Group by weeks
-  const weeksMap = {};
-  const getWeek = (d) => {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  // NOTE: targetDays is ignored in this new logic, kept for signature compatibility if needed.
+  // We use strict schedules instead.
+
+  const SCHEDULE = {
+    facu: [1, 2, 3, 4, 5], // Mon(1) to Fri(5)
+    alma: [1, 3, 5], // Mon(1), Wed(3), Fri(5)
   };
 
-  dates.forEach((date) => {
+  // Ensure frozenDays array exists (migration)
+  if (!gamification[user].frozenDays) {
+    gamification[user].frozenDays = [];
+  }
+
+  const userDates = new Set();
+  Object.keys(trainingHistory).forEach((date) => {
     if (trainingHistory[date][user]) {
-      // Fix: Parse manually to avoid UTC timezone shift issues (e.g. 2026-01-19 becoming Jan 18 in Argentina)
-      const [y, m, d] = date.split("-").map(Number);
-      const dateObj = new Date(y, m - 1, d);
-      const w = getWeek(dateObj);
-      weeksMap[w] = (weeksMap[w] || 0) + 1;
+      userDates.add(date);
     }
   });
 
-  let streakDays = 0;
+  // Helpers
+  const formatDateKey = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  let streak = 0;
   let stateChanged = false;
+  let gapFound = false;
 
-  // START FROM THIS WEEK (2026-W04)
-  // We treat weeks before this as non-existent for streak purposes
-  const START_WEEK = "2026-W04"; // Hardcoded start
-  const currentWeekKey = getWeek(new Date());
+  // Iterate backwards from TODAY (or Yesterday if today not done yet?)
+  // Standard streak logic: If today is not done yet, it doesn't break streak unless today is OVER.
+  // But for simple calculation, we usually check backward from Yesterday if Today is empty.
+  // HOWEVER, if we train today, it should count.
 
-  // 1. Add days from Current Week (if >= START_WEEK)
-  if (currentWeekKey >= START_WEEK) {
-    streakDays += weeksMap[currentWeekKey] || 0;
-  }
+  // Let's start checking from TODAY.
+  // If Today is Required & Not Done -> It breaks streak?
+  // Usually apps allow you to complete today until midnight.
+  // So if Today is missing, we shouldn't break immediately if it's the *tip* of the chain.
+  // We break only if we miss YESTERDAY (and yesterday was required).
 
-  // If current week is START_WEEK, we are done checking backwards from it.
-  if (currentWeekKey <= START_WEEK) {
-    gamification[user].streak = streakDays;
-    return;
-  }
+  const today = new Date();
+  const todayKey = formatDateKey(today);
 
-  // 2. Go backwards from previous week
-  for (let i = 1; i <= 52; i++) {
-    let d = new Date();
-    d.setDate(d.getDate() - i * 7);
-    const weekKey = getWeek(d);
+  // We loop 365 days back
+  for (let i = 0; i < 365; i++) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const key = formatDateKey(d);
+    const dayOfWeek = d.getDay(); // 0=Sun, 1=Mon...
 
-    // Stop if we went past start date
-    if (weekKey < START_WEEK) break;
+    const hasTrained = userDates.has(key);
+    const isRequired = SCHEDULE[user].includes(dayOfWeek);
 
-    const count = weeksMap[weekKey] || 0;
-    const isFrozen = gamification[user].frozenWeeks.includes(weekKey);
+    // Case 1: Trained
+    // Determine if it counts
+    if (hasTrained) {
+      streak++;
+      continue; // Chain continues
+    }
 
-    // Check compliance
-    if (count >= targetDays || isFrozen) {
-      streakDays += count;
-    } else {
-      // Missed this week! Check Freezes available?
-      if (gamification[user].freezes > 0) {
-        gamification[user].freezes--;
-        gamification[user].frozenWeeks.push(weekKey);
-        stateChanged = true;
-        streakDays += count;
+    // Case 2: Not Trained
+
+    // Sub-case: Today. If we haven't trained today, it doesn't break streak yet.
+    // We just don't add it.
+    if (i === 0) {
+      continue;
+    }
+
+    // Sub-case: Required Day
+    if (isRequired) {
+      // Missing a required day!
+      // Check for Freeze
+      const alreadyFrozen = gamification[user].frozenDays.includes(key);
+
+      if (alreadyFrozen) {
+        // Protected!
+        // We do NOT increment streak (it's a bridge), but we don't break.
+        continue;
       } else {
-        break;
+        // Not protected yet. Can we buy one automatically?
+        // User Logic: "SI NO ENTRENO UNO DE ESOS DIAS LA RACHA SE REINICIE A MENOS QUE TENGA UN PROTECTOR"
+        if (gamification[user].freezes > 0) {
+          // Use Freeze
+          gamification[user].freezes--;
+          gamification[user].frozenDays.push(key);
+          stateChanged = true;
+          // Bridge established
+          continue;
+        } else {
+          // No freeze available -> BREAK
+          break;
+        }
       }
     }
 
-    if (weekKey === START_WEEK) break;
+    // Sub-case: Not Required (Rest Day)
+    // If we simply missed a rest day, it doesn't break streak.
+    // Just continue checking backwards.
   }
 
-  gamification[user].streak = streakDays;
+  gamification[user].streak = streak;
   if (stateChanged) saveToCloud();
 }
 
