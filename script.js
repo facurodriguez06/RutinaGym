@@ -415,7 +415,7 @@ let isSyncing = false;
 const JSONBIN_API_KEY =
   "$2a$10$ARqbaMZJCBkzpOxFKlDU6.QpRQOwWN.7KMBcx7a7IH/pKOZD5uNye";
 const JSONBIN_BIN_ID = "69697104ae596e708fdf28e7";
-const JSONBIN_ENABLED = true;
+const JSONBIN_ENABLED = false; // TEMPORARILY DISABLED FOR DATA RECOVERY - RE-ENABLE AFTER!
 
 // --- CLOUD SYNC FUNCTIONS ---
 async function loadFromCloud() {
@@ -440,15 +440,23 @@ async function loadFromCloud() {
 
     if (response.ok) {
       const data = await response.json();
-      trainingHistory = data.record || {};
+      const cloudHistory = data.record || {};
 
-      // Load Gamification from Cloud
-      if (trainingHistory.gamificationState) {
-        gamification = trainingHistory.gamificationState;
-        delete trainingHistory.gamificationState; // Clean up logic so it doesn't pollute history iteration
+      // 1. Extract and Sync Gamification
+      if (cloudHistory.gamificationState) {
+        // Simple strategy: Cloud wins for gamification state (to prevent infinite point glitches)
+        gamification = cloudHistory.gamificationState;
+        delete cloudHistory.gamificationState; // Remove so it doesn't pollute history iteration
+
         localStorage.setItem("gymGamification", JSON.stringify(gamification));
+        if (typeof updateGamificationUI === "function") updateGamificationUI();
       }
 
+      // 2. Merge Training History (Preserve local keys that aren't in cloud)
+      // This prevents losing today's offline workout if we sync with yesterday's cloud data.
+      trainingHistory = { ...trainingHistory, ...cloudHistory };
+
+      // 3. Save merged state to local storage
       localStorage.setItem(
         "gymTrainingHistory",
         JSON.stringify(trainingHistory),
@@ -683,26 +691,45 @@ function toggleSidebar() {
 
 function navigateTo(view) {
   currentView = view;
-  const routineView = document.getElementById("routine-view");
-  const historyView = document.getElementById("history-view");
-  const waterView = document.getElementById("view-water"); // New dedicated view
 
-  // Hide all
-  routineView.classList.add("hidden");
-  historyView.classList.add("hidden");
-  if (waterView) waterView.classList.add("hidden");
+  // Hide all main views
+  const viewIds = [
+    "routine-view",
+    "history-view",
+    "view-water",
+    "view-stats",
+    "view-achievements",
+  ];
+  viewIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
 
-  // Show selected
+  // Show selected view and trigger render
   if (view === "routine") {
-    routineView.classList.remove("hidden");
+    document.getElementById("routine-view").classList.remove("hidden");
   } else if (view === "history") {
-    historyView.classList.remove("hidden");
+    const historyView = document.getElementById("history-view");
+    if (historyView) historyView.classList.remove("hidden");
     renderCalendar();
     updateStats();
   } else if (view === "water") {
+    const waterView = document.getElementById("view-water");
     if (waterView) {
       waterView.classList.remove("hidden");
-      calculateAndRenderWaterGoal(); // Ensure fresh data
+      calculateAndRenderWaterGoal();
+    }
+  } else if (view === "stats") {
+    const statsView = document.getElementById("view-stats");
+    if (statsView) {
+      statsView.classList.remove("hidden");
+      renderCharts();
+    }
+  } else if (view === "achievements") {
+    const achievementsView = document.getElementById("view-achievements");
+    if (achievementsView) {
+      achievementsView.classList.remove("hidden");
+      renderAchievements();
     }
   }
 
@@ -712,7 +739,6 @@ function navigateTo(view) {
     if (btn.onclick && btn.onclick.toString().includes(`'${view}'`)) {
       btn.classList.add("bg-slate-800", "text-white");
       btn.classList.remove("text-slate-300");
-      // Add marker or highlight icon color if needed
     } else {
       btn.classList.remove("bg-slate-800", "text-white");
       btn.classList.add("text-slate-300");
@@ -1762,79 +1788,7 @@ function enableBackgroundMode(exerciseName, duration) {
     .catch((e) => logToScreen("❌ Audio Silencioso FALLÓ: " + e, "error"));
 }
 
-// --- NAVIGATION ---
-// currentView is already defined globally (line ~407)
-
-function navigateTo(view) {
-  currentView = view;
-
-  // Hide all main views
-  document.getElementById("routine-view").classList.add("hidden");
-  const historyView = document.getElementById("history-view"); // Uses renderCalendar?
-  // Wait, existing history view ID is 'view-history' or 'history-view'?
-  // Let's check HTML. Usually it was dynamically handled or had an ID.
-
-  // Existing code likely handled 'routine' vs 'history' specially.
-  // We need to generalize.
-
-  const views = [
-    "routine-view",
-    "view-history",
-    "view-water",
-    "view-stats",
-    "view-achievements",
-  ];
-  views.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add("hidden");
-  });
-
-  // Show specific view
-  if (view === "routine") {
-    document.getElementById("routine-view").classList.remove("hidden");
-    renderContent();
-  } else if (view === "history") {
-    // Current app uses 'currentView' state to toggle render in 'renderCalendar'.
-    // We might need to ensure the container exists?
-    // Let's assume 'view-history' is the ID for the calendar container/page.
-    // If not, we might need to adapt.
-    // Checking script: 'if (currentView === "history") renderCalendar();'
-
-    // Check if 'view-history' exists in HTML?
-    // If not, maybe it was injecting into 'routine-main'?
-    // Let's look for where RenderCalendar injects.
-
-    // Previous code:
-    // renderCalendar targets 'calendar-container'?
-    // And hides routine?
-
-    // Let's assume standard behavior for these new views.
-    const v = document.getElementById("view-history");
-    if (v) v.classList.remove("hidden");
-    renderCalendar();
-    updateStats(); // Old stats (week balance)
-  } else if (view === "water") {
-    document.getElementById("view-water").classList.remove("hidden");
-    renderAquaFlow();
-  } else if (view === "stats") {
-    document.getElementById("view-stats").classList.remove("hidden");
-    renderCharts();
-  } else if (view === "achievements") {
-    document.getElementById("view-achievements").classList.remove("hidden");
-    renderAchievements();
-  }
-
-  // Update Sidebar Active State
-  document.querySelectorAll("#sidebar button").forEach((btn) => {
-    btn.classList.remove("active-nav-item", "bg-slate-800", "text-white");
-    btn.classList.add("text-slate-300");
-  });
-
-  // Highlight correct button (Simple match by onclick text or ID if we had it)
-  // For now, we rely on click adding class manually or re-render?
-  // Let's manually add active class to the button that called this?
-  // Or find by unique property.
-}
+// --- Note: navigateTo is defined earlier in the file ---
 
 // --- CHARTS LOGIC ---
 function renderCharts() {
@@ -2829,11 +2783,8 @@ function checkAchievements() {
           if (ach.condition(user)) {
             gamification[user].achievements.push(ach.id);
             newUnlock = true;
-            showToast(
-              ach.icon,
-              user === "facu" ? "text-blue-400" : "text-pink-400",
-              `¡Logro Desbloqueado: ${ach.title}!`,
-            );
+            // Use the new enhanced modal instead of simple toast
+            showAchievementModal(ach, user);
             triggerConfetti();
           }
         } catch (e) {
@@ -2847,6 +2798,97 @@ function checkAchievements() {
       saveToCloud(); // Sync achievements
     }
   });
+}
+
+// --- ACHIEVEMENT MODAL FUNCTIONS ---
+function showAchievementModal(achievement, user) {
+  const modal = document.getElementById("achievement-modal");
+  const content = document.getElementById("achievement-modal-content");
+  const card = document.getElementById("achievement-modal-card");
+  const glow = document.getElementById("achievement-modal-glow");
+  const iconBg = document.getElementById("achievement-modal-icon-bg");
+  const icon = document.getElementById("achievement-modal-icon");
+  const tier = document.getElementById("achievement-modal-tier");
+  const title = document.getElementById("achievement-modal-title");
+  const desc = document.getElementById("achievement-modal-desc");
+  const userName = document.getElementById("achievement-modal-user");
+  const btn = document.getElementById("achievement-modal-btn");
+
+  if (!modal) return;
+
+  // Tier-based styling
+  const tierStyles = {
+    Común: {
+      card: "border-slate-500 bg-slate-900",
+      glow: "bg-gradient-to-br from-slate-400/20 to-slate-600/10",
+      iconBg: "bg-slate-700",
+      tier: "bg-slate-700 text-slate-300",
+      btn: "bg-slate-600 hover:bg-slate-500",
+    },
+    Raro: {
+      card: "border-blue-500 bg-slate-900",
+      glow: "bg-gradient-to-br from-blue-500/30 to-cyan-500/10",
+      iconBg: "bg-blue-600",
+      tier: "bg-blue-600 text-white",
+      btn: "bg-blue-600 hover:bg-blue-500",
+    },
+    Épico: {
+      card: "border-purple-500 bg-slate-900",
+      glow: "bg-gradient-to-br from-purple-500/40 to-pink-500/20",
+      iconBg: "bg-purple-600",
+      tier: "bg-purple-600 text-white",
+      btn: "bg-purple-600 hover:bg-purple-500",
+    },
+    Legendario: {
+      card: "border-amber-400 bg-slate-900",
+      glow: "bg-gradient-to-br from-amber-400/50 to-orange-500/30",
+      iconBg: "bg-gradient-to-br from-amber-400 to-orange-500",
+      tier: "bg-gradient-to-r from-amber-400 to-orange-500 text-black",
+      btn: "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400",
+    },
+  };
+
+  const style = tierStyles[achievement.tier] || tierStyles["Común"];
+
+  // Apply styles
+  card.className = `relative overflow-hidden rounded-3xl border-2 p-6 text-center ${style.card}`;
+  glow.className = `absolute inset-0 opacity-30 ${style.glow}`;
+  iconBg.className = `mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl animate-bounce ${style.iconBg}`;
+  tier.className = `px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${style.tier}`;
+  btn.className = `relative z-10 w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95 ${style.btn}`;
+
+  // Set content
+  icon.setAttribute("data-lucide", achievement.icon);
+  tier.textContent = achievement.tier || "Común";
+  title.textContent = achievement.title;
+  desc.textContent = achievement.desc;
+  userName.textContent = user === "facu" ? "🙎🏽‍♂️ Facu" : "🙎🏻‍♀️ Alma";
+  userName.className = `font-bold ${user === "facu" ? "text-blue-400" : "text-pink-400"}`;
+
+  // Show modal with animation
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  // Trigger animation
+  setTimeout(() => {
+    content.classList.remove("scale-0");
+    content.classList.add("scale-100");
+  }, 50);
+
+  lucide.createIcons();
+}
+
+function closeAchievementModal() {
+  const modal = document.getElementById("achievement-modal");
+  const content = document.getElementById("achievement-modal-content");
+
+  content.classList.remove("scale-100");
+  content.classList.add("scale-0");
+
+  setTimeout(() => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }, 300);
 }
 
 // --- ACHIEVEMENTS RENDERER ---
@@ -3128,6 +3170,21 @@ function init() {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
       loadFromCloud();
+    }
+  });
+
+  // Global Event Listener for Weight Inputs (Delegation)
+  document.body.addEventListener("input", (e) => {
+    if (e.target.classList.contains("weight-input")) {
+      const key = e.target.getAttribute("data-set-key");
+      const user = e.target.getAttribute("data-user");
+      const value = e.target.value;
+
+      if (key && user) {
+        if (!setWeights[key]) setWeights[key] = {};
+        setWeights[key][user] = value;
+        localStorage.setItem("gymRoutineWeights", JSON.stringify(setWeights));
+      }
     }
   });
 }
