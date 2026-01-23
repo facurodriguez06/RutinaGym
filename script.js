@@ -546,13 +546,18 @@ function toggleTheme() {
 
 function applyTheme() {
   const body = document.body;
+  const html = document.documentElement; // Tailwind looks here by default
   const icon = document.getElementById("theme-icon");
 
   if (currentTheme === "light") {
     body.classList.add("light");
+    body.classList.remove("dark");
+    html.classList.remove("dark"); // Remove from HTML
     if (icon) icon.setAttribute("data-lucide", "sun");
   } else {
     body.classList.remove("light");
+    body.classList.add("dark");
+    html.classList.add("dark"); // Add to HTML for Tailwind
     if (icon) icon.setAttribute("data-lucide", "moon");
   }
   lucide.createIcons();
@@ -2587,25 +2592,25 @@ function renderContent() {
           : "";
 
       setButtonsHTML += `
-          <div class="flex flex-col items-center gap-1.5 bg-slate-950/30 p-2 rounded-xl border border-slate-800/50">
-              <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Set ${
+          <div class="flex flex-col items-center gap-2 bg-white dark:bg-slate-950/30 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/50 shadow-sm dark:shadow-none">
+              <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Set ${
                 s + 1
               }</span>
-              <div class="flex gap-3">
+              <div class="flex gap-2">
                   <!-- Facu Column -->
-                  <div class="flex flex-col items-center gap-1">
+                  <div class="flex flex-col items-center gap-1.5">
                     <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
                       exercise.name
                     }" data-rest-time="${restTime}"
-                          class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
+                          class="set-btn w-10 h-10 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center border
                           ${
                             setData.facu
-                              ? `bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20`
-                              : `bg-slate-800 text-slate-500 border-slate-700 hover:border-blue-500/50 hover:text-blue-400`
+                              ? `bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20`
+                              : `bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-blue-500/50 hover:text-blue-500`
                           }" title="Facu">
                           ${
                             setData.facu
-                              ? '<i data-lucide="check" class="w-4 h-4"></i>'
+                              ? '<i data-lucide="check" class="w-5 h-5"></i>'
                               : "F"
                           }
                       </button>
@@ -2614,24 +2619,24 @@ function renderContent() {
                              placeholder="kg" 
                              data-set-key="${setKey}" 
                              data-user="facu"
-                             class="weight-input w-10 bg-transparent text-center text-[10px] text-slate-300 border-b border-slate-700 focus:border-blue-500 outline-none p-0.5 placeholder:text-slate-700"
+                             class="weight-input w-10 h-7 bg-slate-50 dark:bg-slate-900/50 text-center text-xs font-medium text-slate-600 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none p-0 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
                              onclick="event.stopPropagation()">
                   </div>
                   
                   <!-- Alma Column -->
-                  <div class="flex flex-col items-center gap-1">
+                  <div class="flex flex-col items-center gap-1.5">
                     <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
                       exercise.name
                     }" data-rest-time="${restTime}"
-                          class="set-btn w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 flex items-center justify-center border
+                          class="set-btn w-10 h-10 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center border
                           ${
                             setData.alma
-                              ? `bg-pink-600 text-white border-pink-500 shadow-lg shadow-pink-500/20`
-                              : `bg-slate-800 text-slate-500 border-slate-700 hover:border-pink-500/50 hover:text-pink-400`
+                              ? `bg-pink-600 text-white border-pink-500 shadow-md shadow-pink-500/20`
+                              : `bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-pink-500/50 hover:text-pink-500`
                           }" title="Alma">
                           ${
                             setData.alma
-                              ? '<i data-lucide="check" class="w-4 h-4"></i>'
+                              ? '<i data-lucide="check" class="w-5 h-5"></i>'
                               : "A"
                           }
                       </button>
@@ -2640,7 +2645,7 @@ function renderContent() {
                              placeholder="kg" 
                              data-set-key="${setKey}" 
                              data-user="alma"
-                             class="weight-input w-10 bg-transparent text-center text-[10px] text-slate-300 border-b border-slate-700 focus:border-pink-500 outline-none p-0.5 placeholder:text-slate-700"
+                             class="weight-input w-10 h-7 bg-slate-50 dark:bg-slate-900/50 text-center text-xs font-medium text-slate-600 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/10 outline-none p-0 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
                              onclick="event.stopPropagation()">
                   </div>
               </div>

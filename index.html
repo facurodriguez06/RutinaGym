@@ -15,6 +15,11 @@
     <link rel="manifest" href="manifest.json">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -242,7 +247,7 @@
                                 class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
                                 <span class="text-sm">🙎🏽‍♂️</span>
                             </div>
-                            <h2 class="text-xl font-black text-slate-800 dark:text-slate-100">Facu</h2>
+                            <h2 class="text-xl font-black text-slate-800 dark:text-white">Facu</h2>
                         </div>
                         <button onclick="resetDay('facu')"
                             class="text-slate-400 hover:text-red-500 transition-colors p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
@@ -276,9 +281,11 @@
                             <use href="#bottle-path-facu" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="4" />
                         </svg>
                         <div class="bottle-info">
-                            <h2 class="text-3xl font-black text-slate-800 dark:text-white" id="percent-facu">0%
+                            <h2 class="text-3xl font-black text-slate-800 dark:text-white drop-shadow-md"
+                                id="percent-facu">0%
                             </h2>
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-300 mt-1" id="amount-facu">0 ml
+                            <p class="text-xs font-bold text-slate-500 dark:text-white mt-1 drop-shadow-md"
+                                id="amount-facu">0 ml
                             </p>
                         </div>
                     </div>
@@ -290,23 +297,23 @@
                             <span id="goal-text-facu" class="text-blue-500">2500 ml</span>
                         </div>
                         <input type="range" id="goal-input-facu" min="1500" max="4000" step="50" value="2500"
-                            class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            class="w-full h-2 bg-slate-500 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 border border-slate-300 dark:border-none">
 
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="addWater('facu', 250)"
                                 class="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:-translate-y-1 transition-all flex flex-col items-center gap-1">
                                 <i data-lucide="glass-water" class="w-5 h-5 text-blue-500"></i>
-                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">250ml</span>
+                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-200">250ml</span>
                             </button>
                             <button onclick="addWater('facu', 500)"
                                 class="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:-translate-y-1 transition-all flex flex-col items-center gap-1">
                                 <i data-lucide="flask-conical" class="w-5 h-5 text-blue-600"></i>
-                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">500ml</span>
+                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-200">500ml</span>
                             </button>
                             <button onclick="addWater('facu', 750)"
                                 class="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:-translate-y-1 transition-all flex flex-col items-center gap-1">
                                 <i data-lucide="droplets" class="w-5 h-5 text-blue-700"></i>
-                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">750ml</span>
+                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-200">750ml</span>
                             </button>
                         </div>
                     </div>
@@ -320,7 +327,7 @@
                                 class="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
                                 <span class="text-sm">🙎🏻‍♀️</span>
                             </div>
-                            <h2 class="text-xl font-black text-slate-800 dark:text-slate-100">Alma</h2>
+                            <h2 class="text-xl font-black text-slate-800 dark:text-white">Alma</h2>
                         </div>
                         <button onclick="resetDay('alma')"
                             class="text-slate-400 hover:text-red-500 transition-colors p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
@@ -356,9 +363,11 @@
                             <use href="#bottle-path-alma" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="4" />
                         </svg>
                         <div class="bottle-info">
-                            <h2 class="text-3xl font-black text-slate-800 dark:text-white" id="percent-alma">0%
+                            <h2 class="text-3xl font-black text-slate-800 dark:text-white drop-shadow-md"
+                                id="percent-alma">0%
                             </h2>
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-300 mt-1" id="amount-alma">0 ml
+                            <p class="text-xs font-bold text-slate-500 dark:text-white mt-1 drop-shadow-md"
+                                id="amount-alma">0 ml
                             </p>
                         </div>
                     </div>
@@ -370,23 +379,23 @@
                             <span id="goal-text-alma" class="text-pink-500">2000 ml</span>
                         </div>
                         <input type="range" id="goal-input-alma" min="1500" max="4000" step="50" value="2000"
-                            class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            class="w-full h-2 bg-slate-500 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-pink-500 border border-slate-300 dark:border-none">
 
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="addWater('alma', 250)"
                                 class="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:-translate-y-1 transition-all flex flex-col items-center gap-1">
                                 <i data-lucide="glass-water" class="w-5 h-5 text-pink-500"></i>
-                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">250ml</span>
+                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-200">250ml</span>
                             </button>
                             <button onclick="addWater('alma', 500)"
                                 class="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:-translate-y-1 transition-all flex flex-col items-center gap-1">
                                 <i data-lucide="flask-conical" class="w-5 h-5 text-pink-600"></i>
-                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">500ml</span>
+                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-200">500ml</span>
                             </button>
                             <button onclick="addWater('alma', 750)"
                                 class="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:-translate-y-1 transition-all flex flex-col items-center gap-1">
                                 <i data-lucide="droplets" class="w-5 h-5 text-pink-700"></i>
-                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">750ml</span>
+                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-200">750ml</span>
                             </button>
                         </div>
                     </div>

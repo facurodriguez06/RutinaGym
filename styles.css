@@ -389,19 +389,23 @@ body.light input {
 }
 
 /* Glass Panel */
+/* Glass Panel */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(15, 23, 42, 0.6); /* Slate 900 (Dark default) */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(30, 41, 59, 0.5);
+  box-shadow:
+    0 20px 40px -5px rgba(14, 165, 233, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+body.light .glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.5);
   box-shadow:
     0 20px 40px -5px rgba(14, 165, 233, 0.15),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-}
-
-body.dark .glass-panel {
-  background: rgba(15, 23, 42, 0.6); /* Slate 900 */
-  border-color: rgba(30, 41, 59, 0.5);
 }
 
 /* Bottle Wrapper */
@@ -523,12 +527,13 @@ body.dark .glass-panel {
   z-index: 20;
   width: 100%;
   pointer-events: none;
-  mix-blend-mode: multiply;
+  mix-blend-mode: normal; /* Default for Dark Mode: pure white text */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-body.dark .bottle-info {
-  mix-blend-mode: normal;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+body.light .bottle-info {
+  mix-blend-mode: multiply; /* Only for Light Mode */
+  text-shadow: none;
 }
 
 /* Range Input Customization */
@@ -538,7 +543,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   border-radius: 50%;
   background: var(--water-secondary);
-  margin-top: -6px;
+  margin-top: -4px;
   box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.3);
   transition: box-shadow 0.2s;
 }
