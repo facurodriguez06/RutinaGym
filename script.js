@@ -460,24 +460,25 @@ async function loadFromCloud() {
         // We found water data for today in cloud
         const cloudWater = trainingHistory[todayKey].water;
 
-        // Merge logic: Trust cloud if it seems valid/newer, OR just overwrite local?
-        // User wants live sync. If Facu adds water, Alma sees it.
-        // So we should trust the cloud record for today.
+        // Merge logic: Trust cloud if it seems valid/newer.
+        // FIX: User reported local progress (1500ml) being overwritten by 0 from cloud.
+        // To prevent this data loss, we will use a MAX strategy for now.
+        // This means we can't "reset" via cloud sync easily, but we won't lose progress.
 
         let changed = false;
-        if (
-          cloudWater.facu !== undefined &&
-          cloudWater.facu !== waterState.facu
-        ) {
-          waterState.facu = cloudWater.facu;
-          changed = true;
+        if (cloudWater.facu !== undefined) {
+          const newVal = Math.max(waterState.facu || 0, cloudWater.facu);
+          if (newVal !== waterState.facu) {
+            waterState.facu = newVal;
+            changed = true;
+          }
         }
-        if (
-          cloudWater.alma !== undefined &&
-          cloudWater.alma !== waterState.alma
-        ) {
-          waterState.alma = cloudWater.alma;
-          changed = true;
+        if (cloudWater.alma !== undefined) {
+          const newVal = Math.max(waterState.alma || 0, cloudWater.alma);
+          if (newVal !== waterState.alma) {
+            waterState.alma = newVal;
+            changed = true;
+          }
         }
 
         if (changed) {
