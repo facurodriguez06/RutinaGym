@@ -826,6 +826,7 @@ function changeMonth(delta) {
   updateStats();
 }
 
+// --- CALENDAR RENDERER ---
 function renderCalendar() {
   const grid = document.getElementById("calendar-grid");
   const monthLabel = document.getElementById("calendar-month");
@@ -864,8 +865,14 @@ function renderCalendar() {
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(calendarYear, calendarMonth, day);
     const dateKey = getDateKey(date);
+
+    // Legacy support
+    const legacyKey = date.toDateString();
+
     const isToday = dateKey === todayKey;
-    const history = trainingHistory[dateKey];
+
+    // Check both
+    const history = trainingHistory[dateKey] || trainingHistory[legacyKey];
 
     let bgClass = "bg-slate-800/50 hover:bg-slate-800";
     let borderClass = "border-transparent";
@@ -911,6 +918,39 @@ function renderCalendar() {
                     </div>
                 `;
   }
+}
+
+function getVolumeHistory(user, days) {
+  const history = [];
+  const date = new Date();
+
+  // Go back 'days' amount
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(date.getDate() - i);
+    const key = getDateKey(d);
+
+    // Legacy mapping
+    const legacyKey = d.toDateString();
+
+    // Calculate volume for that day
+    let vol = 0;
+
+    // Check both keys
+    const record = trainingHistory[key] || trainingHistory[legacyKey];
+
+    if (record && record.weights) {
+      // Iterate all keys in weights
+      Object.values(record.weights).forEach((pair) => {
+        // pair = {facu: 50, alma: 30}
+        // Use 10 reps as volume proxy
+        if (pair[user]) vol += (parseInt(pair[user]) || 0) * 10;
+      });
+    }
+    // Correct format for new chart logic {date, value}
+    history.push({ date: key, value: vol });
+  }
+  return history;
 }
 
 function toggleDayModal(dateKey) {
@@ -1839,67 +1879,119 @@ function getVolumeHistory(user, days) {
     d.setDate(date.getDate() - i);
     const key = getDateKey(d);
 
+    // Legacy Key Support (toDateString)
+    // Some data might be saved as "Mon Jan 22 2026"
+    const legacyKey = d.toDateString();
+
     // Calculate volume for that day
     let vol = 0;
-    const record = trainingHistory[key];
+
+    // Check both keys
+    const record = trainingHistory[key] || trainingHistory[legacyKey];
+
     if (record && record.weights) {
       // Iterate all keys in weights
       Object.values(record.weights).forEach((pair) => {
-        // weights[key] = {facu: 50, alma: 30}
-        // We don't know reps here easily without routine map.
-        // But we can sum up 'Weight * Sets' if we assume 3 sets?
-        // Or just sum Max Weight moved?
-        // Let's sum "Max Weight" of the day as a proxy for strength.
-        if (pair[user]) vol += parseInt(pair[user]);
+        // pair = {facu: 50, alma: 30}
+        // Sum roughly: Weight * 10 reps (Approximation for Volume)
+        if (pair[user]) vol += (parseInt(pair[user]) || 0) * 10;
       });
     }
-    history.push({ label: d.getDate() + "/" + (d.getMonth() + 1), value: vol });
+    // Expected format for new SVG chart: { date: "YYYY-MM-DD", value: 123 }
+    history.push({ date: key, value: vol });
   }
   return history;
 }
 
 function generateSVGLineChart(data, color, user) {
   const width = 600;
-  const height = 200;
-  const padding = 20;
+  const height = 250; // Increased height for labels
+  const padding = 40; // Increased padding for axis text
 
   if (data.every((d) => d.value === 0)) {
-    return `<div class="h-48 flex items-center justify-center text-slate-600 italic">Sin datos recientes</div>`;
+    return `<div class="h-64 flex flex-col items-center justify-center text-slate-500 gap-2">
+                <i data-lucide="bar-chart-2" class="w-8 h-8 opacity-50"></i>
+                <span class="text-sm font-medium">Sin datos recientes</span>
+            </div>`;
   }
 
-  const maxValue = Math.max(...data.map((d) => d.value)) || 1;
-  const points = data
-    .map((d, i) => {
-      const x = (i / (data.length - 1)) * (width - padding * 2) + padding;
-      const y =
-        height - (d.value / maxValue) * (height - padding * 2) - padding;
-      return `${x},${y}`;
+  const maxValue = Math.max(...data.map((d) => d.value)) || 100;
+  const roundedMax = Math.ceil(maxValue / 100) * 100; // Round up to nearest 100 for cleaner scale
+
+  // Helper to map Value to Y
+  const getY = (val) =>
+    height - padding - (val / roundedMax) * (height - padding * 2);
+
+  // Helper to map Index to X
+  const getX = (i) => padding + (i / (data.length - 1)) * (width - padding * 2);
+
+  // Grid Lines & Labels (0, 50%, 100%)
+  const gridLines = [0, roundedMax / 2, roundedMax]
+    .map((val) => {
+      const y = getY(val);
+      return `
+      <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="#334155" stroke-width="1" stroke-dasharray="4" opacity="0.5" />
+      <text x="${padding - 10}" y="${y + 4}" fill="#94a3b8" font-size="10" text-anchor="end">${Math.round(val)}</text>
+    `;
     })
-    .join(" ");
+    .join("");
+
+  // X Axis Labels (Show approx 5 dates)
+  const xLabels = data
+    .map((d, i) => {
+      // Show label only for specific indices to avoid clutter
+      if (i % 3 === 0 || i === data.length - 1) {
+        const dateStr = d.date.split("-").slice(1).join("/"); // MM/DD
+        const x = getX(i);
+        return `<text x="${x}" y="${height - 10}" fill="#94a3b8" font-size="10" text-anchor="middle">${dateStr}</text>`;
+      }
+      return "";
+    })
+    .join("");
+
+  const points = data.map((d, i) => `${getX(i)},${getY(d.value)}`).join(" ");
+
+  // Gradient area below the line
+  const areaPoints = `${getX(0)},${getY(0)} ${points} ${getX(data.length - 1)},${getY(0)}`;
+  const gradientId = `grad-${user}`;
 
   return `
-      <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto drop-shadow-lg" style="overflow: visible;">
-         <!-- Axis Labels -->
-         <text x="${padding}" y="${padding - 5}" fill="#94a3b8" font-size="10" font-weight="bold">Volumen (kg)</text>
-         <text x="${width - padding}" y="${height + 15}" fill="#94a3b8" font-size="10" text-anchor="end" font-weight="bold">Días</text>
+      <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto drop-shadow-xl font-mono" style="overflow: visible;">
+         <defs>
+            <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="0%" y2="100%">
+               <stop offset="0%" style="stop-color:${color};stop-opacity:0.2" />
+               <stop offset="100%" style="stop-color:${color};stop-opacity:0" />
+            </linearGradient>
+         </defs>
 
-         <!-- Label lines -->
-         <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#334155" stroke-width="1" />
-         <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#334155" stroke-width="1" />
+         <!-- Grid & Axis Labels -->
+         ${gridLines}
+         ${xLabels}
          
+         <!-- Axis Lines -->
+         <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#475569" stroke-width="1" />
+         <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#475569" stroke-width="1" />
+         
+         <!-- Area Fill -->
+         <polygon points="${areaPoints}" fill="url(#${gradientId})" stroke="none" />
+
          <!-- Path -->
          <polyline fill="none" stroke="${color}" stroke-width="3" points="${points}" 
                    stroke-linecap="round" stroke-linejoin="round"
                    class="animate-draw-line" />
                    
-         <!-- Points -->
+         <!-- Inteactive Points -->
          ${data
            .map((d, i) => {
-             const x =
-               (i / (data.length - 1)) * (width - padding * 2) + padding;
-             const y =
-               height - (d.value / maxValue) * (height - padding * 2) - padding;
-             return `<circle cx="${x}" cy="${y}" r="4" fill="${color}" class="hover:scale-150 transition-transform origin-center"><title>${d.value} kg</title></circle>`;
+             const x = getX(i);
+             const y = getY(d.value);
+             return `
+               <g class="group">
+                 <circle cx="${x}" cy="${y}" r="4" fill="${color}" stroke="#0f172a" stroke-width="2" class="group-hover:scale-150 transition-transform origin-center cursor-pointer" />
+                 <!-- Tooltip (Simulated via title, usually handled via JS for HTML tooltips, but SVG title works on hover) -->
+                 <title>${d.date}: ${d.value} kg</title>
+               </g>
+             `;
            })
            .join("")}
       </svg>
@@ -2526,81 +2618,78 @@ document
 
 // --- GAMIFICATION V2 (LOGROS) ---
 const achievementsConfig = [
+  // --- TIER 1: COMÚN (Fácil / Inicio) ---
   {
     id: "first_workout",
     title: "Primer Paso",
     icon: "footprints",
     desc: "Completa tu primer entrenamiento",
+    tier: "Común",
     condition: (u) => gamification[u].points > 0,
-  },
-  {
-    id: "streak_3",
-    title: "Constancia",
-    icon: "flame",
-    desc: "Racha de 3 días",
-    condition: (u) => calculateUserStreak(u) >= 3,
-  },
-  {
-    id: "streak_7",
-    title: "Imparable",
-    icon: "zap",
-    desc: "Racha de 7 días",
-    condition: (u) => calculateUserStreak(u) >= 7,
-  },
-  {
-    id: "streak_30",
-    title: "Leyenda",
-    icon: "crown",
-    desc: "Racha de 30 días",
-    condition: (u) => calculateUserStreak(u) >= 30,
-  },
-  {
-    id: "streak_60",
-    title: "Dios del Gym",
-    icon: "award",
-    desc: "Racha de 60 días",
-    condition: (u) => calculateUserStreak(u) >= 60,
   },
   {
     id: "hydrated",
     title: "Hidratado",
     icon: "droplets",
     desc: "Alcanza tu meta diaria de agua",
+    tier: "Común",
     condition: (u) => waterState[u] >= (waterState[u + "Goal"] || 2000),
   },
   {
-    id: "hydrated_master",
-    title: "Poseón",
-    icon: "waves",
-    desc: "Bebe 4 litros en un día",
-    condition: (u) => waterState[u] >= 4000,
-  },
-  {
-    id: "volume_10k",
-    title: "10 Toneladas",
-    icon: "dumbbell",
-    desc: "Levanta 10,000kg en total (acumulado histórico)",
-    condition: (u) => getTotalLiftedVolume(u) >= 10000,
-  },
-  {
-    id: "volume_50k",
-    title: "Hércules",
-    icon: "biceps-flexed",
-    desc: "Levanta 50,000kg en total",
-    condition: (u) => getTotalLiftedVolume(u) >= 50000,
+    id: "streak_3",
+    title: "Constancia",
+    icon: "flame",
+    desc: "Racha de 3 días",
+    tier: "Común",
+    condition: (u) => calculateUserStreak(u) >= 3,
   },
   {
     id: "active_10",
-    title: "Constante",
+    title: "Aprendiz",
     icon: "activity",
     desc: "Completa 10 entrenamientos",
+    tier: "Común",
     condition: (u) => getTotalWorkouts(u) >= 10,
+  },
+
+  // --- TIER 2: RARO (Intermedio) ---
+  {
+    id: "streak_7",
+    title: "Imparable",
+    icon: "zap",
+    desc: "Racha de 7 días",
+    tier: "Raro",
+    condition: (u) => calculateUserStreak(u) >= 7,
+  },
+  {
+    id: "volume_10k",
+    title: "Levantador",
+    icon: "dumbbell",
+    desc: "Levanta 10,000kg en total",
+    tier: "Raro",
+    condition: (u) => getTotalLiftedVolume(u) >= 10000,
+  },
+  {
+    id: "weekend_warrior",
+    title: "Finde Warrior",
+    icon: "calendar-check",
+    desc: "Entrena un Sábado o Domingo",
+    tier: "Raro",
+    condition: (u) => {
+      const d = new Date().getDay();
+      return (
+        (d === 0 || d === 6) &&
+        trainingHistory[getDateKey(new Date())] &&
+        trainingHistory[getDateKey(new Date())][u]
+      );
+    },
   },
   {
     id: "active_50",
     title: "Veterano",
     icon: "medal",
     desc: "Completa 50 entrenamientos",
+    tier: "Raro",
     condition: (u) => getTotalWorkouts(u) >= 50,
   },
   {
@@ -2608,6 +2697,7 @@ const achievementsConfig = [
     title: "Madrugador",
     icon: "sunrise",
     desc: "Entrena antes de las 9 AM",
+    tier: "Raro",
     condition: (u) => {
       const h = new Date().getHours();
       return (
@@ -2622,6 +2712,7 @@ const achievementsConfig = [
     title: "Noctámbulo",
     icon: "moon",
     desc: "Entrena después de las 9 PM",
+    tier: "Raro",
     condition: (u) => {
       const h = new Date().getHours();
       return (
@@ -2631,27 +2722,66 @@ const achievementsConfig = [
       );
     },
   },
+
+  // --- TIER 3: ÉPICO (Difícil) ---
   {
-    id: "weekend_warrior",
-    title: "Finde Warrior",
-    icon: "calendar-check",
-    desc: "Entrena un Sábado o Domingo",
-    condition: (u) => {
-      const d = new Date().getDay();
-      return (
-        (d === 0 || d === 6) &&
-        trainingHistory[getDateKey(new Date())] &&
-        trainingHistory[getDateKey(new Date())][u]
-      );
-    },
+    id: "streak_30",
+    title: "Leyenda",
+    icon: "crown",
+    desc: "Racha de 30 días",
+    tier: "Épico",
+    condition: (u) => calculateUserStreak(u) >= 30,
   },
   {
-    id: "heavy_hitter",
-    title: "Peso Pesado",
-    icon: "dumbbell",
-    desc: "Levanta 10,000kg en un día (tbd)",
-    condition: (u) => false,
-  }, // Placeholder
+    id: "volume_50k",
+    title: "Hércules",
+    icon: "biceps-flexed",
+    desc: "Levanta 50,000kg en total",
+    tier: "Épico",
+    condition: (u) => getTotalLiftedVolume(u) >= 50000,
+  },
+  {
+    id: "hydrated_master",
+    title: "Poseidón",
+    icon: "waves",
+    desc: "Bebe 4 litros en un día",
+    tier: "Épico",
+    condition: (u) => waterState[u] >= 4000,
+  },
+  {
+    id: "active_100",
+    title: "Centurión",
+    icon: "shield-check",
+    desc: "Completa 100 entrenamientos",
+    tier: "Épico",
+    condition: (u) => getTotalWorkouts(u) >= 100,
+  },
+
+  // --- TIER 4: LEGENDARIO (Muy Difícil) ---
+  {
+    id: "streak_60",
+    title: "Dios del Gym",
+    icon: "award",
+    desc: "Racha de 60 días",
+    tier: "Legendario",
+    condition: (u) => calculateUserStreak(u) >= 60,
+  },
+  {
+    id: "volume_100k",
+    title: "Titán",
+    icon: "weight",
+    desc: "Levanta 100,000kg en total",
+    tier: "Legendario",
+    condition: (u) => getTotalLiftedVolume(u) >= 100000,
+  },
+  {
+    id: "year_warrior",
+    title: "Inmortal",
+    icon: "infinity",
+    desc: "Entrena durante un año entero (simbólico)",
+    tier: "Legendario",
+    condition: (u) => getTotalWorkouts(u) >= 300,
+  },
 ];
 
 // --- ACHIEVEMENT HELPERS ---
@@ -2719,49 +2849,84 @@ function checkAchievements() {
   });
 }
 
+// --- ACHIEVEMENTS RENDERER ---
 function renderAchievements() {
-  const grid = document.getElementById("achievements-grid");
-  if (!grid) return;
-  grid.innerHTML = "";
+  const container = document.getElementById("achievements-grid");
+  if (!container) return;
 
-  // Check unlocks first
-  checkAchievements();
+  container.innerHTML = "";
 
-  ["facu", "alma"].forEach((user) => {
-    const title = document.createElement("h3");
-    title.className = `col-span-full text-xl font-bold mt-4 mb-2 ${user === "facu" ? "text-blue-400" : "text-pink-400"} flex items-center gap-2`;
-    title.innerHTML = `<span>${user === "facu" ? "🙎🏽‍♂️" : "🙎🏻‍♀️"}</span> Logros de ${user === "facu" ? "Facu" : "Alma"}`;
-    grid.appendChild(title);
+  const TIER_COLORS = {
+    Común: "border-slate-700 bg-slate-800/50",
+    Raro: "border-blue-500/50 bg-blue-900/20 shadow-[0_0_15px_rgba(59,130,246,0.3)]",
+    Épico:
+      "border-purple-500/50 bg-purple-900/20 shadow-[0_0_20px_rgba(168,85,247,0.4)]",
+    Legendario:
+      "border-amber-400/50 bg-amber-900/20 shadow-[0_0_25px_rgba(251,191,36,0.5)]",
+  };
 
-    const unlockedIds = gamification[user].achievements || [];
+  const TIER_TEXT_COLORS = {
+    Común: "text-slate-400",
+    Raro: "text-blue-400",
+    Épico: "text-purple-400",
+    Legendario: "text-amber-400",
+  };
 
-    achievementsConfig.forEach((ach) => {
-      const isUnlocked = unlockedIds.includes(ach.id);
-      const card = document.createElement("div");
-      card.className = `p-4 rounded-xl border flex flex-col items-center text-center gap-2 transition-all ${isUnlocked ? "bg-slate-800 border-slate-700 shadow-lg shadow-" + (user === "facu" ? "blue" : "pink") + "-500/10" : "bg-slate-900/50 border-slate-800 opacity-50 grayscale"}`;
+  achievementsConfig.forEach((ach) => {
+    // Ensure data integrity
+    if (!gamification.facu.achievements) gamification.facu.achievements = [];
+    if (!gamification.alma.achievements) gamification.alma.achievements = [];
 
-      card.innerHTML = `
-                <div class="p-3 rounded-full ${isUnlocked ? "bg-gradient-to-br from-yellow-500/20 to-amber-600/20 text-yellow-500" : "bg-slate-800 text-slate-600"}">
-                    <i data-lucide="${ach.icon}" class="w-8 h-8"></i>
-                </div>
-                <div>
-                   <h4 class="font-bold text-white text-sm">${ach.title}</h4>
-                   <p class="text-[10px] text-slate-400">${ach.desc}</p>
-                </div>
-            `;
-      grid.appendChild(card);
-    });
+    const facuHas = gamification.facu.achievements.includes(ach.id);
+    const almaHas = gamification.alma.achievements.includes(ach.id);
+    const isUnlocked = facuHas || almaHas;
+
+    const tierAttr = ach.tier || "Común";
+    const tierClass = TIER_COLORS[tierAttr];
+    const tierTextClass = TIER_TEXT_COLORS[tierAttr];
+
+    const card = document.createElement("div");
+    // Opacity logic: if unlocked simple opacity. If locked, dim.
+    const opacityClass = isUnlocked ? "opacity-100" : "opacity-40 grayscale";
+
+    card.className = `relative p-4 rounded-xl border flex flex-col items-center text-center transition-all duration-300 group hover:scale-105 ${tierClass} ${opacityClass}`;
+
+    card.innerHTML = `
+            <div class="absolute top-2 right-2 text-[10px] uppercase font-bold tracking-wider ${tierTextClass}">${tierAttr}</div>
+            
+            <div class="p-3 rounded-full bg-slate-950/50 mb-3 ${isUnlocked ? "shadow-inner" : ""}">
+                <i data-lucide="${ach.icon}" class="w-8 h-8 ${isUnlocked ? tierTextClass : "text-slate-600"}"></i>
+            </div>
+            
+            <h4 class="text-sm font-bold text-white mb-1 leading-tight">${ach.title}</h4>
+            <p class="text-[10px] text-slate-400 leading-snug mb-3 min-h-[2.5em] flex items-center justify-center">${ach.desc}</p>
+            
+            <div class="mt-auto w-full flex justify-center gap-3 border-t border-slate-700/50 pt-2">
+                 <div class="flex items-center gap-1 ${facuHas ? "opacity-100" : "opacity-30"}" title="Facu">
+                    <span class="text-xs">🙍🏽‍♂️</span>
+                    ${facuHas ? '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>' : '<i data-lucide="lock" class="w-3 h-3 text-slate-600"></i>'}
+                 </div>
+                 <div class="flex items-center gap-1 ${almaHas ? "opacity-100" : "opacity-30"}" title="Alma">
+                    <span class="text-xs">🙍🏻‍♀️</span>
+                    ${almaHas ? '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>' : '<i data-lucide="lock" class="w-3 h-3 text-slate-600"></i>'}
+                 </div>
+            </div>
+        `;
+    container.appendChild(card);
   });
 
-  // Update counter
-  const total = achievementsConfig.length * 2;
-  const unlocked =
-    (gamification.facu.achievements?.length || 0) +
-    (gamification.alma.achievements?.length || 0);
-  const counter = document.getElementById("total-achievements-count");
-  if (counter) counter.textContent = `${unlocked} / ${total}`;
-
   if (window.lucide) lucide.createIcons();
+
+  // Update Counts header (Unique badges unlocked)
+  const totalCount = document.getElementById("achievements-count");
+  if (totalCount) {
+    const unlockedUnique = achievementsConfig.filter(
+      (a) =>
+        gamification.facu.achievements.includes(a.id) ||
+        gamification.alma.achievements.includes(a.id),
+    ).length;
+    totalCount.textContent = `${unlockedUnique} / ${achievementsConfig.length}`;
+  }
 }
 
 // --- MUSCLE MAP GENERATOR ---
