@@ -563,21 +563,21 @@ function applyTheme() {
 document.addEventListener("DOMContentLoaded", () => {
   applyTheme();
 
-  // Format Date for Header
-  const dateResult = document.getElementById("header-full-date"); // New ID
-  if (dateResult) {
-    const now = new Date();
-    const options = {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    };
-    // "jueves, 22 de enero de 2026"
-    const formatted = now.toLocaleDateString("es-ES", options);
-    // TO UPPERCASE: "JUEVES, 22 DE ENERO DE 2026"
-    dateResult.textContent = formatted.toUpperCase();
-  }
+  // Format Date for Header and Sidebar
+  const dateResult = document.getElementById("header-full-date");
+  const sidebarDate = document.getElementById("sidebar-date");
+  const now = new Date();
+  const options = {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  };
+  const formatted = now.toLocaleDateString("es-ES", options);
+  const formattedUpper = formatted.toUpperCase();
+
+  if (dateResult) dateResult.textContent = formattedUpper;
+  if (sidebarDate) sidebarDate.textContent = formatted;
 });
 
 // --- VIEW FUNCTIONS ---
@@ -918,17 +918,21 @@ if (waterState.date !== new Date().toDateString()) {
   saveWaterState(); // Safe to call if defined, or we define it below
 }
 
-let currentTemp = 25; // Default fallback
+let currentTemp = parseInt(localStorage.getItem("cachedTemp")) || 25; // Load cached or default
+
+// Show cached temp immediately on load
+if (localStorage.getItem("cachedTemp")) {
+  setTimeout(() => updateWeatherUI(), 0);
+}
 
 async function fetchWeather() {
   try {
-    // Uses wttr.in JSON API which is generally accurate
     const res = await fetch("https://wttr.in/Mendoza?format=j1");
     if (res.ok) {
       const data = await res.json();
-      // wttr.in structure: data.current_condition[0].temp_C
       if (data.current_condition && data.current_condition.length > 0) {
         currentTemp = parseInt(data.current_condition[0].temp_C);
+        localStorage.setItem("cachedTemp", currentTemp); // Cache for next load
         updateWeatherUI();
       }
     }
@@ -938,7 +942,7 @@ async function fetchWeather() {
 }
 
 function updateWeatherUI() {
-  // NEW ID IS IN HEADER
+  // Header (desktop)
   const el = document.getElementById("weather-temp-header");
   const container = document.getElementById("header-weather");
 
@@ -946,7 +950,16 @@ function updateWeatherUI() {
     el.textContent = `${currentTemp}°C`;
     if (container) container.classList.remove("hidden");
   }
-  // calculateAndRenderWaterGoal(); // This is now handled by initAquaFlow and renderAquaFlow
+
+  // Sidebar (mobile)
+  const sidebarTemp = document.getElementById("sidebar-temp");
+  const sidebarWeatherContainer = document.getElementById("sidebar-weather");
+
+  if (sidebarTemp) {
+    sidebarTemp.textContent = `${currentTemp}°C`;
+    if (sidebarWeatherContainer)
+      sidebarWeatherContainer.classList.remove("hidden");
+  }
 }
 
 // --- AQUAFLOW LOGIC ---
