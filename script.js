@@ -415,7 +415,7 @@ let isSyncing = false;
 const JSONBIN_API_KEY =
   "$2a$10$ARqbaMZJCBkzpOxFKlDU6.QpRQOwWN.7KMBcx7a7IH/pKOZD5uNye";
 const JSONBIN_BIN_ID = "69697104ae596e708fdf28e7";
-const JSONBIN_ENABLED = false; // TEMPORARILY DISABLED FOR DATA RECOVERY - RE-ENABLE AFTER!
+const JSONBIN_ENABLED = true;
 
 // --- CLOUD SYNC FUNCTIONS ---
 async function loadFromCloud() {
@@ -452,7 +452,29 @@ async function loadFromCloud() {
         if (typeof updateGamificationUI === "function") updateGamificationUI();
       }
 
-      // 2. Merge Training History (Preserve local keys that aren't in cloud)
+      // 2. Sync Exercise Weights from cloud
+      if (cloudHistory.weightsState) {
+        // Merge with local weights (preserve local if newer)
+        const localWeights = JSON.parse(
+          localStorage.getItem("gymRoutineWeights") || "{}",
+        );
+        const mergedWeights = { ...localWeights, ...cloudHistory.weightsState };
+        setWeights = mergedWeights;
+        localStorage.setItem(
+          "gymRoutineWeights",
+          JSON.stringify(mergedWeights),
+        );
+        delete cloudHistory.weightsState;
+        console.log("⚖️ Pesos sincronizados desde la nube");
+
+        // Refresh UI to show loaded weights
+        if (typeof renderContent === "function") {
+          renderContent();
+          lucide.createIcons();
+        }
+      }
+
+      // 3. Merge Training History (Preserve local keys that aren't in cloud)
       // This prevents losing today's offline workout if we sync with yesterday's cloud data.
       trainingHistory = { ...trainingHistory, ...cloudHistory };
 
@@ -558,6 +580,12 @@ async function saveToCloud() {
   // Let's attach it to trainingHistory as a special key "gamificationState".
 
   trainingHistory.gamificationState = gamification;
+
+  // Also sync exercise weights (setWeights)
+  const savedWeights = localStorage.getItem("gymRoutineWeights");
+  if (savedWeights) {
+    trainingHistory.weightsState = JSON.parse(savedWeights);
+  }
 
   try {
     isSyncing = true;
@@ -4609,6 +4637,98 @@ function closeMuscleMapModal() {
 // Ensure global scope access
 window.openMuscleMapModal = openMuscleMapModal;
 window.closeMuscleMapModal = closeMuscleMapModal;
+
+// --- MANUAL HISTORICAL DATA ENTRY ---
+// Use this function from the browser console to add past training days
+// It uses the weights you currently have in the routine inputs!
+// Example: addHistoricalTraining("2026-01-14", "both")
+// Parameters:
+//   date: "YYYY-MM-DD" format
+//   who: "facu", "alma", or "both"
+function addHistoricalTraining(date, who) {
+  if (!date || !who) {
+    console.error(
+      "Usage: addHistoricalTraining('2026-01-14', 'facu'|'alma'|'both')",
+    );
+    return;
+  }
+
+  // Get current weights from localStorage (the ones you've filled in today)
+  const currentWeights =
+    JSON.parse(localStorage.getItem("gymRoutineWeights")) || {};
+
+  if (Object.keys(currentWeights).length === 0) {
+    console.warn(
+      "⚠️ No hay pesos guardados. Primero cargá tus pesos en la rutina de hoy y volvé a ejecutar.",
+    );
+    return;
+  }
+
+  if (!trainingHistory[date]) {
+    trainingHistory[date] = { alma: false, facu: false, weights: {} };
+  }
+
+  if (who === "facu" || who === "both") {
+    trainingHistory[date].facu = true;
+  }
+  if (who === "alma" || who === "both") {
+    trainingHistory[date].alma = true;
+  }
+
+  // Copy current weights to this historical date
+  Object.keys(currentWeights).forEach((key) => {
+    if (!trainingHistory[date].weights[key]) {
+      trainingHistory[date].weights[key] = {};
+    }
+
+    if ((who === "facu" || who === "both") && currentWeights[key].facu) {
+      trainingHistory[date].weights[key].facu = currentWeights[key].facu;
+    }
+    if ((who === "alma" || who === "both") && currentWeights[key].alma) {
+      trainingHistory[date].weights[key].alma = currentWeights[key].alma;
+    }
+  });
+
+  localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+
+  // Calculate volume for confirmation
+  let volFacu = 0,
+    volAlma = 0;
+  Object.values(trainingHistory[date].weights).forEach((w) => {
+    volFacu += (parseInt(w.facu) || 0) * 10;
+    volAlma += (parseInt(w.alma) || 0) * 10;
+  });
+
+  const volMsg =
+    who === "both"
+      ? `Facu: ${volFacu}kg, Alma: ${volAlma}kg`
+      : who === "facu"
+        ? `${volFacu}kg`
+        : `${volAlma}kg`;
+  console.log(
+    `✅ Entrenamiento añadido: ${date} (${who}) - Volumen: ${volMsg}`,
+  );
+
+  // Refresh UI if on relevant views
+  if (currentView === "history") renderCalendar();
+  if (currentView === "stats") renderCharts();
+}
+
+// Bulk add helper - adds multiple days at once using current weights
+// Example: addBulkHistory(["2026-01-08", "2026-01-09", "2026-01-12"], "both")
+function addBulkHistory(dates, who) {
+  if (!Array.isArray(dates)) {
+    console.error(
+      "Usage: addBulkHistory(['2026-01-08', '2026-01-09'], 'both')",
+    );
+    return;
+  }
+  dates.forEach((date) => addHistoricalTraining(date, who));
+  console.log(`\n✅ ${dates.length} entrenamientos añadidos para ${who}`);
+}
+
+window.addHistoricalTraining = addHistoricalTraining;
+window.addBulkHistory = addBulkHistory;
 
 // Init App
 

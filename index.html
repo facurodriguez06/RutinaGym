@@ -1387,6 +1387,50 @@
         </div>
     </div>
 
+    <!-- ACHIEVEMENT UNLOCK MODAL -->
+    <div id="achievement-modal"
+        class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div id="achievement-modal-content"
+            class="w-full max-w-sm transform scale-0 transition-transform duration-500 ease-out">
+            <div class="relative overflow-hidden rounded-3xl border-2 p-6 text-center" id="achievement-modal-card">
+                <!-- Glow Effect -->
+                <div class="absolute inset-0 opacity-30" id="achievement-modal-glow"></div>
+
+                <!-- Badge Icon -->
+                <div class="relative z-10 mb-4">
+                    <div class="mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl animate-bounce"
+                        id="achievement-modal-icon-bg">
+                        <i id="achievement-modal-icon" class="w-10 h-10"></i>
+                    </div>
+                </div>
+
+                <!-- Tier Badge -->
+                <div class="relative z-10 mb-2">
+                    <span id="achievement-modal-tier"
+                        class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"></span>
+                </div>
+
+                <!-- Title -->
+                <h2 id="achievement-modal-title" class="relative z-10 text-2xl font-black text-white mb-2"></h2>
+
+                <!-- Description -->
+                <p id="achievement-modal-desc" class="relative z-10 text-sm text-slate-300 mb-4"></p>
+
+                <!-- User -->
+                <p class="relative z-10 text-xs text-slate-500 mb-6">
+                    Desbloqueado por <span id="achievement-modal-user" class="font-bold"></span>
+                </p>
+
+                <!-- Close Button -->
+                <button onclick="closeAchievementModal()"
+                    class="relative z-10 w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95"
+                    id="achievement-modal-btn">
+                    ¡Genial!
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 
