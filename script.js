@@ -2626,12 +2626,44 @@ const achievementsConfig = [
     condition: (u) => calculateUserStreak(u) >= 3,
   },
   {
+    id: "active_5",
+    title: "Iniciado",
+    icon: "play",
+    desc: "Completa 5 entrenamientos",
+    tier: "Común",
+    condition: (u) => getTotalWorkouts(u) >= 5,
+  },
+  {
     id: "active_10",
     title: "Aprendiz",
     icon: "activity",
     desc: "Completa 10 entrenamientos",
     tier: "Común",
     condition: (u) => getTotalWorkouts(u) >= 10,
+  },
+  {
+    id: "duo_workout",
+    title: "Compañeros",
+    icon: "users",
+    desc: "Entrena con tu pareja por primera vez",
+    tier: "Común",
+    condition: (u) => getDuoWorkouts() >= 1,
+  },
+  {
+    id: "hydrated_3_days",
+    title: "Agua x3",
+    icon: "droplet",
+    desc: "Cumple meta de agua 3 días seguidos",
+    tier: "Común",
+    condition: (u) => getHydrationStreak(u) >= 3,
+  },
+  {
+    id: "first_points_50",
+    title: "Primeros Puntos",
+    icon: "coins",
+    desc: "Acumula 50 puntos",
+    tier: "Común",
+    condition: (u) => gamification[u].points >= 50,
   },
 
   // --- TIER 2: RARO (Intermedio) ---
@@ -2644,12 +2676,28 @@ const achievementsConfig = [
     condition: (u) => calculateUserStreak(u) >= 7,
   },
   {
+    id: "streak_14",
+    title: "Quincena",
+    icon: "calendar",
+    desc: "Racha de 14 días",
+    tier: "Raro",
+    condition: (u) => calculateUserStreak(u) >= 14,
+  },
+  {
     id: "volume_10k",
     title: "Levantador",
     icon: "dumbbell",
     desc: "Levanta 10,000kg en total",
     tier: "Raro",
     condition: (u) => getTotalLiftedVolume(u) >= 10000,
+  },
+  {
+    id: "volume_25k",
+    title: "Máquina",
+    icon: "cog",
+    desc: "Levanta 25,000kg en total",
+    tier: "Raro",
+    condition: (u) => getTotalLiftedVolume(u) >= 25000,
   },
   {
     id: "weekend_warrior",
@@ -2665,6 +2713,14 @@ const achievementsConfig = [
         trainingHistory[getDateKey(new Date())][u]
       );
     },
+  },
+  {
+    id: "active_25",
+    title: "Regular",
+    icon: "repeat",
+    desc: "Completa 25 entrenamientos",
+    tier: "Raro",
+    condition: (u) => getTotalWorkouts(u) >= 25,
   },
   {
     id: "active_50",
@@ -2704,8 +2760,48 @@ const achievementsConfig = [
       );
     },
   },
+  {
+    id: "duo_10",
+    title: "Dúo Dinámico",
+    icon: "heart-handshake",
+    desc: "Entrena 10 veces con tu pareja",
+    tier: "Raro",
+    condition: (u) => getDuoWorkouts() >= 10,
+  },
+  {
+    id: "hydrated_7_days",
+    title: "Fuente Natural",
+    icon: "glass-water",
+    desc: "Cumple meta de agua 7 días seguidos",
+    tier: "Raro",
+    condition: (u) => getHydrationStreak(u) >= 7,
+  },
+  {
+    id: "volume_single_day_5k",
+    title: "Día Pesado",
+    icon: "arrow-up-circle",
+    desc: "Levanta 5,000kg en un solo día",
+    tier: "Raro",
+    condition: (u) => getDailyVolume(u) >= 5000,
+  },
+  {
+    id: "points_200",
+    title: "Coleccionista",
+    icon: "piggy-bank",
+    desc: "Acumula 200 puntos",
+    tier: "Raro",
+    condition: (u) => gamification[u].points >= 200,
+  },
 
   // --- TIER 3: ÉPICO (Difícil) ---
+  {
+    id: "streak_21",
+    title: "Hábito Forjado",
+    icon: "hammer",
+    desc: "Racha de 21 días (se forma un hábito)",
+    tier: "Épico",
+    condition: (u) => calculateUserStreak(u) >= 21,
+  },
   {
     id: "streak_30",
     title: "Leyenda",
@@ -2723,6 +2819,14 @@ const achievementsConfig = [
     condition: (u) => getTotalLiftedVolume(u) >= 50000,
   },
   {
+    id: "volume_75k",
+    title: "Coloso",
+    icon: "mountain",
+    desc: "Levanta 75,000kg en total",
+    tier: "Épico",
+    condition: (u) => getTotalLiftedVolume(u) >= 75000,
+  },
+  {
     id: "hydrated_master",
     title: "Poseidón",
     icon: "waves",
@@ -2731,12 +2835,52 @@ const achievementsConfig = [
     condition: (u) => waterState[u] >= 4000,
   },
   {
+    id: "active_75",
+    title: "Atleta",
+    icon: "user-check",
+    desc: "Completa 75 entrenamientos",
+    tier: "Épico",
+    condition: (u) => getTotalWorkouts(u) >= 75,
+  },
+  {
     id: "active_100",
     title: "Centurión",
     icon: "shield-check",
     desc: "Completa 100 entrenamientos",
     tier: "Épico",
     condition: (u) => getTotalWorkouts(u) >= 100,
+  },
+  {
+    id: "duo_25",
+    title: "Alma Gemela",
+    icon: "heart",
+    desc: "Entrena 25 veces con tu pareja",
+    tier: "Épico",
+    condition: (u) => getDuoWorkouts() >= 25,
+  },
+  {
+    id: "hydrated_14_days",
+    title: "Océano",
+    icon: "anchor",
+    desc: "Cumple meta de agua 14 días seguidos",
+    tier: "Épico",
+    condition: (u) => getHydrationStreak(u) >= 14,
+  },
+  {
+    id: "volume_single_day_8k",
+    title: "Bestia",
+    icon: "skull",
+    desc: "Levanta 8,000kg en un solo día",
+    tier: "Épico",
+    condition: (u) => getDailyVolume(u) >= 8000,
+  },
+  {
+    id: "points_500",
+    title: "Banquero",
+    icon: "landmark",
+    desc: "Acumula 500 puntos",
+    tier: "Épico",
+    condition: (u) => gamification[u].points >= 500,
   },
 
   // --- TIER 4: LEGENDARIO (Muy Difícil) ---
@@ -2749,6 +2893,22 @@ const achievementsConfig = [
     condition: (u) => calculateUserStreak(u) >= 60,
   },
   {
+    id: "streak_90",
+    title: "Imbatible",
+    icon: "shield",
+    desc: "Racha de 90 días",
+    tier: "Legendario",
+    condition: (u) => calculateUserStreak(u) >= 90,
+  },
+  {
+    id: "streak_180",
+    title: "Semidiós",
+    icon: "star",
+    desc: "Racha de 180 días (6 meses)",
+    tier: "Legendario",
+    condition: (u) => calculateUserStreak(u) >= 180,
+  },
+  {
     id: "volume_100k",
     title: "Titán",
     icon: "weight",
@@ -2757,12 +2917,60 @@ const achievementsConfig = [
     condition: (u) => getTotalLiftedVolume(u) >= 100000,
   },
   {
+    id: "volume_200k",
+    title: "Atlas",
+    icon: "globe",
+    desc: "Levanta 200,000kg en total",
+    tier: "Legendario",
+    condition: (u) => getTotalLiftedVolume(u) >= 200000,
+  },
+  {
+    id: "active_200",
+    title: "Espartano",
+    icon: "swords",
+    desc: "Completa 200 entrenamientos",
+    tier: "Legendario",
+    condition: (u) => getTotalWorkouts(u) >= 200,
+  },
+  {
     id: "year_warrior",
     title: "Inmortal",
     icon: "infinity",
-    desc: "Entrena durante un año entero (simbólico)",
+    desc: "Entrena durante un año entero",
     tier: "Legendario",
     condition: (u) => getTotalWorkouts(u) >= 300,
+  },
+  {
+    id: "year_complete",
+    title: "Año Dorado",
+    icon: "trophy",
+    desc: "Completa 365 entrenamientos",
+    tier: "Legendario",
+    condition: (u) => getTotalWorkouts(u) >= 365,
+  },
+  {
+    id: "duo_50",
+    title: "Eternos",
+    icon: "gem",
+    desc: "Entrena 50 veces con tu pareja",
+    tier: "Legendario",
+    condition: (u) => getDuoWorkouts() >= 50,
+  },
+  {
+    id: "hydrated_30_days",
+    title: "Neptuno",
+    icon: "ship",
+    desc: "Cumple meta de agua 30 días seguidos",
+    tier: "Legendario",
+    condition: (u) => getHydrationStreak(u) >= 30,
+  },
+  {
+    id: "points_1000",
+    title: "Magnate",
+    icon: "crown",
+    desc: "Acumula 1000 puntos",
+    tier: "Legendario",
+    condition: (u) => gamification[u].points >= 1000,
   },
 ];
 
@@ -2792,6 +3000,58 @@ function getTotalLiftedVolume(user) {
           total += (parseInt(weightObj[user]) || 0) * 10;
         }
       });
+    }
+  });
+  return total;
+}
+
+// Count days where BOTH Facu and Alma trained together
+function getDuoWorkouts() {
+  let count = 0;
+  Object.values(trainingHistory).forEach((day) => {
+    if (day.facu && day.alma) count++;
+  });
+  return count;
+}
+
+// Count consecutive days meeting water goal
+function getHydrationStreak(user) {
+  const goal = waterState[user + "Goal"] || 2000;
+  let streak = 0;
+  const today = new Date();
+
+  for (let i = 0; i < 365; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const key = getDateKey(date);
+    const dayData = trainingHistory[key];
+
+    if (dayData && dayData.water && dayData.water[user] >= goal) {
+      streak++;
+    } else if (i === 0) {
+      // Today might not be saved yet, check waterState
+      if (waterState[user] >= goal) {
+        streak++;
+      } else {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+// Get volume lifted on a specific day
+function getDailyVolume(user, date = new Date()) {
+  const key = getDateKey(date);
+  const dayData = trainingHistory[key];
+  if (!dayData || !dayData.weights) return 0;
+
+  let total = 0;
+  Object.values(dayData.weights).forEach((weightObj) => {
+    if (weightObj[user]) {
+      total += (parseInt(weightObj[user]) || 0) * 10; // Assume 10 reps
     }
   });
   return total;
