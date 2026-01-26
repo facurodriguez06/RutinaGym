@@ -2709,6 +2709,195 @@ const achievementsConfig = [
     tier: "Común",
     condition: (u) => gamification[u].points >= 50,
   },
+  // --- NEW COMMON ACHIEVEMENTS ---
+  {
+    id: "streak_2",
+    title: "El Dúo",
+    icon: "flame",
+    desc: "Racha de 2 días seguidos",
+    tier: "Común",
+    condition: (u) => calculateUserStreak(u) >= 2,
+  },
+  {
+    id: "points_100",
+    title: "Centenario",
+    icon: "piggy-bank",
+    desc: "Acumula 100 puntos",
+    tier: "Común",
+    condition: (u) => gamification[u].points >= 100,
+  },
+  {
+    id: "active_2",
+    title: "Calentando",
+    icon: "play",
+    desc: "Completa 2 entrenamientos",
+    tier: "Común",
+    condition: (u) => getTotalWorkouts(u) >= 2,
+  },
+  {
+    id: "active_8",
+    title: "En Marcha",
+    icon: "fast-forward",
+    desc: "Completa 8 entrenamientos",
+    tier: "Común",
+    condition: (u) => getTotalWorkouts(u) >= 8,
+  },
+  {
+    id: "duo_3",
+    title: "Trio Dinámico",
+    icon: "users",
+    desc: "Entrena 3 veces con tu pareja",
+    tier: "Común",
+    condition: (u) => getDuoWorkouts() >= 3,
+  },
+  {
+    id: "duo_5",
+    title: "Equipo",
+    icon: "users",
+    desc: "Entrena 5 veces con tu pareja",
+    tier: "Común",
+    condition: (u) => getDuoWorkouts() >= 5,
+  },
+  {
+    id: "volume_1k",
+    title: "Kilo a Kilo",
+    icon: "dumbbell",
+    desc: "Levanta 1,000kg en total (histórico)",
+    tier: "Común",
+    condition: (u) => getTotalLiftedVolume(u) >= 1000,
+  },
+  {
+    id: "volume_3k",
+    title: "Tres Mil",
+    icon: "dumbbell",
+    desc: "Levanta 3,000kg en total (histórico)",
+    tier: "Común",
+    condition: (u) => getTotalLiftedVolume(u) >= 3000,
+  },
+  {
+    id: "volume_day_1k",
+    title: "Tonelada Diaria",
+    icon: "weight",
+    desc: "Levanta 1,000kg en un solo día",
+    tier: "Común",
+    condition: (u) => getDailyVolume(u) >= 1000,
+  },
+  {
+    id: "volume_day_2k",
+    title: "Fuerza Diaria",
+    icon: "weight",
+    desc: "Levanta 2,000kg en un solo día",
+    tier: "Común",
+    condition: (u) => getDailyVolume(u) >= 2000,
+  },
+  {
+    id: "monday_motivation",
+    title: "Odio los Lunes",
+    icon: "calendar-check",
+    desc: "Entrena un Lunes",
+    tier: "Común",
+    condition: (u) =>
+      new Date().getDay() === 1 &&
+      trainingHistory[getDateKey(new Date())] &&
+      trainingHistory[getDateKey(new Date())][u],
+  },
+  {
+    id: "hump_day",
+    title: "Ombligo",
+    icon: "calendar",
+    desc: "Entrena un Miércoles",
+    tier: "Común",
+    condition: (u) =>
+      new Date().getDay() === 3 &&
+      trainingHistory[getDateKey(new Date())] &&
+      trainingHistory[getDateKey(new Date())][u],
+  },
+  {
+    id: "weekend_warrior_easy",
+    title: "Finde Activo",
+    icon: "sun",
+    desc: "Entrena un Sábado o Domingo",
+    tier: "Común",
+    condition: (u) =>
+      (new Date().getDay() === 6 || new Date().getDay() === 0) &&
+      trainingHistory[getDateKey(new Date())] &&
+      trainingHistory[getDateKey(new Date())][u],
+  },
+  {
+    id: "early_bird_easy",
+    title: "Mañanero",
+    icon: "sunrise",
+    desc: "Entrena antes de las 11 AM",
+    tier: "Común",
+    condition: (u) =>
+      new Date().getHours() < 11 &&
+      trainingHistory[getDateKey(new Date())] &&
+      trainingHistory[getDateKey(new Date())][u],
+  },
+  {
+    id: "night_owl",
+    title: "Búho",
+    icon: "moon",
+    desc: "Entrena después de las 20:00",
+    tier: "Común",
+    condition: (u) =>
+      new Date().getHours() >= 20 &&
+      trainingHistory[getDateKey(new Date())] &&
+      trainingHistory[getDateKey(new Date())][u],
+  },
+  {
+    id: "water_500",
+    title: "Sediento",
+    icon: "glass-water",
+    desc: "Registra 500ml de agua",
+    tier: "Común",
+    condition: (u) => (waterState[u] || 0) >= 500,
+  },
+  {
+    id: "water_1000",
+    title: "Litro",
+    icon: "glass-water",
+    desc: "Registra 1 Litro de agua",
+    tier: "Común",
+    condition: (u) => (waterState[u] || 0) >= 1000,
+  },
+  {
+    id: "water_streak_2",
+    title: "Hidratado x2",
+    icon: "droplet",
+    desc: "Meta de agua 2 días seguidos",
+    tier: "Común",
+    condition: (u) => getHydrationStreak(u) >= 2,
+  },
+  {
+    id: "first_freeze",
+    title: "Protegido",
+    icon: "shield",
+    desc: "Ten al menos 1 protector de racha",
+    tier: "Común",
+    condition: (u) => gamification[u].freezes >= 1,
+  },
+  {
+    id: "perfect_week_start",
+    title: "Buen Inicio",
+    icon: "calendar-check-2",
+    desc: "Completa el Lunes y Martes seguidos",
+    tier: "Común",
+    condition: (u) => {
+      const today = new Date();
+      const yest = new Date();
+      yest.setDate(today.getDate() - 1);
+      const k1 = getDateKey(today);
+      const k2 = getDateKey(yest);
+      return (
+        today.getDay() === 2 &&
+        trainingHistory[k1] &&
+        trainingHistory[k1][u] &&
+        trainingHistory[k2] &&
+        trainingHistory[k2][u]
+      );
+    },
+  },
 
   // --- TIER 2: RARO (Intermedio) ---
   {
