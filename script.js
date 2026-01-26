@@ -3026,6 +3026,100 @@ const achievementsConfig = [
     condition: (u) => gamification[u].points >= 200,
   },
 
+  // --- NEW RARE ACHIEVEMENTS ---
+  {
+    id: "streak_10",
+    title: "Decatleta",
+    icon: "medal",
+    desc: "Racha de 10 días seguidos",
+    tier: "Raro",
+    condition: (u) => calculateUserStreak(u) >= 10,
+  },
+  {
+    id: "active_15",
+    title: "Iniciado Pro",
+    icon: "star",
+    desc: "Completa 15 entrenamientos",
+    tier: "Raro",
+    condition: (u) => getTotalWorkouts(u) >= 15,
+  },
+  {
+    id: "active_30",
+    title: "Hábito Mensual",
+    icon: "calendar-days",
+    desc: "Completa 30 entrenamientos",
+    tier: "Raro",
+    condition: (u) => getTotalWorkouts(u) >= 30,
+  },
+  {
+    id: "duo_15",
+    title: "Pareja Fitness",
+    icon: "heart-handshake",
+    desc: "Entrena 15 veces con tu pareja",
+    tier: "Raro",
+    condition: (u) => getDuoWorkouts() >= 15,
+  },
+  {
+    id: "volume_15k",
+    title: "Peso Medio",
+    icon: "dumbbell",
+    desc: "Levanta 15,000kg en total",
+    tier: "Raro",
+    condition: (u) => getTotalLiftedVolume(u) >= 15000,
+  },
+  {
+    id: "volume_day_3k",
+    title: "Día de Furia",
+    icon: "biceps-flexed",
+    desc: "Levanta 3,000kg en un solo día",
+    tier: "Raro",
+    condition: (u) => getDailyVolume(u) >= 3000,
+  },
+  {
+    id: "points_300",
+    title: "Ahorrador Pro",
+    icon: "wallet",
+    desc: "Acumula 300 puntos",
+    tier: "Raro",
+    condition: (u) => gamification[u].points >= 300,
+  },
+  {
+    id: "four_days_week",
+    title: "Intenso",
+    icon: "zap",
+    desc: "Entrena 4 veces en los últimos 7 días",
+    tier: "Raro",
+    condition: (u) => {
+      let count = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const k = getDateKey(d);
+        if (trainingHistory[k] && trainingHistory[k][u]) count++;
+      }
+      return count >= 4;
+    },
+  },
+  {
+    id: "night_owl_hard",
+    title: "Turno Noche",
+    icon: "moon-star",
+    desc: "Entrena después de las 22:00",
+    tier: "Raro",
+    condition: (u) =>
+      new Date().getHours() >= 22 &&
+      trainingHistory[getDateKey(new Date())] &&
+      trainingHistory[getDateKey(new Date())][u],
+  },
+  {
+    id: "water_streak_5",
+    title: "Oasis",
+    icon: "droplets",
+    desc: "Meta de agua 5 días seguidos",
+    tier: "Raro",
+    condition: (u) => getHydrationStreak(u) >= 5,
+  },
+
   // --- TIER 3: ÉPICO (Difícil) ---
   {
     id: "streak_21",
