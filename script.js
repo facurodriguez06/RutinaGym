@@ -948,14 +948,55 @@ function renderCalendar() {
       }
     }
 
-    // Water icon if water was logged
-    let waterIcon = "";
-    if (
-      history &&
-      history.water &&
-      (history.water.facu > 0 || history.water.alma > 0)
-    ) {
-      waterIcon = '<i data-lucide="droplets" class="w-3 h-3 text-sky-400"></i>';
+    // Water indicators
+    let waterIndicators = "";
+    if (history && history.water) {
+      // Facu Water Dot
+      if (history.water.facu >= (history.water.facuGoal || 3500)) {
+        waterIndicators +=
+          '<div class="w-1.5 h-1.5 rounded-full bg-blue-500" title="Facu: Meta cumplida"></div>';
+      } else if (history.water.facu > 0) {
+        waterIndicators +=
+          '<div class="w-1.5 h-1.5 rounded-full bg-slate-600" title="Facu: ' +
+          history.water.facu +
+          'ml"></div>';
+      }
+
+      // Alma Water Dot
+      if (history.water.alma >= (history.water.almaGoal || 2700)) {
+        waterIndicators +=
+          '<div class="w-1.5 h-1.5 rounded-full bg-pink-500" title="Alma: Meta cumplida"></div>';
+      } else if (history.water.alma > 0) {
+        waterIndicators +=
+          '<div class="w-1.5 h-1.5 rounded-full bg-slate-600" title="Alma: ' +
+          history.water.alma +
+          'ml"></div>';
+      }
+    }
+
+    // Check if we have hydration data in waterState (for TODAY live update)
+    if (isToday && waterState) {
+      // Reset to re-calc based on live waterState if it's today
+      waterIndicators = "";
+      if (waterState.facu >= (waterState.facuGoal || 3500)) {
+        waterIndicators +=
+          '<div class="w-1.5 h-1.5 rounded-full bg-blue-500" title="Facu: Meta cumplida"></div>';
+      } else if (waterState.facu > 0) {
+        waterIndicators +=
+          '<div class="w-1.5 h-1.5 rounded-full bg-slate-600" title="Facu: ' +
+          waterState.facu +
+          'ml"></div>';
+      }
+
+      if (waterState.alma >= (waterState.almaGoal || 2700)) {
+        waterIndicators +=
+          '<div class="w-1.5 h-1.5 rounded-full bg-pink-500" title="Alma: Meta cumplida"></div>';
+      } else if (waterState.alma > 0) {
+        waterIndicators +=
+          '<div class="w-1.5 h-1.5 rounded-full bg-slate-600" title="Alma: ' +
+          waterState.alma +
+          'ml"></div>';
+      }
     }
 
     const todayRing = isToday
@@ -968,7 +1009,10 @@ function renderCalendar() {
                         <span class="text-sm font-medium ${
                           isToday ? "text-emerald-400" : "text-slate-300"
                         }">${day}</span>
-                        <div class="flex gap-0.5">${icon}${waterIcon}</div>
+                        <div class="flex gap-1 items-center justify-center mt-1">
+                            ${icon}
+                            ${waterIndicators ? `<div class="flex gap-0.5">${waterIndicators}</div>` : ""}
+                        </div>
                     </div>
                 `;
   }
