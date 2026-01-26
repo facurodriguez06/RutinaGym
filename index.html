@@ -270,6 +270,30 @@
                 </div>
             </header>
 
+            <!-- Filter Tabs -->
+            <div class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide" id="achievements-filter-tabs">
+                <button onclick="filterAchievements('Todos')"
+                    class="px-4 py-2 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-sm whitespace-nowrap active-filter">
+                    Todos
+                </button>
+                <button onclick="filterAchievements('Común')"
+                    class="px-4 py-2 rounded-xl bg-slate-800 text-slate-400 border border-slate-700/50 font-medium text-sm whitespace-nowrap">
+                    Común
+                </button>
+                <button onclick="filterAchievements('Raro')"
+                    class="px-4 py-2 rounded-xl bg-slate-800 text-slate-400 border border-slate-700/50 font-medium text-sm whitespace-nowrap">
+                    Raro
+                </button>
+                <button onclick="filterAchievements('Épico')"
+                    class="px-4 py-2 rounded-xl bg-slate-800 text-slate-400 border border-slate-700/50 font-medium text-sm whitespace-nowrap">
+                    Épico
+                </button>
+                <button onclick="filterAchievements('Legendario')"
+                    class="px-4 py-2 rounded-xl bg-slate-800 text-slate-400 border border-slate-700/50 font-medium text-sm whitespace-nowrap">
+                    Legendario
+                </button>
+            </div>
+
             <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <!-- Badges injected here -->
             </div>

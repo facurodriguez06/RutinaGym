@@ -3101,7 +3101,16 @@ function getDailyVolume(user, date = new Date()) {
   return total;
 }
 
+const appStartTime = Date.now();
+
 function checkAchievements() {
+  // Guard: Don't check on initial load (requested by user)
+  // Only check when triggered by explicit actions (which happen usually > 2s after load)
+  if (Date.now() - appStartTime < 5000) {
+    console.log("🚫 Skipping achievement check on startup");
+    return;
+  }
+
   // Logic to unlock achievements
   // We store unlocked IDs in gamification[user].achievements = ["id1", "id2"]
   ["facu", "alma"].forEach((user) => {
@@ -5035,5 +5044,148 @@ window.addHistoricalTraining = addHistoricalTraining;
 window.addBulkHistory = addBulkHistory;
 
 // Init App
+
+// --- ACHIEVEMENTS RENDER & LOGIC ---
+
+let currentAchievementFilter = "Todos";
+
+function filterAchievements(tier) {
+  currentAchievementFilter = tier;
+
+  // Update Buttons UI
+  const buttons = document.querySelectorAll("#achievements-filter-tabs button");
+  buttons.forEach((btn) => {
+    if (btn.textContent.trim() === tier) {
+      btn.className =
+        "px-4 py-2 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-sm whitespace-nowrap active-filter shadow-md shadow-slate-900/50";
+      // Tint based on tier
+      if (tier === "Común") btn.classList.add("text-slate-200");
+      if (tier === "Raro")
+        btn.classList.add("text-blue-400", "border-blue-500/30");
+      if (tier === "Épico")
+        btn.classList.add("text-purple-400", "border-purple-500/30");
+      if (tier === "Legendario")
+        btn.classList.add("text-amber-400", "border-amber-500/30");
+    } else {
+      btn.className =
+        "px-4 py-2 rounded-xl bg-slate-900 text-slate-500 border border-slate-800 font-medium text-sm whitespace-nowrap hover:bg-slate-800 transition-colors";
+    }
+  });
+
+  renderAchievements();
+}
+
+function renderAchievements() {
+  const container = document.getElementById("achievements-grid");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const countBadge = document.getElementById("total-achievements-count");
+
+  // Get combined unlocked achievements for counting
+  const unlockedFacu = gamification.facu.achievements || [];
+  const unlockedAlma = gamification.alma.achievements || [];
+  const allUnlockedIDs = new Set([...unlockedFacu, ...unlockedAlma]);
+
+  if (countBadge) {
+    countBadge.textContent = `${allUnlockedIDs.size} / ${achievementsConfig.length}`;
+  }
+
+  // Filter
+  let filtered = achievementsConfig;
+  if (currentAchievementFilter !== "Todos") {
+    filtered = achievementsConfig.filter(
+      (a) => a.tier === currentAchievementFilter,
+    );
+  }
+
+  filtered.forEach((ach) => {
+    // Check status
+    const facuHas = unlockedFacu.includes(ach.id);
+    const almaHas = unlockedAlma.includes(ach.id);
+    const isUnlocked = facuHas || almaHas;
+
+    // Define Styles based on Tier
+    let borderClass = "border-slate-800";
+    let bgClass = "bg-slate-900";
+    let iconColor = "text-slate-600";
+    let opacity = "opacity-50 grayscale"; // Locked state default
+
+    if (isUnlocked) {
+      opacity = "opacity-100";
+      switch (ach.tier) {
+        case "Común":
+          borderClass = "border-slate-600";
+          iconColor = "text-slate-400";
+          break;
+        case "Raro":
+          borderClass = "border-blue-500/50";
+          bgClass = "bg-blue-900/10";
+          iconColor = "text-blue-400";
+          break;
+        case "Épico":
+          borderClass = "border-purple-500/50";
+          bgClass = "bg-purple-900/10";
+          iconColor = "text-purple-400";
+          break;
+        case "Legendario":
+          borderClass = "border-amber-500/50";
+          bgClass = "bg-amber-900/10";
+          iconColor = "text-amber-400";
+          break;
+      }
+    }
+
+    // Determine badging who has it
+    let whoHasHTML = "";
+    if (isUnlocked) {
+      whoHasHTML = '<div class="flex items-center gap-1 mt-3 justify-center">';
+      if (facuHas)
+        whoHasHTML += '<span title="Facu lo tiene" class="text-xs">🙎🏽‍♂️</span>';
+      if (almaHas)
+        whoHasHTML += '<span title="Alma lo tiene" class="text-xs">🙎🏻‍♀️</span>';
+      whoHasHTML += "</div>";
+    } else {
+      whoHasHTML = '<div class="h-4 mt-3 opacity-0">.</div>'; // Spacer
+    }
+
+    const html = `
+      <div class="relative p-4 rounded-2xl border ${borderClass} ${bgClass} flex flex-col items-center text-center transition-all duration-300 ${opacity} hover:scale-[1.02]">
+          ${isUnlocked ? `<div class="absolute top-2 right-2 text-[10px] uppercase font-bold tracking-wider ${iconColor}">${ach.tier}</div>` : ""}
+          
+          <div class="w-12 h-12 rounded-full bg-slate-950 flex items-center justify-center mb-3 border border-slate-800">
+             <i data-lucide="${ach.icon}" class="w-6 h-6 ${isUnlocked ? iconColor : "text-slate-700"}"></i>
+          </div>
+          
+          <h3 class="font-bold text-white text-sm mb-1 line-clamp-1" title="${ach.title}">${ach.title}</h3>
+          <p class="text-xs text-slate-500 line-clamp-2 leading-tight">${ach.desc}</p>
+          
+          ${whoHasHTML}
+      </div>
+    `;
+    container.innerHTML += html;
+  });
+
+  lucide.createIcons();
+}
+
+window.filterAchievements = filterAchievements;
+window.renderAchievements = renderAchievements;
+
+// Init App (Modified)
+document.addEventListener("DOMContentLoaded", () => {
+  // Assuming init() is defined elsewhere or we just attach handlers here
+  // If init exists, it will run.
+
+  // We add the click handler for "Logros" tab to render achievements on demand
+  const achievementsBtn = Array.from(document.querySelectorAll("button")).find(
+    (b) => b.textContent.includes("Logros"),
+  );
+  if (achievementsBtn) {
+    achievementsBtn.addEventListener("click", () => {
+      setTimeout(renderAchievements, 100); // Small delay to ensure view visible
+    });
+  }
+});
 
 document.addEventListener("DOMContentLoaded", init);
