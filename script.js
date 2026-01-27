@@ -445,11 +445,17 @@ async function loadFromCloud() {
       // 1. Extract and Sync Gamification
       if (cloudHistory.gamificationState) {
         // Simple strategy: Cloud wins for gamification state (to prevent infinite point glitches)
-        gamification = cloudHistory.gamificationState;
+        if (
+          JSON.stringify(gamification) !==
+          JSON.stringify(cloudHistory.gamificationState)
+        ) {
+          gamification = cloudHistory.gamificationState;
+          localStorage.setItem("gymGamification", JSON.stringify(gamification));
+          if (typeof updateGamificationUI === "function") {
+            updateGamificationUI();
+          }
+        }
         delete cloudHistory.gamificationState; // Remove so it doesn't pollute history iteration
-
-        localStorage.setItem("gymGamification", JSON.stringify(gamification));
-        if (typeof updateGamificationUI === "function") updateGamificationUI();
       }
 
       // 2. Sync Exercise Weights from cloud
@@ -459,30 +465,37 @@ async function loadFromCloud() {
           localStorage.getItem("gymRoutineWeights") || "{}",
         );
         const mergedWeights = { ...cloudHistory.weightsState, ...localWeights };
-        setWeights = mergedWeights;
-        localStorage.setItem(
-          "gymRoutineWeights",
-          JSON.stringify(mergedWeights),
-        );
-        delete cloudHistory.weightsState;
-        console.log("⚖️ Pesos sincronizados desde la nube");
 
-        // Refresh UI to show loaded weights
-        if (typeof renderContent === "function") {
-          renderContent();
-          lucide.createIcons();
+        // Check if data actually changed before re-rendering to avoid flicker
+        if (JSON.stringify(setWeights) !== JSON.stringify(mergedWeights)) {
+          setWeights = mergedWeights;
+          localStorage.setItem(
+            "gymRoutineWeights",
+            JSON.stringify(mergedWeights),
+          );
+          console.log("⚖️ Pesos sincronizados desde la nube");
+
+          // Refresh UI to show loaded weights
+          if (typeof renderContent === "function") {
+            renderContent();
+            lucide.createIcons();
+          }
         }
+        delete cloudHistory.weightsState;
       }
 
       // 3. Merge Training History (Preserve local keys that aren't in cloud)
       // This prevents losing today's offline workout if we sync with yesterday's cloud data.
-      trainingHistory = { ...trainingHistory, ...cloudHistory };
+      const mergedHistory = { ...trainingHistory, ...cloudHistory };
 
-      // 3. Save merged state to local storage
-      localStorage.setItem(
-        "gymTrainingHistory",
-        JSON.stringify(trainingHistory),
-      );
+      if (JSON.stringify(trainingHistory) !== JSON.stringify(mergedHistory)) {
+        trainingHistory = mergedHistory;
+        localStorage.setItem(
+          "gymTrainingHistory",
+          JSON.stringify(trainingHistory),
+        );
+        console.log("✅ Historial cargado desde la nube");
+      }
 
       // --- SYNC HYDRATION FROM CLOUD TO LOCAL ---
       const todayKey = getDateKey(new Date());
@@ -517,8 +530,6 @@ async function loadFromCloud() {
           console.log("💧 Hidratación sincronizada desde la nube");
         }
       }
-
-      console.log("✅ Historial cargado desde la nube");
     }
   } catch (error) {
     console.warn(
