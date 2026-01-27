@@ -458,7 +458,7 @@ async function loadFromCloud() {
         const localWeights = JSON.parse(
           localStorage.getItem("gymRoutineWeights") || "{}",
         );
-        const mergedWeights = { ...localWeights, ...cloudHistory.weightsState };
+        const mergedWeights = { ...cloudHistory.weightsState, ...localWeights };
         setWeights = mergedWeights;
         localStorage.setItem(
           "gymRoutineWeights",
