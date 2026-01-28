@@ -4793,7 +4793,7 @@ function updateGamificationUI() {
   const container = document.getElementById("streak-display");
   if (container) {
     container.classList.remove("hidden");
-    container.classList.add("flex", "gap-4", "justify-start", "flex-wrap"); // Use flex-wrap just in case
+    container.classList.add("flex", "gap-3", "justify-start", "flex-nowrap"); // Force horizontal layout
     // NOTE: We do NOT overwrite className to avoid breaking HTML structure
 
     container.innerHTML = `
