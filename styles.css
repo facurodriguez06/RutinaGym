@@ -25,13 +25,12 @@ body.light header {
   border-color: #e2e8f0;
 }
 
-body.light .bg-slate-900 {
-  background-color: #ffffff !important;
-}
-
+body.light .bg-slate-900,
+body.light .bg-slate-900\/50,
 body.light .bg-slate-950\/50,
 body.light .bg-slate-800,
-body.light .bg-slate-800\/50 {
+body.light .bg-slate-800\/50,
+body.light .bg-slate-800\/80 {
   background-color: #f1f5f9 !important;
 }
 
@@ -46,6 +45,7 @@ body.light .text-slate-500 {
 }
 
 body.light .text-slate-300,
+body.light .text-slate-200,
 body.light .text-white {
   color: #1e293b !important;
 }

@@ -545,15 +545,44 @@ async function loadFromCloud() {
 
 // --- GAMIFICATION STATE ---
 let gamification = JSON.parse(localStorage.getItem("gymGamification")) || {
-  facu: { points: 0, freezes: 0, frozenWeeks: [] },
-  alma: { points: 0, freezes: 0, frozenWeeks: [] },
+  facu: {
+    points: 0,
+    streak: 0,
+    freezes: 0,
+    frozenDays: [],
+    achievements: [],
+    lastReset: 0,
+  },
+  alma: {
+    points: 0,
+    streak: 0,
+    freezes: 0,
+    frozenDays: [],
+    achievements: [],
+    lastReset: 0,
+  },
 };
 
 // Ensure structure integrity if updating from older version
 ["facu", "alma"].forEach((u) => {
   if (!gamification[u])
-    gamification[u] = { points: 0, freezes: 0, frozenWeeks: [] };
-  if (!gamification[u].frozenWeeks) gamification[u].frozenWeeks = [];
+    gamification[u] = {
+      points: 0,
+      streak: 0,
+      freezes: 0,
+      frozenDays: [],
+      achievements: [],
+      lastReset: 0,
+    };
+  // Migrar de frozenWeeks a frozenDays si existe
+  if (gamification[u].frozenWeeks && !gamification[u].frozenDays) {
+    gamification[u].frozenDays = gamification[u].frozenWeeks;
+    delete gamification[u].frozenWeeks;
+  }
+  if (!gamification[u].frozenDays) gamification[u].frozenDays = [];
+  if (gamification[u].lastReset === undefined) gamification[u].lastReset = 0;
+  if (!gamification[u].achievements) gamification[u].achievements = [];
+  if (gamification[u].streak === undefined) gamification[u].streak = 0;
 });
 
 // Optimization: Update Render immediately with local data (don't wait for cloud/init)
@@ -3714,6 +3743,23 @@ const getMuscleMapSVG = (primary = [], secondary = []) => {
 
 // --- INIT & RENDER FUNCTIONS ---
 
+// --- HISTORY STATE ---
+// (trainingHistory is already defined globally at the top)
+
+// DATA MIGRATION: Check for old 'gymTrainingHistory' vs 'gymRoutineHistory' mismatch if needed
+// (If trainingHistory is empty, try to see if there's other data? No, just ensure variable exists)
+if (Object.keys(trainingHistory).length === 0) {
+  const s = localStorage.getItem("gymTrainingHistory");
+  if (s) trainingHistory = JSON.parse(s);
+
+  const oldKeys = Object.keys(localStorage).filter((k) =>
+    k.startsWith("gym_history_"),
+  );
+  if (oldKeys.length > 0) {
+    console.log("Found separated history keys, consider migrating if needed.");
+  }
+}
+
 // --- STATE (Weights) ---
 let setWeights = JSON.parse(localStorage.getItem("gymRoutineWeights")) || {};
 
@@ -4785,11 +4831,16 @@ window.calculate1RM = calculate1RM;
 // --- STREAK LOGIC ---
 // --- GAMIFICATION SYSTEM ---
 function updateGamificationUI() {
-  calculateUserStreak("facu", 5);
-  calculateUserStreak("alma", 3);
+  calculateUserStreak("facu");
+  calculateUserStreak("alma");
+
+  // Verificar oportunidades de rescate
+  setTimeout(() => {
+    checkForStreakRescue("facu");
+    checkForStreakRescue("alma");
+  }, 1000);
 
   // Update Header UI
-  // We need to inject or update the streak display container
   const container = document.getElementById("streak-display");
   if (container) {
     container.classList.remove("hidden");
@@ -4808,7 +4859,10 @@ function updateGamificationUI() {
                     <i data-lucide="gem" class="w-3 h-3 text-emerald-400"></i>
                     <span class="text-xs font-bold text-slate-200">${gamification.facu.points}</span>
                 </div>
-                ${gamification.facu.freezes > 0 ? `<div class="flex items-center"><i data-lucide="shield-check" class="w-3 h-3 text-cyan-400 ml-1"></i><span class="text-[10px] text-cyan-400 font-bold ml-0.5">${gamification.facu.freezes}</span></div>` : ""}
+                <div class="flex items-center">
+                    <i data-lucide="shield-check" class="w-3 h-3 ml-1 ${gamification.facu.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}"></i>
+                    <span class="text-[10px] font-bold ml-0.5 ${gamification.facu.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}">${gamification.facu.freezes}</span>
+                </div>
             </div>
 
             <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-pink-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer" onclick="openShopModal('alma')">
@@ -4822,148 +4876,263 @@ function updateGamificationUI() {
                     <i data-lucide="gem" class="w-3 h-3 text-emerald-400"></i>
                     <span class="text-xs font-bold text-slate-200">${gamification.alma.points}</span>
                 </div>
-                ${gamification.alma.freezes > 0 ? `<div class="flex items-center"><i data-lucide="shield-check" class="w-3 h-3 text-cyan-400 ml-1"></i><span class="text-[10px] text-cyan-400 font-bold ml-0.5">${gamification.alma.freezes}</span></div>` : ""}
+                <div class="flex items-center">
+                    <i data-lucide="shield-check" class="w-3 h-3 ml-1 ${gamification.alma.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}"></i>
+                    <span class="text-[10px] font-bold ml-0.5 ${gamification.alma.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}">${gamification.alma.freezes}</span>
+                </div>
             </div>
         `;
     lucide.createIcons();
   }
 }
 
-function calculateUserStreak(user, targetDays) {
-  // NOTE: targetDays is ignored in this new logic, kept for signature compatibility if needed.
-  // We use strict schedules instead.
+function calculateUserStreak(user) {
+  // Asegurar estructura de datos
+  if (!gamification[user].frozenDays) gamification[user].frozenDays = [];
+  if (!gamification[user].lastReset) gamification[user].lastReset = 0;
 
+  // SCHEDULE de días requeridos por usuario
+  // Facu: Lunes(1) a Viernes(5)
+  // Alma: Lunes(1), Miércoles(3), Viernes(5)
   const SCHEDULE = {
-    facu: [1, 2, 3, 4, 5], // Mon(1) to Fri(5)
-    alma: [1, 3, 5], // Mon(1), Wed(3), Fri(5)
+    facu: [1, 2, 3, 4, 5], // L-M-M-J-V
+    alma: [1, 3, 5], // L-M-V
   };
 
-  // Ensure frozenDays array exists (migration)
-  if (!gamification[user].frozenDays) {
-    gamification[user].frozenDays = [];
+  // HOTFIX: Corregir freeze erróneo del 22/01 para Facu
+  if (user === "facu") {
+    const badDate = "2026-01-22";
+    const idx = gamification.facu.frozenDays.indexOf(badDate);
+    if (idx > -1) {
+      gamification.facu.frozenDays.splice(idx, 1);
+      // No guardamos inmediatamente para no saturar, se guardará al final si cambió algo más
+      // o la próxima vez que se persista.
+    }
   }
 
-  // --- NORMALIZE HISTORY KEYS ---
-  // Create a Set of "YYYY-MM-DD" strings for every day the user has trained
+  // 1. NORMALIZAR FECHAS DEL HISTORIAL
   const userDates = new Set();
+  const lastReset = gamification[user].lastReset || 0;
 
   Object.keys(trainingHistory).forEach((key) => {
-    if (trainingHistory[key][user]) {
-      // Attempt to parse the key. It could be "YYYY-MM-DD" or "DateString"
-      // We'll use our helper getDateKey to ensure standard format
-      const dateObj = new Date(key);
-      if (!isNaN(dateObj)) {
-        // Valid date
-        // Fix: new Date("2025-01-22") might be interpreted as UTC and shift day?
-        // "2025-01-22" is UTC at midnight -> Previous day in local time?
-        // "Fri Jan 23 2026" is local midnight?
+    // Verificar que el usuario entrenó y no está borrado
+    if (trainingHistory[key][user] && !trainingHistory[key].deleted) {
+      // Parsear fecha
+      const ymdRegex = /^\d{4}-\d{2}-\d{2}$/;
+      let dateObj;
+      let normalizedKey;
 
-        // To be safe with "YYYY-MM-DD" strings, we should append "T00:00:00" or simple split if it matches pattern
-        // But checking if it matches YYYY-MM-DD regex is safer.
-
-        const ymdRegex = /^\d{4}-\d{2}-\d{2}$/;
-        let normalizedKey = "";
-
-        if (ymdRegex.test(key)) {
-          // It's already YYYY-MM-DD. Trust it.
-          normalizedKey = key;
-        } else {
-          // It's likely "Mon Jan 22 2026" or similar. Parse and converting.
-          // NOTE: new Date("YYYY-MM-DD") is UTC. new Date("Mon ...") is Local.
-          // getDateKey uses local .getDate().
-          // We need to match how the key was created.
-          // If key is "Mon Jan..." it was created with local time.
-          // getDateKey(new Date("Mon Jan...")) will preserve local time.
+      if (ymdRegex.test(key)) {
+        normalizedKey = key;
+        const [y, m, d] = key.split("-").map(Number);
+        dateObj = new Date(y, m - 1, d);
+      } else {
+        dateObj = new Date(key);
+        if (!isNaN(dateObj)) {
           normalizedKey = getDateKey(dateObj);
         }
+      }
 
-        if (normalizedKey) userDates.add(normalizedKey);
+      // Verificar que la fecha es posterior al último reset
+      if (normalizedKey && dateObj && dateObj.getTime() >= lastReset) {
+        userDates.add(normalizedKey);
       }
     }
   });
 
-  // Helpers
-  const formatDateKey = (date) => {
-    return getDateKey(date); // Reuse global helper
-  };
-
+  // 2. INICIALIZAR CONTADOR
   let streak = 0;
   let stateChanged = false;
-  let gapFound = false;
 
-  // Iterate backwards from TODAY (or Yesterday if today not done yet?)
-  // Standard streak logic: If today is not done yet, it doesn't break streak unless today is OVER.
-  // But for simple calculation, we usually check backward from Yesterday if Today is empty.
-  // HOWEVER, if we train today, it should count.
-
-  // Let's start checking from TODAY.
-  // If Today is Required & Not Done -> It breaks streak?
-  // Usually apps allow you to complete today until midnight.
-  // So if Today is missing, we shouldn't break immediately if it's the *tip* of the chain.
-  // We break only if we miss YESTERDAY (and yesterday was required).
-
+  // 3. VERIFICAR SI ENTRENÓ HOY
   const today = new Date();
-  const todayKey = formatDateKey(today);
+  const todayKey = getDateKey(today);
 
-  // We loop 365 days back
-  for (let i = 0; i < 365; i++) {
+  if (userDates.has(todayKey)) {
+    streak++; // Si entrenó hoy, la racha empieza en 1
+  }
+
+  // 4. ITERAR HACIA ATRÁS (365 días máximo)
+  for (let i = 1; i < 365; i++) {
     const d = new Date();
     d.setDate(today.getDate() - i);
-    const key = formatDateKey(d);
-    const dayOfWeek = d.getDay(); // 0=Sun, 1=Mon...
+    const key = getDateKey(d);
+    const dayOfWeek = d.getDay(); // 0=Dom, 6=Sáb
 
-    const hasTrained = userDates.has(key);
-    const isRequired = SCHEDULE[user].includes(dayOfWeek);
-
-    // Case 1: Trained
-    // Determine if it counts
-    if (hasTrained) {
+    // 4a. SI ENTRENÓ: Sumar 1 a la racha
+    if (userDates.has(key)) {
       streak++;
-      continue; // Chain continues
-    }
-
-    // Case 2: Not Trained
-
-    // Sub-case: Today. If we haven't trained today, it doesn't break streak yet.
-    // We just don't add it.
-    if (i === 0) {
       continue;
     }
 
-    // Sub-case: Required Day
-    if (isRequired) {
-      // Missing a required day!
-      // Check for Freeze
-      const alreadyFrozen = gamification[user].frozenDays.includes(key);
+    // 4b. NO ENTRENÓ - Verificar si es fin de semana (Sáb/Dom)
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-      if (alreadyFrozen) {
-        // Protected!
-        // We do NOT increment streak (it's a bridge), but we don't break.
-        continue;
-      } else {
-        // Not protected yet. Can we buy one automatically?
-        // User Logic: "SI NO ENTRENO UNO DE ESOS DIAS LA RACHA SE REINICIE A MENOS QUE TENGA UN PROTECTOR"
-        if (gamification[user].freezes > 0) {
-          // Use Freeze
-          gamification[user].freezes--;
-          gamification[user].frozenDays.push(key);
-          stateChanged = true;
-          // Bridge established
-          continue;
-        } else {
-          // No freeze available -> BREAK
-          break;
-        }
-      }
+    if (isWeekend) {
+      // ✅ FIN DE SEMANA: No rompe la racha, continuar
+      continue;
     }
 
-    // Sub-case: Not Required (Rest Day)
-    // If we simply missed a rest day, it doesn't break streak.
-    // Just continue checking backwards.
+    // 4c. NO ENTRENÓ - Verificar si es día requerido según SCHEDULE
+    const isRequired = SCHEDULE[user].includes(dayOfWeek);
+
+    if (!isRequired) {
+      // ✅ DÍA NO REQUERIDO para este usuario: No rompe la racha
+      continue;
+    }
+
+    // 4d. ES DÍA REQUERIDO SIN ENTRENAMIENTO - Verificar freezes
+    const alreadyFrozen = gamification[user].frozenDays.includes(key);
+
+    if (alreadyFrozen) {
+      // ✅ YA ESTABA CONGELADO: continuar sin romper racha
+      continue;
+    }
+
+    // 4d. MODIFICADO: NO USAR FREEZE AUTOMÁTICAMENTE
+    // Si llegamos acá, es un día requerido, no entrenado y no congelado.
+    // La racha se rompe. El usuario deberá "rescatarla" manualmente si quiere.
+    // La función checkForStreakRescue se encargará de ofrecer la opción.
+
+    // ❌ ROMPER LA RACHA
+    break;
   }
 
+  // 5. GUARDAR RESULTADO
   gamification[user].streak = streak;
-  if (stateChanged) saveToCloud();
+
+  if (stateChanged) {
+    saveToCloud();
+  }
+}
+
+// STREAK RESCUE LOGIC
+let rescueTargetUser = null;
+let rescueTargetDate = null;
+
+function checkForStreakRescue(user) {
+  // Solo si tiene freezes disponibles
+  if (gamification[user].freezes <= 0) return;
+
+  // Analizar si perdió la racha ayer o hoy por falta
+  const today = new Date();
+  const SCHEDULE = {
+    facu: [1, 2, 3, 4, 5],
+    alma: [1, 3, 5],
+  };
+
+  // Buscar un día perdido RECIENTE (ayer o hoy)
+  for (let i = 1; i <= 1; i++) {
+    // Solo miramos ayer (i=1)
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const key = getDateKey(d);
+    const dayOfWeek = d.getDay();
+
+    // Si ya entrenó o es finde o no es requerido, seguir
+    // (Lógica simplificada, idealmente reutilizaríamos userDates pero acá lo hacemos rápido)
+    // Para simplificar: asumimos que si la racha actual es baja (0 o 1) y hay un hueco ayer, ofrecemos.
+
+    // Verificamos "alreadyFrozen"
+    if (gamification[user].frozenDays.includes(key)) continue;
+
+    const isRequired = SCHEDULE[user].includes(dayOfWeek);
+    if (!isRequired) continue;
+
+    // Verificar si entrenó: miramos trainingHistory
+    // Esto es costoso iterar todo, mejor ver si NO entrenó
+    // Reutilizamos la lógica de "si streak rompió ayer"
+
+    let trained = false;
+    Object.keys(trainingHistory).forEach((hKey) => {
+      if (hKey === key || new Date(hKey).toDateString() === d.toDateString()) {
+        if (trainingHistory[hKey][user] && !trainingHistory[hKey].deleted)
+          trained = true;
+      }
+    });
+
+    if (!trained) {
+      // ¡CANDIDATO A RESCATE!
+      // Mostramos modal
+      openRescueModal(user, key);
+      return; // Solo un rescate a la vez
+    }
+  }
+}
+
+function openRescueModal(user, dateKey) {
+  // Evitar abrir si ya está abierto o si ya declinó (podríamos guardar estado de sesión)
+  if (!document.getElementById("rescue-modal").classList.contains("hidden"))
+    return;
+
+  // Si el usuario ya dijo "no" en esta sesión, no molestar (opcional, por ahora molestamos)
+
+  rescueTargetUser = user;
+  rescueTargetDate = dateKey;
+
+  const modal = document.getElementById("rescue-modal");
+  const content = document.getElementById("rescue-modal-content");
+  const dateSpan = document.getElementById("rescue-date");
+  const streakSpan = document.getElementById("rescue-streak-val");
+  const remainingSpan = document.getElementById("rescue-remaining");
+
+  // Formatear fecha
+  const parts = dateKey.split("-");
+  const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+  const options = { weekday: "long", day: "numeric", month: "long" };
+  dateSpan.innerText = dateObj.toLocaleDateString("es-AR", options);
+
+  // Deducir cuánto salvaría (Racha potencial)
+  // Esto es complejo calcular sin simular. Pondremos "tu racha" genérico o el valor actual + lo perdido.
+  // Simplificación: Mostramos "tu racha".
+  streakSpan.innerText = "tu racha";
+
+  remainingSpan.innerText = gamification[user].freezes;
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  setTimeout(() => {
+    content.classList.remove("scale-95", "opacity-0");
+    content.classList.add("scale-100", "opacity-100");
+  }, 10);
+
+  // Event listener para confirmar
+  const btn = document.getElementById("btn-confirm-rescue");
+  btn.onclick = confirmRescue;
+}
+
+function closeRescueModal() {
+  const modal = document.getElementById("rescue-modal");
+  const content = document.getElementById("rescue-modal-content");
+
+  content.classList.remove("scale-100", "opacity-100");
+  content.classList.add("scale-95", "opacity-0");
+
+  setTimeout(() => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    rescueTargetUser = null;
+    rescueTargetDate = null;
+  }, 300);
+}
+
+function confirmRescue() {
+  if (!rescueTargetUser || !rescueTargetDate) return;
+
+  // 1. Descontar Freeze
+  if (gamification[rescueTargetUser].freezes > 0) {
+    gamification[rescueTargetUser].freezes--;
+
+    // 2. Agregar a FrozenDays
+    gamification[rescueTargetUser].frozenDays.push(rescueTargetDate);
+
+    // 3. Guardar, Cerrar y Actualizar
+    saveToCloud();
+
+    showToast("shield-check", "text-cyan-400", "¡Racha salvada con éxito!");
+    closeRescueModal();
+    updateGamificationUI(); // Esto recalculará la racha considerando el nuevo frozen day
+  }
 }
 
 function buyFreeze(user) {
@@ -5483,3 +5652,213 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.addEventListener("DOMContentLoaded", init);
+
+// --- FIX V6: CORRECT STREAK (SAFE MODE) ---
+setTimeout(() => {
+  try {
+    console.log("🛡️ Running Fix V6...");
+    const interval = setInterval(() => {
+      attemptFix();
+    }, 3000); // Check every 3 seconds
+
+    // Stop checking after 15 seconds
+    setTimeout(() => clearInterval(interval), 15000);
+  } catch (e) {
+    console.error("Fix v6 error:", e);
+  }
+}, 2000);
+
+// --- REAL WEATHER IMPLEMENTATION ---
+
+function initWeather() {
+  const weatherElements = {
+    headerTemp: document.getElementById("weather-temp-header"),
+    sidebarTemp: document.getElementById("sidebar-temp"),
+    headerContainer: document.getElementById("header-weather"),
+    sidebarContainer: document.getElementById("sidebar-weather"),
+  };
+
+  if (!navigator.geolocation) {
+    console.log("Geolocalización no soportada por el navegador.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+      fetchWeather(latitude, longitude, weatherElements);
+    },
+    (error) => {
+      console.warn("Permiso de ubicación denegado o error:", error);
+      // Fallback opcional o dejar oculto
+    },
+    { timeout: 10000 },
+  );
+}
+
+async function fetchWeather(lat, lon, elements) {
+  try {
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`,
+    );
+
+    if (!response.ok) throw new Error("Error en API de clima");
+
+    const data = await response.json();
+    const temp = Math.round(data.current_weather.temperature);
+
+    updateWeatherUI(`${temp}°C`, elements);
+    console.log(`🌤️ Clima actualizado: ${temp}°C (${lat}, ${lon})`);
+  } catch (error) {
+    console.error("Error obteniendo datos del clima:", error);
+  }
+}
+
+function updateWeatherUI(tempText, elements) {
+  // Actualizar Header
+  if (elements.headerTemp) elements.headerTemp.textContent = tempText;
+  if (elements.headerContainer) {
+    elements.headerContainer.classList.remove("hidden");
+    elements.headerContainer.classList.add("flex");
+  }
+
+  // Actualizar Sidebar
+  if (elements.sidebarTemp) elements.sidebarTemp.textContent = tempText;
+  if (elements.sidebarContainer) {
+    elements.sidebarContainer.classList.remove("hidden");
+    elements.sidebarContainer.classList.add("flex");
+  }
+}
+
+// Iniciar clima al cargar
+document.addEventListener("DOMContentLoaded", initWeather);
+
+// --- RECOVERY TOOLS ---
+
+window.manualFixStreak = function () {
+  // Replaced with Visual Debugger
+  showDebugReport();
+};
+
+window.showDebugReport = function () {
+  const user = "facu";
+  const g = window.gamification[user];
+  const history =
+    window.trainingHistory ||
+    JSON.parse(localStorage.getItem("gymTrainingHistory")) ||
+    {};
+  const SCHEDULE = [1, 2, 3, 4, 5]; // Mon-Fri
+
+  // Create Overlay
+  const overlay = document.createElement("div");
+  overlay.className =
+    "fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4";
+
+  let html = `
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto text-white">
+            <h2 class="text-xl font-bold mb-4 text-purple-400">🕵️ Streak Detective</h2>
+            
+            <div class="mb-4 text-sm text-slate-400 p-3 bg-slate-800 rounded">
+                Streak Actual: <strong class="text-white text-lg">${g.streak}</strong><br>
+                Freezes: <strong class="text-white">${g.freezes}</strong><br>
+                Frozen Days: <code class="text-xs">${JSON.stringify(g.frozenDays)}</code>
+            </div>
+
+            <table class="w-full text-xs text-left">
+                <thead>
+                    <tr class="text-slate-500 border-b border-slate-700">
+                        <th class="pb-2">Date</th>
+                        <th class="pb-2">Day</th>
+                        <th class="pb-2">Req?</th>
+                        <th class="pb-2">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+    `;
+
+  // Access helper safely
+  const getDK = (d) => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const today = new Date();
+  // Check last 14 days
+  for (let i = 0; i < 14; i++) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const key = getDK(d);
+    const dayOfWeek = d.getDay();
+    const isRequired = SCHEDULE.includes(dayOfWeek);
+
+    // Status Check
+    let status = "";
+    let rowClass = "";
+
+    const hasTrained = history[key] && history[key][user];
+    const isFrozen = g.frozenDays.includes(key);
+
+    if (hasTrained) {
+      status = "✅ TRAINED";
+      rowClass = "text-emerald-400 font-bold";
+    } else if (isFrozen) {
+      status = "❄️ FROZEN";
+      rowClass = "text-cyan-400 font-bold";
+    } else if (!isRequired) {
+      status = "😴 REST";
+      rowClass = "text-slate-600";
+    } else {
+      status = "❌ MISSING";
+      rowClass = "text-red-500 font-bold";
+    }
+
+    // Highlight Jan 22
+    if (key.includes("2026-01-22")) rowClass += " bg-red-900/30";
+
+    html += `
+            <tr class="${rowClass}">
+                <td class="py-2">${key}</td>
+                <td class="py-2">${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dayOfWeek]}</td>
+                <td class="py-2">${isRequired ? "Yes" : "No"}</td>
+                <td class="py-2">${status}</td>
+            </tr>
+        `;
+  }
+
+  html += `
+                </tbody>
+            </table>
+            
+            <div class="mt-6 flex gap-2">
+                <button onclick="this.closest('.fixed').remove()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold">Cerrar</button>
+                <button onclick="window.forceManualClean22()" class="flex-1 py-3 bg-red-600 rounded-xl font-bold text-white">NUKE JAN 22</button>
+            </div>
+        </div>
+    `;
+
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+};
+
+window.forceManualClean22 = function () {
+  const g = window.gamification.facu;
+  g.frozenDays = g.frozenDays.filter((d) => !d.includes("2026-01-22"));
+
+  // Also clean history just in case
+  const history =
+    window.trainingHistory ||
+    JSON.parse(localStorage.getItem("gymTrainingHistory")) ||
+    {};
+  Object.keys(history).forEach((k) => {
+    if (k.includes("2026-01-22")) {
+      console.log("Deleting fake history for", k);
+      if (history[k].facu) history[k].facu = false;
+    }
+  });
+
+  localStorage.setItem("gymGamification", JSON.stringify(window.gamification));
+  localStorage.setItem("gymTrainingHistory", JSON.stringify(history));
+
+  if (typeof saveToCloud === "function") saveToCloud();
+  alert("NUCLEAR OPTION EXECUTED. Día 22 purgado. Recargando...");
+  location.reload();
+};
