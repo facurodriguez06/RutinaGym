@@ -3962,14 +3962,29 @@ function renderTimerCard(ex) {
 
   const card = document.createElement("div");
   // Applying 'premium' styling similar to main cards but specific for timers
-  card.className = `relative overflow-hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 group hover:border-${ex.color}-500/30 transition-all`;
+  let borderClass = `border-${ex.color}-500/30`;
+  let bgClass = "bg-slate-900";
+  let opacityClass = "";
+
+  if (state.isSkipped) {
+    borderClass = "border-slate-800";
+    bgClass = "bg-slate-900/50";
+    opacityClass = "opacity-50 grayscale";
+  }
+
+  card.className = `relative overflow-hidden ${bgClass} border ${borderClass} rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 group hover:border-${ex.color}-500/30 transition-all ${opacityClass}`;
 
   // Render HTML
   card.innerHTML = `
       <!-- Background Progress Bar (Subtle) -->
+      ${
+        !state.isSkipped
+          ? `
       <div class="absolute bottom-0 left-0 h-1 bg-${ex.color}-900/30 w-full">
           <div class="h-full bg-${ex.color}-500 shadow-[0_0_10px_currentColor] transition-all duration-1000 ease-linear" style="width: ${progressPercent}%"></div>
-      </div>
+      </div>`
+          : ""
+      }
 
       <!-- Icon & Info -->
       <div class="flex items-center gap-4 w-full md:w-auto">
@@ -3977,7 +3992,10 @@ function renderTimerCard(ex) {
               <i data-lucide="${ex.icon}" class="w-6 h-6 text-${ex.color}-400"></i>
           </div>
           <div>
-              <h4 class="font-bold text-slate-200 text-lg leading-tight md:mb-1">${ex.title}</h4>
+              <h4 class="font-bold text-slate-200 text-lg leading-tight md:mb-1">
+                  ${ex.title}
+                  ${state.isSkipped ? '<span class="text-xs text-red-400 ml-2 font-bold uppercase">(Saltado)</span>' : ""}
+              </h4>
               <p class="text-xs text-slate-500 font-medium">${ex.desc}</p>
           </div>
       </div>
@@ -3990,11 +4008,14 @@ function renderTimerCard(ex) {
           </div>
 
           <div class="flex gap-2">
-              <button onclick="toggleWarmupTimer('${ex.id}')" class="p-2 rounded-lg ${state.isRunning ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30" : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"} transition-all active:scale-95">
+              <button onclick="toggleWarmupTimer('${ex.id}')" ${state.isSkipped ? "disabled" : ""} class="p-2 rounded-lg ${state.isRunning ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30" : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"} transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                   <i data-lucide="${state.isRunning ? "pause" : "play"}" class="w-5 h-5 fill-current"></i>
               </button>
               <button onclick="resetWarmupTimer('${ex.id}')" class="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all active:scale-95">
                   <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+              </button>
+               <button onclick="skipWarmupTimer('${ex.id}')" class="p-2 rounded-lg bg-red-900/20 text-red-400 hover:bg-red-900/40 transition-all active:scale-95" title="Saltar">
+                  <i data-lucide="skip-forward" class="w-5 h-5"></i>
               </button>
           </div>
       </div>
@@ -4052,7 +4073,25 @@ function resetWarmupTimer(id) {
   if (!state) return;
   clearInterval(state.interval);
   state.isRunning = false;
+  state.isSkipped = false;
   state.time = state.original;
+  renderContent();
+}
+
+function skipWarmupTimer(id) {
+  const state = warmupTimers[id];
+  if (!state) return;
+
+  // Stop if running
+  clearInterval(state.interval);
+  state.isRunning = false;
+
+  // Mark as skipped (toggle or set?)
+  // If already skipped, maybe unskip? User just said "option to skip".
+  // Let's assume toggle is better UI UX or just Set Skip.
+  // Standard logic: if skipped, stay skipped. Reset clears it.
+  state.isSkipped = true;
+
   renderContent();
 }
 
@@ -4074,6 +4113,7 @@ function updateTimerDOM(id) {
 
 window.toggleWarmupTimer = toggleWarmupTimer;
 window.resetWarmupTimer = resetWarmupTimer;
+window.skipWarmupTimer = skipWarmupTimer;
 
 function renderContent() {
   const dayData = routineData[activeTab];
