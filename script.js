@@ -2053,7 +2053,9 @@ function generateSVGLineChart(data, color, user) {
              const y = getY(d.value);
              return `
                <g class="group">
-                 <circle cx="${x}" cy="${y}" r="4" fill="${color}" stroke="#0f172a" stroke-width="2" class="group-hover:scale-150 transition-transform origin-center cursor-pointer" />
+                 <circle cx="${x}" cy="${y}" r="4" fill="${color}" stroke="#0f172a" stroke-width="2" 
+                         class="group-hover:scale-125 transition-transform cursor-pointer" 
+                         style="transform-box: fill-box; transform-origin: center;" />
                  <!-- Tooltip (Simulated via title, usually handled via JS for HTML tooltips, but SVG title works on hover) -->
                  <title>${d.date}: ${d.value} kg</title>
                </g>
