@@ -5951,3 +5951,16 @@ function updateWeatherUI(tempText, elements) {
 
 // Iniciar clima al cargar
 document.addEventListener("DOMContentLoaded", initWeather);
+
+// --- SPLASH SCREEN ---
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    const splash = document.getElementById("splash-screen");
+    if (splash) {
+      splash.classList.add("opacity-0", "pointer-events-none");
+      setTimeout(() => {
+        splash.remove();
+      }, 500); // Wait for transition
+    }
+  }, 2000); // 2 seconds delay
+});
