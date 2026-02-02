@@ -2180,9 +2180,25 @@ function startGlobalTimerIfNeeded() {
       releaseWakeLock();
       disableBackgroundMode();
     } else {
-      updateTimerDisplay(); // Updates values only
+      // Only update UI if seconds changed to avoid flickering/thrashing
+      const state = timerState[activeFullModalUser || "facu"]; // Fallback check
+      // We need to check if ANY active timer changed seconds, or just the main one.
+      // Since we update the global UI based on the active full modal...
+
+      // Let's perform a smart check.
+      // We will blindly call methods but optimize INSIDE them or just check the main user here.
+
+      // Actually, simplest fix: Let's throttling `setPositionState` and `updateTimerDisplay`
+      // We can check if ANY active timer has a new second value?
+      // But `currentSeconds` is updated above.
+
+      // Let's skip the complicated tracking and just rely on the fact that we calculated `currentSeconds`.
+      // We will modify updateTimerDisplay to be smarter? No, easier to block call here.
+
+      updateTimerDisplay();
 
       // Update Lock Screen Media Player position (live countdown)
+      // Throttle this to only when seconds change (handled by native throttling usually, but let's be safe)
       if (
         "mediaSession" in navigator &&
         activeFullModalUser &&
@@ -2195,11 +2211,16 @@ function startGlobalTimerIfNeeded() {
           state.totalSeconds >= state.currentSeconds
         ) {
           try {
-            navigator.mediaSession.setPositionState({
-              duration: state.totalSeconds,
-              playbackRate: 1,
-              position: state.totalSeconds - state.currentSeconds,
-            });
+            // Only update if it's a new second to avoid flickering system UI
+            // We can check against a stored 'lastUpdatedSecond' in state
+            if (state.lastMediaUpdate !== state.currentSeconds) {
+              navigator.mediaSession.setPositionState({
+                duration: state.totalSeconds,
+                playbackRate: 1,
+                position: state.totalSeconds - state.currentSeconds,
+              });
+              state.lastMediaUpdate = state.currentSeconds;
+            }
           } catch (e) {
             // Ignore position errors
           }
@@ -2414,60 +2435,68 @@ function updateTimerDisplay() {
     const secs = displaySeconds % 60;
     const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
 
-    display.textContent = timeStr;
-    secondsLeft.textContent = displaySeconds;
+    // Optimization: Don't touch DOM if text matches
+    if (display.textContent !== timeStr) {
+      display.textContent = timeStr;
+      secondsLeft.textContent = displaySeconds;
 
-    const circumference = 364.42;
-    const progress = Math.max(0, displaySeconds / state.totalSeconds);
-    ring.style.strokeDashoffset = circumference * (1 - progress);
+      const circumference = 364.42;
+      const progress = Math.max(0, displaySeconds / state.totalSeconds);
+      ring.style.strokeDashoffset = circumference * (1 - progress);
+    }
 
     // Low time warning colors
     const timerIcon = document.querySelector("#timer-full .lucide-timer");
     const addBtn = document.getElementById("timer-add-btn");
+    const modal = document.getElementById("timer-full");
 
-    if (displaySeconds <= 10) {
+    // Check if we are already in the correct state to avoid thrashing classList
+    const isWarning = displaySeconds <= 10;
+    const currentIsWarning = ring.dataset.state === "warning";
+
+    if (isWarning && !currentIsWarning) {
+      // ENTER WARNING STATE
+      ring.dataset.state = "warning";
       ring.style.stroke = "#ef4444";
       display.className =
         "text-7xl font-mono font-bold text-red-400 mb-6 tabular-nums";
 
-      const modal = document.getElementById("timer-full");
       if (modal) {
         modal.classList.remove("border-slate-700", "shadow-emerald-500/10");
         modal.classList.add("border-red-500", "shadow-red-500/20");
       }
-
-      // Icon Red
       if (timerIcon) {
         timerIcon.classList.remove("text-emerald-400");
         timerIcon.classList.add("text-red-400");
       }
-
-      // Add Button Red
       if (addBtn) {
         addBtn.classList.remove("bg-emerald-600", "hover:bg-emerald-500");
         addBtn.classList.add("bg-red-600", "hover:bg-red-500");
       }
-    } else {
+    } else if (!isWarning && currentIsWarning) {
+      // EXIT WARNING STATE
+      ring.dataset.state = "normal";
       ring.style.stroke = "#10b981";
       display.className =
         "text-7xl font-mono font-bold text-emerald-400 mb-6 tabular-nums";
 
-      const modal = document.getElementById("timer-full");
       if (modal) {
         modal.classList.add("border-slate-700", "shadow-emerald-500/10");
         modal.classList.remove("border-red-500", "shadow-red-500/20");
       }
-
-      // Icon Revert
       if (timerIcon) {
         timerIcon.classList.add("text-emerald-400");
         timerIcon.classList.remove("text-red-400");
       }
-
-      // Add Button Revert
       if (addBtn) {
         addBtn.classList.add("bg-emerald-600", "hover:bg-emerald-500");
         addBtn.classList.remove("bg-red-600", "hover:bg-red-500");
+      }
+    } else if (!currentIsWarning && !isWarning) {
+      // Ensure default state if no state set (first run)
+      if (!ring.dataset.state) {
+        ring.dataset.state = "normal";
+        // Optional: force defaults if potentially wrong?
       }
     }
   }
