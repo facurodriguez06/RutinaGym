@@ -9,7 +9,8 @@ const routineData = [
         sets: "3",
         reps: "8-10",
         rir: "RIR 2",
-        notes: "El ejercicio rey. Prioricen la profundidad. Descanso: 3 min.",
+        notes:
+          "El rey. Facu: pies ancho de hombros. Alma: un pelín más abierto. Prioricen profundidad. Descanso: 3 min.",
         muscles: {
           primary: ["quads", "glutes"],
           secondary: ["hamstrings", "lower_back"],
@@ -20,7 +21,8 @@ const routineData = [
         sets: "4",
         reps: "10-12",
         rir: "RIR 1",
-        notes: "Contracción máxima de glúteo arriba (1 seg). Descanso: 2 min.",
+        notes:
+          "Contracción máxima de glúteo arriba (1 seg). Mentón pegado al pecho. Descanso: 2 min.",
         muscles: { primary: ["glutes"], secondary: ["hamstrings"] },
       },
       {
@@ -29,8 +31,17 @@ const routineData = [
         reps: "12-15",
         rir: "RIR 1",
         notes:
-          "Enfoque en cuádriceps. Pies zona media-baja de plataforma. Descanso: 90 seg.",
+          "Enfoque cuádriceps. Pies zona media. Bajar controlado (3 seg). Descanso: 90 seg.",
         muscles: { primary: ["quads"], secondary: ["glutes", "hamstrings"] },
+      },
+      {
+        name: "Sillón de Aductores (Máquina)",
+        sets: "3",
+        reps: "15-20",
+        rir: "RIR 1",
+        notes:
+          "Facu: Rango medio (no abras todo por el pubis). Alma: Rango completo. Sostengan 1 seg al cerrar. Descanso: 60 seg.",
+        muscles: { primary: ["adductors"], secondary: [] },
       },
       {
         name: "Sillón de Cuádriceps (Extensiones)",
@@ -38,7 +49,7 @@ const routineData = [
         reps: "15-20",
         rir: "RIR 0",
         notes:
-          "Nuevo. Bombeo final para definir la pierna. Aguanta 1 seg arriba. Descanso: 60 seg.",
+          "Bombeo final. Aguanta 1 seg arriba con piernas rectas. Descanso: 60 seg.",
         muscles: { primary: ["quads"], secondary: [] },
       },
       {
@@ -47,7 +58,7 @@ const routineData = [
         reps: "12-15",
         rir: "RIR 0",
         notes:
-          "Isquios. No despeguen la cadera. Controlen la bajada. Descanso: 60 seg.",
+          "Isquios. No despeguen la cadera del asiento. Controlen la bajada. Descanso: 60 seg.",
         muscles: { primary: ["hamstrings"], secondary: ["calves"] },
       },
       {
@@ -55,8 +66,7 @@ const routineData = [
         sets: "4",
         reps: "15-20",
         rir: "RIR 0",
-        notes:
-          "Nuevo. Rango completo: talón bien abajo, punta bien arriba. Descanso: 45 seg.",
+        notes: "Talón bien abajo, punta bien arriba. Descanso: 45 seg.",
         muscles: { primary: ["calves"], secondary: [] },
       },
       {
@@ -293,7 +303,7 @@ const routineData = [
         reps: "10-12",
         rir: "RIR 2",
         notes:
-          "Cadera atrás. Rodillas semi-rígidas. Sentir isquios. Descanso: 2 min.",
+          "Cadera atrás. Rodillas semi-rígidas. La barra baja pegada a las piernas. Descanso: 2 min.",
         muscles: {
           primary: ["hamstrings", "glutes"],
           secondary: ["lower_back"],
@@ -304,7 +314,8 @@ const routineData = [
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
-        notes: "Empuje seguro. Enfócate en bombear el pecho. Descanso: 90 seg.",
+        notes:
+          "Empuje seguro. Enfócate en el pecho, no en los hombros. Descanso: 90 seg.",
         muscles: { primary: ["chest", "triceps"], secondary: ["shoulders"] },
       },
       {
@@ -312,9 +323,17 @@ const routineData = [
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
-        notes:
-          "Aguanta 1 seg arriba con piernas rectas. Quema, pero sirve. Descanso: 60 seg.",
+        notes: "Aguanta 1 seg arriba. Quema, pero sirve. Descanso: 60 seg.",
         muscles: { primary: ["quads"], secondary: [] },
+      },
+      {
+        name: "Sillón de Aductores (Máquina)",
+        sets: "3",
+        reps: "15-20",
+        rir: "RIR 2",
+        notes:
+          "Facu: Peso liviano (bombeo), altas repes. ¡Cuida el pubis! Alma: Dale intensidad normal. Descanso: 60 seg.",
+        muscles: { primary: ["adductors"], secondary: [] },
       },
       {
         name: "Patada de Glúteo en Máquina",
@@ -322,7 +341,7 @@ const routineData = [
         reps: "12-15",
         rir: "RIR 0",
         notes:
-          "Pecho apoyado. Empuja con el talón. Sin arquear lumbar. Descanso: 60 seg.",
+          "Pecho apoyado. Empuja con el talón. Sin arquear la espalda baja. Descanso: 60 seg.",
         muscles: { primary: ["glutes"], secondary: ["hamstrings"] },
       },
       {
@@ -330,7 +349,8 @@ const routineData = [
         sets: "3",
         reps: "15-20",
         rir: "RIR 1",
-        notes: "Salud de hombros. Cuerda a la frente. Descanso: 60 seg.",
+        notes:
+          "Salud de hombros. Cuerda a la frente, codos arriba y atrás. Descanso: 60 seg.",
         muscles: { primary: ["shoulders", "traps"], secondary: [] },
       },
       {
@@ -338,7 +358,8 @@ const routineData = [
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
-        notes: "Cabeza larga del tríceps. Codos cerrados. Descanso: 60 seg.",
+        notes:
+          "Sentado. Cabeza larga del tríceps. Codos cerrados apuntando al techo. Descanso: 60 seg.",
         muscles: { primary: ["triceps"], secondary: [] },
       },
       {
@@ -346,7 +367,8 @@ const routineData = [
         sets: "4",
         reps: "15-20",
         rir: "RIR 0",
-        notes: "Controla la bajada para proteger espalda. Descanso: 60 seg.",
+        notes:
+          "Controla la bajada para proteger la espalda baja. Descanso: 60 seg.",
         muscles: { primary: ["abs"], secondary: ["obliques"] },
       },
       {
@@ -355,7 +377,7 @@ const routineData = [
         reps: "12-15",
         rir: "RIR 0",
         notes:
-          "El 'postre' de la rutina. Disfrútenlo. Descanso: 60 seg. ALMA: Curl Manc. Alternado (palmas al techo). FACU: Press Inclinado Manc. (banco 30-45°, profundo).",
+          "Alma: Curl Manc. Alternado (Bíceps). Facu: Press Inclinado Manc. (Pecho Superior). Descanso: 60 seg.",
         muscles: { primary: ["biceps", "chest"], secondary: [] },
       },
     ],
