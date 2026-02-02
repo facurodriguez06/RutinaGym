@@ -3922,7 +3922,7 @@ function renderTabs() {
                         } ${isActive ? "active-tab-label" : ""}">${
                           day.day
                         }</span>
-                        <span class="font-medium text-sm truncate w-32 md:w-auto">${
+                        <span class="font-medium text-sm whitespace-normal break-words leading-tight md:w-auto">${
                           day.title
                         }</span>
                     </div>
