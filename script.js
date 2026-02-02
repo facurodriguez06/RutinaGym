@@ -5060,12 +5060,12 @@ function updateGamificationUI() {
     container.classList.remove("hidden");
     // Mobile: Stacked vertical for full width and "bonito" look. Desktop: Horizontal.
     container.className =
-      "flex flex-col md:flex-row gap-2 md:gap-3 md:justify-start pb-3";
+      "grid grid-cols-2 md:flex md:flex-row gap-2 md:gap-3 md:justify-start pb-3";
 
     container.innerHTML = `
-            <div class="flex items-center justify-between md:justify-start gap-3 bg-slate-800/80 px-4 py-2 rounded-xl border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('facu')">
-                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest min-w-[30px]">FACU</span>
-                <div class="flex items-center gap-3">
+            <div class="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 bg-slate-800/80 px-2 md:px-4 py-2 md:py-2 rounded-xl border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('facu')">
+                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest md:min-w-[30px]">FACU</span>
+                <div class="flex items-center gap-2 md:gap-3">
                     <div class="flex items-center gap-1.5">
                         <i data-lucide="flame" class="w-3.5 h-3.5 ${gamification.facu.streak > 0 ? "text-orange-500 fill-orange-500" : "text-slate-600"}"></i>
                         <span class="text-sm font-bold text-slate-200">${gamification.facu.streak}</span>
@@ -5082,9 +5082,9 @@ function updateGamificationUI() {
                 </div>
             </div>
 
-            <div class="flex items-center justify-between md:justify-start gap-3 bg-slate-800/80 px-4 py-2 rounded-xl border border-pink-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('alma')">
-                <span class="text-[10px] font-bold text-pink-400 uppercase tracking-widest min-w-[30px]">ALMA</span>
-                <div class="flex items-center gap-3">
+            <div class="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 bg-slate-800/80 px-2 md:px-4 py-2 md:py-2 rounded-xl border border-pink-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('alma')">
+                <span class="text-[10px] font-bold text-pink-400 uppercase tracking-widest md:min-w-[30px]">ALMA</span>
+                <div class="flex items-center gap-2 md:gap-3">
                     <div class="flex items-center gap-1.5">
                         <i data-lucide="flame" class="w-3.5 h-3.5 ${gamification.alma.streak > 0 ? "text-orange-500 fill-orange-500" : "text-slate-600"}"></i>
                         <span class="text-sm font-bold text-slate-200">${gamification.alma.streak}</span>
