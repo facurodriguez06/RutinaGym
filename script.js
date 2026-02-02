@@ -5058,40 +5058,41 @@ function updateGamificationUI() {
   const container = document.getElementById("streak-display");
   if (container) {
     container.classList.remove("hidden");
-    container.classList.add("flex", "gap-3", "justify-start", "flex-nowrap"); // Force horizontal layout
-    // NOTE: We do NOT overwrite className to avoid breaking HTML structure
+    // Optimized Mobile Layout: Grid 2 cols for perfect fit without scroll
+    container.className =
+      "grid grid-cols-2 gap-2 md:flex md:gap-3 md:justify-start pb-3";
 
     container.innerHTML = `
-            <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer" onclick="openShopModal('facu')">
-                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Facu</span>
-                <div class="flex items-center gap-1">
+            <div class="flex items-center justify-center md:justify-start gap-1 md:gap-2 bg-slate-800/80 px-2 md:px-3 py-1.5 rounded-xl md:rounded-full border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('facu')">
+                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wide">F</span>
+                <div class="flex items-center gap-0.5 md:gap-1">
                     <i data-lucide="flame" class="w-3 h-3 ${gamification.facu.streak > 0 ? "text-orange-500 fill-orange-500" : "text-slate-600"}"></i>
                     <span class="text-xs font-bold text-slate-200">${gamification.facu.streak}</span>
                 </div>
-                <div class="w-px h-3 bg-slate-600 mx-1"></div>
-                <div class="flex items-center gap-1">
+                <div class="w-px h-3 bg-slate-600 mx-0.5 md:mx-1"></div>
+                <div class="flex items-center gap-0.5 md:gap-1">
                     <i data-lucide="gem" class="w-3 h-3 text-emerald-400"></i>
                     <span class="text-xs font-bold text-slate-200">${gamification.facu.points}</span>
                 </div>
                 <div class="flex items-center">
-                    <i data-lucide="shield-check" class="w-3 h-3 ml-1 ${gamification.facu.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}"></i>
+                    <i data-lucide="shield-check" class="w-3 h-3 ml-0.5 md:ml-1 ${gamification.facu.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}"></i>
                     <span class="text-[10px] font-bold ml-0.5 ${gamification.facu.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}">${gamification.facu.freezes}</span>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-pink-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer" onclick="openShopModal('alma')">
-                <span class="text-[10px] font-bold text-pink-400 uppercase tracking-wider">Alma</span>
-                <div class="flex items-center gap-1">
+            <div class="flex items-center justify-center md:justify-start gap-1 md:gap-2 bg-slate-800/80 px-2 md:px-3 py-1.5 rounded-xl md:rounded-full border border-pink-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('alma')">
+                <span class="text-[10px] font-bold text-pink-400 uppercase tracking-wide">A</span>
+                <div class="flex items-center gap-0.5 md:gap-1">
                     <i data-lucide="flame" class="w-3 h-3 ${gamification.alma.streak > 0 ? "text-orange-500 fill-orange-500" : "text-slate-600"}"></i>
                     <span class="text-xs font-bold text-slate-200">${gamification.alma.streak}</span>
                 </div>
-                <div class="w-px h-3 bg-slate-600 mx-1"></div>
-                <div class="flex items-center gap-1">
+                <div class="w-px h-3 bg-slate-600 mx-0.5 md:mx-1"></div>
+                <div class="flex items-center gap-0.5 md:gap-1">
                     <i data-lucide="gem" class="w-3 h-3 text-emerald-400"></i>
                     <span class="text-xs font-bold text-slate-200">${gamification.alma.points}</span>
                 </div>
                 <div class="flex items-center">
-                    <i data-lucide="shield-check" class="w-3 h-3 ml-1 ${gamification.alma.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}"></i>
+                    <i data-lucide="shield-check" class="w-3 h-3 ml-0.5 md:ml-1 ${gamification.alma.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}"></i>
                     <span class="text-[10px] font-bold ml-0.5 ${gamification.alma.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}">${gamification.alma.freezes}</span>
                 </div>
             </div>
