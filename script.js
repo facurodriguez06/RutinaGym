@@ -4032,7 +4032,7 @@ function renderTimerCard(ex) {
         !state.isSkipped
           ? `
       <div class="absolute bottom-0 left-0 h-1 bg-${ex.color}-900/30 w-full">
-          <div class="h-full bg-${ex.color}-500 shadow-[0_0_10px_currentColor] transition-all duration-1000 ease-linear" style="width: ${progressPercent}%"></div>
+          <div id="warmup-timer-progress-${ex.id}" class="h-full bg-${ex.color}-500 shadow-[0_0_10px_currentColor] transition-all duration-1000 ease-linear" style="width: ${progressPercent}%"></div>
       </div>`
           : ""
       }
@@ -4054,7 +4054,7 @@ function renderTimerCard(ex) {
       <!-- Timer Controls -->
       <div class="flex items-center gap-4 ml-auto w-full md:w-auto justify-between md:justify-end bg-slate-950/50 p-2 rounded-xl border border-slate-800/50">
           <!-- Digital Display -->
-          <div class="font-mono text-2xl font-bold tracking-widest ${state.isRunning ? `text-${ex.color}-400` : "text-slate-400"} w-24 text-center">
+          <div id="warmup-timer-display-${ex.id}" class="font-mono text-2xl font-bold tracking-widest ${state.isRunning ? `text-${ex.color}-400` : "text-slate-400"} w-24 text-center">
               ${mins}:${secs}
           </div>
 
@@ -4148,18 +4148,26 @@ function skipWarmupTimer(id) {
 
 // Helper to update DOM without full re-render
 function updateTimerDOM(id) {
-  // We need to find the specific elements.
-  // Since we don't have unique IDs on elements easily without looking messy,
-  // we called renderContent() on toggle which re-rendered the list.
-  // If we want smooth ticking, we should just call renderContent() or
-  // improve renderTimerCard to add unique IDs.
-  // Let's modify renderContent() strategy later if needed.
-  // For now, re-rendering `renderContent()` is safe enough as it's fast,
-  // BUT it will kill input focus if user is typing weights elsewhere.
-  // CRITICAL: DO NOT BREAK WEIGHT INPUTS.
-  // Solution: Only re-render the Warmup Block? Or simpler:
-  // Let's re-render content. If the user is typing weights, they are doing it AFTER warmup.
-  renderContent();
+  const state = warmupTimers[id];
+  if (!state) return;
+
+  const display = document.getElementById(`warmup-timer-display-${id}`);
+  const progressBar = document.getElementById(`warmup-timer-progress-${id}`);
+
+  if (display && progressBar) {
+    const mins = Math.floor(state.time / 60)
+      .toString()
+      .padStart(2, "0");
+    const secs = (state.time % 60).toString().padStart(2, "0");
+    const progressPercent =
+      ((state.original - state.time) / state.original) * 100;
+
+    display.textContent = `${mins}:${secs}`;
+    progressBar.style.width = `${progressPercent}%`;
+  } else {
+    // Fallback if elements not found (e.g. view changed)
+    renderContent();
+  }
 }
 
 window.toggleWarmupTimer = toggleWarmupTimer;
