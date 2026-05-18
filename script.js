@@ -1,4 +1,4 @@
-﻿// --- DATA ---
+// --- DATA ---
 const routineData = [
   {
     day: "Lunes",
@@ -68,15 +68,6 @@ const routineData = [
         rir: "RIR 0",
         notes: "Talón bien abajo, punta bien arriba. Descanso: 45 seg.",
         muscles: { primary: ["calves"], secondary: [] },
-      },
-      {
-        name: "Elevación de Rodillas (Silla Capitana)",
-        sets: "3",
-        reps: "12-15",
-        rir: "RIR 1",
-        notes:
-          "Espalda pegada. Suban rodillas suave. Sin balanceo. Descanso: 60 seg.",
-        muscles: { primary: ["abs"], secondary: ["obliques"] },
       },
     ],
   },
@@ -361,15 +352,6 @@ const routineData = [
         notes:
           "Sentado. Cabeza larga del tríceps. Codos cerrados apuntando al techo. Descanso: 60 seg.",
         muscles: { primary: ["triceps"], secondary: [] },
-      },
-      {
-        name: "Elevación de Rodillas (Silla Capitana)",
-        sets: "4",
-        reps: "15-20",
-        rir: "RIR 0",
-        notes:
-          "Controla la bajada para proteger la espalda baja. Descanso: 60 seg.",
-        muscles: { primary: ["abs"], secondary: ["obliques"] },
       },
       {
         name: "BONUS A ELECCIÓN (Ver abajo)",
@@ -1922,35 +1904,25 @@ function enableBackgroundMode(exerciseName, duration) {
     .catch((e) => logToScreen("❌ Audio Silencioso FALLÓ: " + e, "error"));
 }
 
-// --- Note: navigateTo is defined earlier in the file ---
-
 // --- CHARTS LOGIC ---
 function renderCharts() {
   const container = document.getElementById("charts-container");
   container.innerHTML = "";
 
-  // We will generate 4 main charts:
-  // 1. Facu's Max Volume Day
-  // 2. Alma's Max Volume Day
-  // 3. Facu's Streak Evolution (?)
-  // 4. Exercise Progress (Squat?)
-
-  // Let's simplify: 1 Chart per user showing "Daily Volume" over last 30 days.
-
   ["facu", "alma"].forEach((user) => {
     const dataPoints = getVolumeHistory(user, 14); // Last 14 days
     const chartHTML = generateSVGLineChart(
       dataPoints,
-      user === "facu" ? "#60a5fa" : "#f472b6",
+      user === "facu" ? "var(--accent-facu)" : "var(--accent-alma)",
       user,
     );
 
     const card = document.createElement("div");
-    card.className = "bg-slate-900 border border-slate-800 p-4 rounded-2xl";
+    card.className = "bg-slate-950 border-2 border-slate-800 p-6 shadow-[4px_4px_0px_#000] relative overflow-hidden transition-all duration-300 hover:shadow-[6px_6px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5";
     card.innerHTML = `
-        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            ${user === "facu" ? "🙎🏽‍♂️ Volumen de Facu" : "🙎🏻‍♀️ Volumen de Alma"}
-            <span class="text-xs text-slate-500 font-normal">(Últimos 14 días)</span>
+        <h3 class="text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2" style="color: ${user === "facu" ? "var(--accent-facu)" : "var(--accent-alma)"}">
+            ${user === "facu" ? "🙍🏽‍♂️ Volumen de Facu" : "🙍🏻‍♀️ Volumen de Alma"}
+            <span class="text-xs text-slate-500 font-normal normal-case tracking-normal">(Últimos 14 días)</span>
         </h3>
         ${chartHTML}
       `;
@@ -1997,9 +1969,9 @@ function generateSVGLineChart(data, color, user) {
   const padding = 40; // Increased padding for axis text
 
   if (data.every((d) => d.value === 0)) {
-    return `<div class="h-64 flex flex-col items-center justify-center text-slate-500 gap-2">
-                <i data-lucide="bar-chart-2" class="w-8 h-8 opacity-50"></i>
-                <span class="text-sm font-medium">Sin datos recientes</span>
+    return `<div class="h-64 flex flex-col items-center justify-center text-slate-500 gap-2 border-2 border-dashed border-slate-800 bg-slate-900/10">
+                <i data-lucide="bar-chart-2" class="w-8 h-8 opacity-30 text-slate-600"></i>
+                <span class="text-xs font-bold uppercase tracking-wider font-mono text-slate-600">Sin datos recientes</span>
             </div>`;
   }
 
@@ -2018,8 +1990,8 @@ function generateSVGLineChart(data, color, user) {
     .map((val) => {
       const y = getY(val);
       return `
-      <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="#334155" stroke-width="1" stroke-dasharray="4" opacity="0.5" />
-      <text x="${padding - 10}" y="${y + 4}" fill="#94a3b8" font-size="10" text-anchor="end">${Math.round(val)}</text>
+      <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="2,2" />
+      <text x="${padding - 10}" y="${y + 4}" fill="#475569" font-size="9" font-weight="900" font-family="'JetBrains Mono', monospace" text-anchor="end">${Math.round(val)}</text>
     `;
     })
     .join("");
@@ -2031,7 +2003,7 @@ function generateSVGLineChart(data, color, user) {
       if (i % 3 === 0 || i === data.length - 1) {
         const dateStr = d.date.split("-").slice(1).join("/"); // MM/DD
         const x = getX(i);
-        return `<text x="${x}" y="${height - 10}" fill="#94a3b8" font-size="10" text-anchor="middle">${dateStr}</text>`;
+        return `<text x="${x}" y="${height - 10}" fill="#475569" font-size="9" font-weight="900" font-family="'JetBrains Mono', monospace" text-anchor="middle">${dateStr}</text>`;
       }
       return "";
     })
@@ -2042,14 +2014,23 @@ function generateSVGLineChart(data, color, user) {
   // Gradient area below the line
   const areaPoints = `${getX(0)},${getY(0)} ${points} ${getX(data.length - 1)},${getY(0)}`;
   const gradientId = `grad-${user}`;
+  const filterId = `line-glow-${user}`;
 
   return `
-      <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto drop-shadow-xl font-mono" style="overflow: visible;">
+      <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto font-mono" style="overflow: visible;">
          <defs>
             <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="0%" y2="100%">
-               <stop offset="0%" style="stop-color:${color};stop-opacity:0.2" />
+               <stop offset="0%" style="stop-color:${color};stop-opacity:0.25" />
                <stop offset="100%" style="stop-color:${color};stop-opacity:0" />
             </linearGradient>
+            
+            <filter id="${filterId}" x="-20%" y="-20%" width="140%" height="140%">
+               <feGaussianBlur stdDeviation="5" result="blur" />
+               <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+               </feMerge>
+            </filter>
          </defs>
 
          <!-- Grid & Axis Labels -->
@@ -2057,8 +2038,8 @@ function generateSVGLineChart(data, color, user) {
          ${xLabels}
          
          <!-- Axis Lines -->
-         <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#475569" stroke-width="1" />
-         <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#475569" stroke-width="1" />
+         <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#334155" stroke-width="2" />
+         <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#334155" stroke-width="2" />
          
          <!-- Area Fill -->
          <polygon points="${areaPoints}" fill="url(#${gradientId})" stroke="none" />
@@ -2066,19 +2047,24 @@ function generateSVGLineChart(data, color, user) {
          <!-- Path -->
          <polyline fill="none" stroke="${color}" stroke-width="3" points="${points}" 
                    stroke-linecap="round" stroke-linejoin="round"
+                   filter="url(#${filterId})"
                    class="animate-draw-line" />
                    
-         <!-- Inteactive Points -->
+         <!-- Interactive Points -->
          ${data
            .map((d, i) => {
              const x = getX(i);
              const y = getY(d.value);
              return `
-               <g class="group">
-                 <circle cx="${x}" cy="${y}" r="4" fill="${color}" stroke="#0f172a" stroke-width="2" 
-                         class="group-hover:scale-125 transition-transform cursor-pointer" 
+               <g class="group cursor-pointer">
+                 <!-- Outer pulsing hover ring -->
+                 <circle cx="${x}" cy="${y}" r="8" fill="${color}" opacity="0"
+                         class="group-hover:opacity-20 group-hover:scale-125 transition-all duration-200"
                          style="transform-box: fill-box; transform-origin: center;" />
-                 <!-- Tooltip (Simulated via title, usually handled via JS for HTML tooltips, but SVG title works on hover) -->
+                 <circle cx="${x}" cy="${y}" r="4" fill="${color}" stroke="#090d16" stroke-width="2" 
+                         class="group-hover:scale-110 transition-transform" 
+                         style="transform-box: fill-box; transform-origin: center;" />
+                 <!-- Tooltip (Simulated via title) -->
                  <title>${d.date}: ${d.value} kg</title>
                </g>
              `;
@@ -2449,6 +2435,7 @@ function updateTimerDisplay() {
     const timerIcon = document.querySelector("#timer-full .lucide-timer");
     const addBtn = document.getElementById("timer-add-btn");
     const modal = document.getElementById("timer-full");
+    const bgFlash = document.getElementById("timer-bg-flash");
 
     // Check if we are already in the correct state to avoid thrashing classList
     const isWarning = displaySeconds <= 10;
@@ -2457,46 +2444,51 @@ function updateTimerDisplay() {
     if (isWarning && !currentIsWarning) {
       // ENTER WARNING STATE
       ring.dataset.state = "warning";
-      ring.style.stroke = "#ef4444";
+      ring.style.stroke = "#ff0055"; // accent-alma
       display.className =
-        "text-7xl font-mono font-bold text-red-400 mb-6 tabular-nums";
+        "text-[8rem] leading-none font-mono font-black mb-4 tabular-nums timer-text-anim drop-shadow-[4px_4px_0_rgba(0,0,0,1)] timer-warning-text animate-brutal-pulse";
 
       if (modal) {
-        modal.classList.remove("border-slate-700", "shadow-emerald-500/10");
-        modal.classList.add("border-red-500", "shadow-red-500/20");
+        modal.classList.remove("border-[var(--border-strong)]");
+        modal.classList.add("border-[#ff0055]");
+      }
+      if (bgFlash) {
+        bgFlash.classList.add("animate-flash-bg");
       }
       if (timerIcon) {
-        timerIcon.classList.remove("text-emerald-400");
-        timerIcon.classList.add("text-red-400");
+        timerIcon.classList.remove("text-[var(--text-main)]", "animate-float");
+        timerIcon.classList.add("text-[#ff0055]", "animate-brutal-pulse");
       }
       if (addBtn) {
-        addBtn.classList.remove("bg-emerald-600", "hover:bg-emerald-500");
-        addBtn.classList.add("bg-red-600", "hover:bg-red-500");
+        addBtn.classList.remove("bg-[var(--accent-vigor)]");
+        addBtn.classList.add("bg-[#ff0055]", "text-white");
       }
     } else if (!isWarning && currentIsWarning) {
       // EXIT WARNING STATE
       ring.dataset.state = "normal";
-      ring.style.stroke = "#10b981";
+      ring.style.stroke = "var(--accent-vigor)";
       display.className =
-        "text-7xl font-mono font-bold text-emerald-400 mb-6 tabular-nums";
+        "text-[8rem] leading-none font-mono font-black text-[var(--accent-vigor)] mb-4 tabular-nums timer-text-anim drop-shadow-[4px_4px_0_rgba(0,0,0,1)]";
 
       if (modal) {
-        modal.classList.add("border-slate-700", "shadow-emerald-500/10");
-        modal.classList.remove("border-red-500", "shadow-red-500/20");
+        modal.classList.add("border-[var(--border-strong)]");
+        modal.classList.remove("border-[#ff0055]");
+      }
+      if (bgFlash) {
+        bgFlash.classList.remove("animate-flash-bg");
       }
       if (timerIcon) {
-        timerIcon.classList.add("text-emerald-400");
-        timerIcon.classList.remove("text-red-400");
+        timerIcon.classList.add("text-[var(--text-main)]", "animate-float");
+        timerIcon.classList.remove("text-[#ff0055]", "animate-brutal-pulse");
       }
       if (addBtn) {
-        addBtn.classList.add("bg-emerald-600", "hover:bg-emerald-500");
-        addBtn.classList.remove("bg-red-600", "hover:bg-red-500");
+        addBtn.classList.add("bg-[var(--accent-vigor)]");
+        addBtn.classList.remove("bg-[#ff0055]", "text-white");
       }
     } else if (!currentIsWarning && !isWarning) {
       // Ensure default state if no state set (first run)
       if (!ring.dataset.state) {
         ring.dataset.state = "normal";
-        // Optional: force defaults if potentially wrong?
       }
     }
   }
@@ -3690,105 +3682,221 @@ function renderAchievements() {
 
 // --- MUSCLE MAP GENERATOR ---
 const getMuscleMapSVG = (primary = [], secondary = []) => {
-  const getColor = (muscleId) => {
-    if (primary.includes(muscleId)) return "#ef4444"; // Red-500
-    if (secondary.includes(muscleId)) return "#eab308"; // Yellow-500
-    return "#e2e8f0"; // Slate-200 (Atlas Base Color)
+  const getClass = (muscleId) => {
+    if (primary.includes(muscleId)) return "muscle-path muscle-primary";
+    if (secondary.includes(muscleId)) return "muscle-path muscle-secondary";
+    return "muscle-path muscle-inactive";
   };
 
-  const strokeColor = "#94a3b8";
   const strokeWidth = "2";
 
-  // SVG Content - Atlas Style
   return `
-    <div class="flex gap-2 h-56 w-full justify-center opacity-90 transition-opacity duration-500 hover:opacity-100 py-2">
+    <div class="flex gap-2 h-56 w-full justify-center opacity-95 transition-opacity duration-500 hover:opacity-100 py-2 relative">
+        <style>
+          .hud-grid {
+            stroke: #1e293b;
+            stroke-width: 0.75;
+            opacity: 0.4;
+          }
+          .hud-circle {
+            stroke: #334155;
+            stroke-width: 0.5;
+            fill: none;
+            opacity: 0.2;
+          }
+          .hud-scanner {
+            stroke: var(--accent-vigor);
+            stroke-width: 0.5;
+            fill: none;
+            opacity: 0.15;
+            stroke-dasharray: 5, 5;
+            animation: rotate-scan 40s linear infinite;
+            transform-origin: center;
+          }
+          @keyframes rotate-scan {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .hud-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            fill: #475569;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 900;
+          }
+          .body-frame {
+            fill: #0c0f17;
+            stroke: #334155;
+            stroke-width: 2;
+          }
+          .muscle-path {
+            transition: all 0.2s ease;
+          }
+          .muscle-inactive {
+            fill: #1a202c;
+            stroke: #2d3748;
+            stroke-width: 2;
+          }
+          .muscle-primary {
+            fill: var(--accent-alma);
+            stroke: #000;
+            stroke-width: 2;
+            filter: url(#glow-primary);
+          }
+          .muscle-secondary {
+            fill: var(--accent-vigor);
+            stroke: #000;
+            stroke-width: 2;
+            filter: url(#glow-secondary);
+          }
+          .joint {
+            fill: #1a202c;
+            stroke: #334155;
+            stroke-width: 2;
+          }
+        </style>
+        
         <!-- FRONT VIEW -->
         <svg viewBox="0 0 400 780" class="h-full w-auto drop-shadow-md">
-             <!-- Head -->
-            <ellipse cx="200" cy="60" rx="35" ry="45" fill="#f1f5f9" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <rect x="185" y="100" width="30" height="25" fill="#f1f5f9" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <defs>
+              <filter id="glow-primary" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="6" result="blur" />
+                <feComponentTransfer in="blur" result="glow1">
+                  <feFuncA type="linear" slope="0.8"/>
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode in="glow1" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id="glow-secondary" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="6" result="blur" />
+                <feComponentTransfer in="blur" result="glow1">
+                  <feFuncA type="linear" slope="0.8"/>
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode in="glow1" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Tech HUD Grid Background -->
+            <line x1="200" y1="0" x2="200" y2="780" class="hud-grid" />
+            <line x1="0" y1="390" x2="400" y2="390" class="hud-grid" />
+            <line x1="100" y1="0" x2="100" y2="780" class="hud-grid" stroke-dasharray="2,2" />
+            <line x1="300" y1="0" x2="300" y2="780" class="hud-grid" stroke-dasharray="2,2" />
+            
+            <circle cx="200" cy="350" r="100" class="hud-circle" />
+            <circle cx="200" cy="350" r="220" class="hud-circle" />
+            
+            <!-- Scan Overlay -->
+            <circle cx="200" cy="350" r="180" class="hud-scanner" />
+
+            <text x="20" y="30" class="hud-text">SYS: VIGOR_HUD</text>
+            <text x="20" y="45" class="hud-text">VIEW: ANTERIOR</text>
+
+            <!-- Head & Neck -->
+            <ellipse cx="200" cy="60" rx="35" ry="45" class="body-frame" />
+            <rect x="185" y="100" width="30" height="25" class="body-frame" />
 
             <!-- Traps -->
-            <path d="M185,105 L150,115 L140,125 L185,120 Z" fill="${getColor("traps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M215,105 L250,115 L260,125 L215,120 Z" fill="${getColor("traps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M185,105 L150,115 L140,125 L185,120 Z" class="${getClass("traps")}" stroke-width="${strokeWidth}" />
+            <path d="M215,105 L250,115 L260,125 L215,120 Z" class="${getClass("traps")}" stroke-width="${strokeWidth}" />
 
             <!-- Shoulders -->
-            <path d="M140,125 Q115,130 110,160 Q120,185 140,170 Q150,150 140,125 Z" fill="${getColor("shoulders")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M260,125 Q285,130 290,160 Q280,185 260,170 Q250,150 260,125 Z" fill="${getColor("shoulders")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M140,125 Q115,130 110,160 Q120,185 140,170 Q150,150 140,125 Z" class="${getClass("shoulders")}" stroke-width="${strokeWidth}" />
+            <path d="M260,125 Q285,130 290,160 Q280,185 260,170 Q250,150 260,125 Z" class="${getClass("shoulders")}" stroke-width="${strokeWidth}" />
 
-             <!-- Chest -->
-            <path d="M200,130 L160,130 Q140,135 140,160 Q160,190 200,190 L200,130 Z" fill="${getColor("chest")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M200,130 L240,130 Q260,135 260,160 Q240,190 200,190 L200,130 Z" fill="${getColor("chest")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <!-- Chest -->
+            <path d="M200,130 L160,130 Q140,135 140,160 Q160,190 200,190 L200,130 Z" class="${getClass("chest")}" stroke-width="${strokeWidth}" />
+            <path d="M200,130 L240,130 Q260,135 260,160 Q240,190 200,190 L200,130 Z" class="${getClass("chest")}" stroke-width="${strokeWidth}" />
 
             <!-- Abs -->
-            <path d="M170,195 H230 V280 Q200,290 170,280 Z" fill="${getColor("abs")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M170,195 H230 V280 Q200,290 170,280 Z" class="${getClass("abs")}" stroke-width="${strokeWidth}" />
             
             <!-- Obliques -->
-            <path d="M170,195 L155,200 Q150,240 160,270 L170,280 V195 Z" fill="${getColor("obliques")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M230,195 L245,200 Q250,240 240,270 L230,280 V195 Z" fill="${getColor("obliques")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M170,195 L155,200 Q150,240 160,270 L170,280 V195 Z" class="${getClass("obliques")}" stroke-width="${strokeWidth}" />
+            <path d="M230,195 L245,200 Q250,240 240,270 L230,280 V195 Z" class="${getClass("obliques")}" stroke-width="${strokeWidth}" />
 
             <!-- Biceps -->
-            <path d="M110,160 Q100,190 110,210 Q130,205 140,170 Z" fill="${getColor("biceps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M290,160 Q300,190 290,210 Q270,205 260,170 Z" fill="${getColor("biceps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M110,160 Q100,190 110,210 Q130,205 140,170 Z" class="${getClass("biceps")}" stroke-width="${strokeWidth}" />
+            <path d="M290,160 Q300,190 290,210 Q270,205 260,170 Z" class="${getClass("biceps")}" stroke-width="${strokeWidth}" />
 
             <!-- Forearms -->
-            <path d="M110,210 Q95,250 100,290 L120,285 Q125,240 130,210 Z" fill="${getColor("forearms")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M290,210 Q305,250 300,290 L280,285 Q275,240 270,210 Z" fill="${getColor("forearms")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M110,210 Q95,250 100,290 L120,285 Q125,240 130,210 Z" class="${getClass("forearms")}" stroke-width="${strokeWidth}" />
+            <path d="M290,210 Q305,250 300,290 L280,285 Q275,240 270,210 Z" class="${getClass("forearms")}" stroke-width="${strokeWidth}" />
 
             <!-- Quads -->
-            <path d="M160,285 Q140,350 150,450 L195,450 Q195,350 195,290 Z" fill="${getColor("quads")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M240,285 Q260,350 250,450 L205,450 Q205,350 205,290 Z" fill="${getColor("quads")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M160,285 Q140,350 150,450 L195,450 Q195,350 195,290 Z" class="${getClass("quads")}" stroke-width="${strokeWidth}" />
+            <path d="M240,285 Q260,350 250,450 L205,450 Q205,350 205,290 Z" class="${getClass("quads")}" stroke-width="${strokeWidth}" />
             
-            <!-- Tibials (Using Calves color for completeness) -->
-             <path d="M155,480 Q150,530 160,580 L175,580 Q170,530 170,480 Z" fill="${getColor("calves")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-             <path d="M245,480 Q250,530 240,580 L225,580 Q230,530 230,480 Z" fill="${getColor("calves")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <!-- Tibials (Calves color mapping) -->
+            <path d="M155,480 Q150,530 160,580 L175,580 Q170,530 170,480 Z" class="${getClass("calves")}" stroke-width="${strokeWidth}" />
+            <path d="M245,480 Q250,530 240,580 L225,580 Q230,530 230,480 Z" class="${getClass("calves")}" stroke-width="${strokeWidth}" />
 
-             <!-- Knees -->
-             <circle cx="172" cy="465" r="12" fill="#e2e8f0" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-             <circle cx="228" cy="465" r="12" fill="#e2e8f0" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <!-- Knees -->
+            <circle cx="172" cy="465" r="12" class="joint" />
+            <circle cx="228" cy="465" r="12" class="joint" />
         </svg>
 
         <!-- BACK VIEW -->
         <svg viewBox="0 0 400 780" class="h-full w-auto drop-shadow-md">
-            <!-- Head -->
-            <ellipse cx="200" cy="60" rx="35" ry="45" fill="#f1f5f9" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <rect x="185" y="100" width="30" height="20" fill="#f1f5f9" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <!-- Tech HUD Grid Background -->
+            <line x1="200" y1="0" x2="200" y2="780" class="hud-grid" />
+            <line x1="0" y1="390" x2="400" y2="390" class="hud-grid" />
+            <line x1="100" y1="0" x2="100" y2="780" class="hud-grid" stroke-dasharray="2,2" />
+            <line x1="300" y1="0" x2="300" y2="780" class="hud-grid" stroke-dasharray="2,2" />
+            
+            <circle cx="200" cy="350" r="100" class="hud-circle" />
+            <circle cx="200" cy="350" r="220" class="hud-circle" />
+            
+            <!-- Scan Overlay -->
+            <circle cx="200" cy="350" r="180" class="hud-scanner" />
+
+            <text x="20" y="30" class="hud-text">SYS: VIGOR_HUD</text>
+            <text x="20" y="45" class="hud-text">VIEW: POSTERIOR</text>
+
+            <!-- Head & Neck -->
+            <ellipse cx="200" cy="60" rx="35" ry="45" class="body-frame" />
+            <rect x="185" y="100" width="30" height="20" class="body-frame" />
 
             <!-- Traps (Back) -->
-            <path d="M200,100 L160,120 L180,180 L200,230 L220,180 L240,120 Z" fill="${getColor("traps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M200,100 L160,120 L180,180 L200,230 L220,180 L240,120 Z" class="${getClass("traps")}" stroke-width="${strokeWidth}" />
 
             <!-- Shoulders (Rear) -->
-            <path d="M140,125 Q115,135 110,160 L130,170 Q145,150 160,120 Z" fill="${getColor("shoulders")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M260,125 Q285,135 290,160 L270,170 Q255,150 240,120 Z" fill="${getColor("shoulders")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M140,125 Q115,135 110,160 L130,170 Q145,150 160,120 Z" class="${getClass("shoulders")}" stroke-width="${strokeWidth}" />
+            <path d="M260,125 Q285,135 290,160 L270,170 Q255,150 240,120 Z" class="${getClass("shoulders")}" stroke-width="${strokeWidth}" />
 
             <!-- Lats -->
-            <path d="M180,180 L150,200 L160,260 L200,280 L240,260 L250,200 L220,180 L200,230 Z" fill="${getColor("lats")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M180,180 L150,200 L160,260 L200,280 L240,260 L250,200 L220,180 L200,230 Z" class="${getClass("lats")}" stroke-width="${strokeWidth}" />
 
             <!-- Lower Back -->
-            <path d="M185,280 V300 Q185,310 200,310 Q215,310 215,300 V280 Z" fill="${getColor("lower_back")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M185,280 V300 Q185,310 200,310 Q215,310 215,300 V280 Z" class="${getClass("lower_back")}" stroke-width="${strokeWidth}" />
 
             <!-- Triceps -->
-            <path d="M110,160 Q100,180 110,210 L130,205 Q135,170 130,170 Z" fill="${getColor("triceps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M290,160 Q300,180 290,210 L270,205 Q265,170 270,170 Z" fill="${getColor("triceps")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M110,160 Q100,180 110,210 L130,205 Q135,170 130,170 Z" class="${getClass("triceps")}" stroke-width="${strokeWidth}" />
+            <path d="M290,160 Q300,180 290,210 L270,205 Q265,170 270,170 Z" class="${getClass("triceps")}" stroke-width="${strokeWidth}" />
 
             <!-- Forearms (Rear) -->
-            <path d="M110,210 Q95,250 100,290 L120,285 Q125,240 130,210 Z" fill="${getColor("forearms")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M290,210 Q305,250 300,290 L280,285 Q275,240 270,210 Z" fill="${getColor("forearms")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M110,210 Q95,250 100,290 L120,285 Q125,240 130,210 Z" class="${getClass("forearms")}" stroke-width="${strokeWidth}" />
+            <path d="M290,210 Q305,250 300,290 L280,285 Q275,240 270,210 Z" class="${getClass("forearms")}" stroke-width="${strokeWidth}" />
 
-             <!-- Glutes -->
-            <path d="M160,280 Q140,300 145,340 Q170,360 200,340 Q230,360 255,340 Q260,300 240,280 Q200,300 160,280 Z" fill="${getColor("glutes")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <!-- Glutes -->
+            <path d="M160,280 Q140,300 145,340 Q170,360 200,340 Q230,360 255,340 Q260,300 240,280 Q200,300 160,280 Z" class="${getClass("glutes")}" stroke-width="${strokeWidth}" />
 
             <!-- Hamstrings -->
-            <path d="M150,350 Q145,400 155,460 L190,460 Q195,400 190,350 Z" fill="${getColor("hamstrings")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M250,350 Q255,400 245,460 L210,460 Q205,400 210,350 Z" fill="${getColor("hamstrings")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M150,350 Q145,400 155,460 L190,460 Q195,400 190,350 Z" class="${getClass("hamstrings")}" stroke-width="${strokeWidth}" />
+            <path d="M250,350 Q255,400 245,460 L210,460 Q205,400 210,350 Z" class="${getClass("hamstrings")}" stroke-width="${strokeWidth}" />
             
             <!-- Popliteal -->
-            <rect x="160" y="460" width="30" height="15" fill="#f1f5f9" stroke="none" />
-            <rect x="210" y="460" width="30" height="15" fill="#f1f5f9" stroke="none" />
+            <rect x="160" y="460" width="30" height="15" class="body-frame" stroke="none" />
+            <rect x="210" y="460" width="30" height="15" class="body-frame" stroke="none" />
 
             <!-- Calves -->
-            <path d="M155,475 Q140,500 160,560 L185,550 Q195,500 185,475 Z" fill="${getColor("calves")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-            <path d="M245,475 Q260,500 240,560 L215,550 Q205,500 215,475 Z" fill="${getColor("calves")}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+            <path d="M155,475 Q140,500 160,560 L185,550 Q195,500 185,475 Z" class="${getClass("calves")}" stroke-width="${strokeWidth}" />
+            <path d="M245,475 Q260,500 240,560 L215,550 Q205,500 215,475 Z" class="${getClass("calves")}" stroke-width="${strokeWidth}" />
         </svg>
     </div>
   `;
@@ -4344,8 +4452,8 @@ function renderContent() {
       }
 
       setButtonsHTML += `
-          <div class="flex flex-col items-center gap-2 bg-white dark:bg-slate-950/30 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/50 shadow-sm dark:shadow-none">
-              <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Set ${
+          <div class="flex flex-col items-center gap-2 bg-[var(--bg-panel-alt)] p-2 border-2 border-[var(--border-strong)]">
+              <span class="text-[10px] text-white font-black uppercase tracking-wider">Set ${
                 s + 1
               }</span>
               <div class="flex gap-2">
@@ -4354,11 +4462,11 @@ function renderContent() {
                     <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
                       exercise.name
                     }" data-rest-time="${restTime}"
-                          class="set-btn w-10 h-10 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center border
+                          class="set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
                           ${
                             setData.facu
-                              ? `bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20`
-                              : `bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-blue-500/50 hover:text-blue-500`
+                              ? `bg-[var(--accent-facu)] text-black border-black`
+                              : `bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-facu)] hover:text-[var(--accent-facu)]`
                           }" title="Facu">
                           ${
                             setData.facu
@@ -4371,7 +4479,7 @@ function renderContent() {
                              placeholder="kg" 
                              data-set-key="${setKey}" 
                              data-user="facu"
-                             class="weight-input w-10 h-7 bg-slate-50 dark:bg-slate-900/50 text-center text-xs font-medium text-slate-600 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none p-0 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                             class="weight-input w-12 h-8 bg-[var(--bg-base)] text-center text-xs font-black text-white border-2 border-[var(--border-strong)] focus:border-[var(--accent-facu)] outline-none p-0 transition-all placeholder:text-[var(--text-dim)] shadow-[2px_2px_0_#000]"
                              onclick="event.stopPropagation()">
                   </div>
                   
@@ -4380,11 +4488,11 @@ function renderContent() {
                     <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
                       exercise.name
                     }" data-rest-time="${restTime}"
-                          class="set-btn w-10 h-10 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center border
+                          class="set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
                           ${
                             setData.alma
-                              ? `bg-pink-600 text-white border-pink-500 shadow-md shadow-pink-500/20`
-                              : `bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-pink-500/50 hover:text-pink-500`
+                              ? `bg-[var(--accent-alma)] text-white border-black`
+                              : `bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-alma)] hover:text-[var(--accent-alma)]`
                           }" title="Alma">
                           ${
                             setData.alma
@@ -4397,7 +4505,7 @@ function renderContent() {
                              placeholder="kg" 
                              data-set-key="${setKey}" 
                              data-user="alma"
-                             class="weight-input w-10 h-7 bg-slate-50 dark:bg-slate-900/50 text-center text-xs font-medium text-slate-600 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/10 outline-none p-0 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                             class="weight-input w-12 h-8 bg-[var(--bg-base)] text-center text-xs font-black text-white border-2 border-[var(--border-strong)] focus:border-[var(--accent-alma)] outline-none p-0 transition-all placeholder:text-[var(--text-dim)] shadow-[2px_2px_0_#000]"
                              onclick="event.stopPropagation()">
                   </div>
               </div>

@@ -1,524 +1,310 @@
+/* 
+===================================================
+ VIGOR - INDUSTRIAL NEO-BRUTALIST GYM AESTHETIC
+===================================================
+*/
+
 /* Tipografía Base */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@700;800&display=swap");
+
+:root {
+  /* Core Colors */
+  --bg-base: #050505;
+  --bg-panel: #111111;
+  --bg-panel-alt: #1a1a1a;
+  
+  --border-dim: #262626;
+  --border-strong: #404040;
+  
+  --text-main: #f5f5f5;
+  --text-dim: #888888;
+  
+  /* Brand Accents */
+  --accent-vigor: #ccff00; /* Neon Yellow/Green */
+  --accent-facu: #00f0ff;  /* Cyber Cyan */
+  --accent-alma: #ff0055;  /* Neon Magenta */
+  
+  /* Shadows */
+  --shadow-color: #000000;
+  --brutal-shadow: 4px 4px 0px var(--shadow-color);
+  --brutal-shadow-hover: 6px 6px 0px var(--shadow-color);
+  --brutal-shadow-active: 0px 0px 0px var(--shadow-color);
+}
 
 body {
   font-family: "Inter", sans-serif;
-  background-color: #020617;
-  /* slate-950 */
-  color: #e2e8f0;
-  /* slate-200 */
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
-  overflow-x: hidden; /* Prevent global horizontal scroll */
+  background-color: var(--bg-base) !important;
+  color: var(--text-main) !important;
+  overflow-x: hidden;
+  /* subtle industrial texture */
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-/* Tema Claro */
-body.light {
-  background-color: #f8fafc;
-  /* slate-50 */
-  color: #1e293b;
-  /* slate-800 */
+/* ==========================================================================
+   TYPOGRAPHY
+   ========================================================================== */
+h1, h2, h3, h4, .font-black, #day-title {
+  font-family: "Bebas Neue", sans-serif !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  font-weight: normal !important; /* Bebas is naturally bold */
 }
 
-body.light header {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
+.tabular-nums {
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 800 !important;
+  letter-spacing: -1px;
 }
 
-body.light .bg-slate-900,
-body.light .bg-slate-900\/50,
-body.light .bg-slate-950\/50,
-body.light .bg-slate-800,
-body.light .bg-slate-800\/50,
-body.light .bg-slate-800\/80 {
-  background-color: #f1f5f9 !important;
+/* Fix Tailwind gradients for texts - force solid neon */
+.bg-clip-text {
+  background: none !important;
+  -webkit-text-fill-color: var(--accent-vigor) !important;
+  color: var(--accent-vigor) !important;
+  text-shadow: 2px 2px 0px #000;
 }
 
-body.light .border-slate-800,
-body.light .border-slate-700 {
-  border-color: #e2e8f0 !important;
+h1.from-yellow-400, h1.from-amber-300 {
+  -webkit-text-fill-color: var(--accent-vigor) !important;
+  color: var(--accent-vigor) !important;
 }
 
-body.light .text-slate-400,
-body.light .text-slate-500 {
-  color: #64748b !important;
+/* ==========================================================================
+   BRUTALIST GEOMETRY (Remove curves, add thick borders & shadows)
+   ========================================================================== */
+.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg, .rounded-md {
+  border-radius: 0px !important;
+}
+.rounded-full {
+  border-radius: 0px !important; /* Force square for badges/buttons */
 }
 
-body.light .text-slate-300,
-body.light .text-slate-200,
-body.light .text-white {
-  color: #1e293b !important;
+/* Containers / Panels */
+.bg-slate-900, .bg-slate-950, .glass-panel {
+  background-color: var(--bg-panel) !important;
+  border: 2px solid var(--border-strong) !important;
+  box-shadow: var(--brutal-shadow) !important;
+  backdrop-filter: none !important;
+  border-radius: 0 !important;
 }
 
-body.light .text-slate-100 {
-  color: #334155 !important;
+/* Specific Panel Overrides */
+.bg-slate-800 {
+  background-color: var(--bg-panel-alt) !important;
+  border: 1px solid var(--border-strong) !important;
 }
 
-body.light .hover\:bg-slate-700:hover,
-body.light .hover\:bg-slate-800:hover {
-  background-color: #e2e8f0 !important;
+/* ==========================================================================
+   BUTTONS & INTERACTIONS
+   ========================================================================== */
+button {
+  border-radius: 0 !important;
+  border: 2px solid var(--border-strong) !important;
+  box-shadow: 3px 3px 0px var(--shadow-color) !important;
+  transition: transform 0.1s, box-shadow 0.1s, border-color 0.1s !important;
+  text-transform: uppercase;
+  font-weight: 800 !important;
+  letter-spacing: 1px;
 }
 
-body.light ::-webkit-scrollbar-track {
-  background: #f8fafc;
+button:hover {
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 5px 5px 0px var(--shadow-color) !important;
 }
 
-body.light ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+button:active {
+  transform: translate(3px, 3px) !important;
+  box-shadow: var(--brutal-shadow-active) !important;
 }
 
-/* Light Theme Blocks Overrides */
-body.light .warmup-block {
-  background: #fffbeb !important;
-  /* amber-50 */
-  border-color: #fcd34d !important;
-  /* amber-300 */
+/* ==========================================================================
+   COLOR MAPPING (Tailwind to Brutalist Neon)
+   ========================================================================== */
+/* VIGOR / Shared Accent */
+.text-emerald-400, .text-emerald-500, .text-emerald-600 { color: var(--accent-vigor) !important; }
+.bg-emerald-500, .bg-emerald-600 { background-color: var(--accent-vigor) !important; color: #000 !important; border-color: var(--accent-vigor) !important; }
+.border-emerald-500 { border-color: var(--accent-vigor) !important; }
+
+/* Facu Accent (Blue/Cyan) */
+.text-blue-400, .text-blue-500, .text-sky-300 { color: var(--accent-facu) !important; }
+.bg-blue-500, .bg-blue-600, .bg-sky-500 { background-color: var(--accent-facu) !important; color: #000 !important; border-color: var(--accent-facu) !important; }
+.border-blue-500 { border-color: var(--accent-facu) !important; }
+
+/* Alma Accent (Pink) */
+.text-pink-400, .text-pink-500, .text-pink-600 { color: var(--accent-alma) !important; }
+.bg-pink-500, .bg-pink-600 { background-color: var(--accent-alma) !important; color: #000 !important; border-color: var(--accent-alma) !important; }
+.border-pink-500 { border-color: var(--accent-alma) !important; }
+
+/* Warning / Destructive */
+.text-red-400, .text-red-500 { color: #ff3333 !important; }
+.bg-red-500, .bg-red-600 { background-color: #ff3333 !important; color: #000 !important; }
+
+/* Texts */
+.text-slate-200, .text-white { color: var(--text-main) !important; }
+.text-slate-400, .text-slate-500 { color: var(--text-dim) !important; }
+
+/* Nav / Tabs */
+.active-nav-item, .active-filter {
+  background-color: var(--accent-vigor) !important;
+  color: #000 !important;
+  border-color: var(--accent-vigor) !important;
+}
+.active-nav-item i, .active-filter i { color: #000 !important; }
+
+/* Sidebar & Headers */
+#sidebar, #main-header {
+  background-color: var(--bg-panel) !important;
+  border-color: var(--border-strong) !important;
+  border-width: 0 2px 2px 0 !important; /* Thick right/bottom borders */
 }
 
-body.light .warmup-block i,
-body.light .warmup-block h3 {
-  color: #d97706 !important;
-  /* amber-600 */
+/* Modals */
+.fixed > .bg-slate-900 {
+  border: 4px solid var(--border-strong) !important;
+  box-shadow: 12px 12px 0px var(--shadow-color) !important;
 }
 
-body.light .core-block {
-  background: #eef2ff !important;
-  /* indigo-50 */
-  border-color: #a5b4fc !important;
-  /* indigo-300 */
+/* Inputs */
+input[type="number"], input[type="range"] {
+  border-radius: 0 !important;
+  border: 2px solid var(--border-strong) !important;
+  background-color: var(--bg-base) !important;
+  color: var(--accent-vigor) !important;
+  font-family: "JetBrains Mono", monospace;
 }
 
-body.light .core-block i,
-body.light .core-block h3 {
-  color: #4f46e5 !important;
-  /* indigo-600 */
+input[type="number"]:focus {
+  border-color: var(--accent-vigor) !important;
+  box-shadow: 4px 4px 0px var(--shadow-color) !important;
 }
 
-/* Light Theme Active Tabs Overrides */
-body.light .active-tab-pink {
-  background: #fdf2f8 !important;
-  border-color: #f9a8d4 !important;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-body.light .active-tab-pink .active-tab-label {
-  color: #db2777 !important;
-}
-
-body.light .active-tab-pink .active-tab-icon {
-  color: #db2777 !important;
-}
-
-body.light .active-tab-blue {
-  background: #eff6ff !important;
-  border-color: #93c5fd !important;
-}
-
-body.light .active-tab-blue .active-tab-label {
-  color: #2563eb !important;
-}
-
-body.light .active-tab-blue .active-tab-icon {
-  color: #2563eb !important;
-}
-
-body.light .active-tab-emerald {
-  background: #ecfdf5 !important;
-  border-color: #6ee7b7 !important;
-}
-
-body.light .active-tab-emerald .active-tab-label {
-  color: #059669 !important;
-}
-
-body.light .active-tab-emerald .active-tab-icon {
-  color: #059669 !important;
-}
-
-/* New Day Colors Overrides */
-body.light .active-tab-violet {
-  background: #f5f3ff !important;
-  border-color: #c4b5fd !important;
-}
-
-body.light .active-tab-violet .active-tab-label,
-body.light .active-tab-violet .active-tab-icon {
-  color: #7c3aed !important;
-}
-
-body.light .active-tab-cyan {
-  background: #ecfeff !important;
-  border-color: #67e8f9 !important;
-}
-
-body.light .active-tab-cyan .active-tab-label,
-body.light .active-tab-cyan .active-tab-icon {
-  color: #0891b2 !important;
-}
-
-body.light .active-tab-rose {
-  background: #fff1f2 !important;
-  border-color: #fda4af !important;
-}
-
-body.light .active-tab-rose .active-tab-label,
-body.light .active-tab-rose .active-tab-icon {
-  color: #e11d48 !important;
-}
-
-body.light .active-tab-emerald .active-tab-label {
-  color: #059669 !important;
-}
-
-body.light .active-tab-emerald .active-tab-icon {
-  color: #059669 !important;
-}
-
-body.light .core-block li,
-body.light .warmup-block li {
-  color: #334155 !important;
-  /* slate-700 */
-}
-
-/* Scrollbar Personalizado */
+/* ==========================================================================
+   SCROLLBAR
+   ========================================================================== */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 12px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: var(--bg-base);
+  border-left: 2px solid var(--border-strong);
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: var(--border-strong);
+  border: 2px solid var(--bg-base);
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #10b981;
+  background: var(--accent-vigor);
 }
 
-/* Utilidades para ocultar scrollbar */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* Animaciones */
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
 @keyframes slideUpFade {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-.animate-slide-up {
-  animation: slideUpFade 0.5s ease-out forwards;
-}
+.animate-slide-up { animation: slideUpFade 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
 @keyframes pop {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.3);
-  }
-
-  100% {
-    transform: scale(1.1);
-  }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
-
-.animate-pop {
-  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
+.animate-pop { animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
 /* Stagger delays */
-.stagger-1 {
-  animation-delay: 0.05s;
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+
+/* Brutalist specific animations */
+@keyframes flash-bg {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(255, 0, 85, 0.2); }
+}
+.animate-flash-bg { animation: flash-bg 1s infinite; }
+
+@keyframes brutal-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+.animate-brutal-pulse { animation: brutal-pulse 1s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+/* Drop shadows for text in timer */
+.timer-warning-text {
+  color: #ff0055 !important;
+  text-shadow: 6px 6px 0px #000 !important;
 }
 
-.stagger-2 {
-  animation-delay: 0.1s;
-}
-
-.stagger-3 {
-  animation-delay: 0.15s;
-}
-
-.stagger-4 {
-  animation-delay: 0.2s;
-}
-
-.stagger-5 {
-  animation-delay: 0.25s;
-}
-
-.stagger-6 {
-  animation-delay: 0.3s;
-}
-
-/* Water Animation */
-@keyframes wave {
-  0% {
-    transform: translateX(0) translateZ(0) scaleY(1);
-  }
-  50% {
-    transform: translateX(-25%) translateZ(0) scaleY(0.55);
-  }
-  100% {
-    transform: translateX(-50%) translateZ(0) scaleY(1);
-  }
-}
-
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Light Mode Overrides for New Sections */
-body.light .bg-slate-900,
-body.light .bg-slate-950\/50,
-body.light .bg-slate-950 {
-  background-color: #f8fafc !important; /* Slate 50 */
-  border-color: #e2e8f0 !important;
-}
-
-body.light .bg-gradient-to-r.from-cyan-900\/40 {
-  background: linear-gradient(to right, #ecfeff, #eff6ff) !important;
-  border-color: #a5f3fc !important;
-}
-
-body.light .bg-slate-900\/40 {
-  background-color: rgba(255, 255, 255, 0.6) !important;
-  border-color: #cbd5e1 !important;
-}
-
-body.light .text-cyan-200 {
-  color: #0e7490 !important; /* cyan-700 */
-}
-
-body.light .text-cyan-400 {
-  color: #0891b2 !important; /* cyan-600 */
-}
-
-body.light input {
-  color: #0f172a !important; /* slate-900 */
-  background-color: #ffffff !important;
-}
-
-/* Mobile Safe Area Fixes */
-.header-safe-area {
-  padding-top: calc(
-    1rem + env(safe-area-inset-top, 20px)
-  ); /* Added fallback to env */
-  padding-bottom: 1rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-@media (max-width: 640px) {
-  /* Enforce extra padding on mobile even if env() is 0 */
-  .header-safe-area {
-    padding-top: 3.5rem; /* ~1.5rem (base) + 2rem (pseudo-notch) */
-    padding-top: calc(1.5rem + env(safe-area-inset-top, 24px));
-  }
-}
-
-/* Animations */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.animate-slide-up {
-  animation: slide-up 0.5s ease-out forwards;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-/* --- AQUAFLOW COMPONENT STYLES --- */
-:root {
-  --water-primary: #0ea5e9; /* Sky 500 */
-  --water-secondary: #0284c7; /* Sky 600 */
-  --water-dark: #0369a1; /* Sky 700 */
-}
-
-/* Glass Panel */
-/* Glass Panel */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.6); /* Slate 900 (Dark default) */
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(30, 41, 59, 0.5);
-  box-shadow:
-    0 20px 40px -5px rgba(14, 165, 233, 0.15),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-body.light .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(255, 255, 255, 0.5);
-  box-shadow:
-    0 20px 40px -5px rgba(14, 165, 233, 0.15),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-}
-
-/* Bottle Wrapper */
+/* ==========================================================================
+   WATER TRACKER OVERRIDES (AQUAFLOW -> NEON FLUID)
+   ========================================================================== */
 .bottle-wrapper {
   position: relative;
-  width: 100px; /* Mobile first */
+  width: 100px;
   height: 280px;
   margin: 0 auto;
-  filter: drop-shadow(0 15px 25px rgba(14, 165, 233, 0.25));
   transition: transform 0.2s ease;
   transform-origin: bottom center;
 }
-
-/* Tablet and larger */
-@media (min-width: 640px) {
-  .bottle-wrapper {
-    width: 120px;
-    height: 350px;
-  }
-}
-
-/* Desktop */
-@media (min-width: 768px) {
-  .bottle-wrapper {
-    width: 140px;
-    height: 400px;
-  }
-}
+@media (min-width: 640px) { .bottle-wrapper { width: 120px; height: 350px; } }
+@media (min-width: 768px) { .bottle-wrapper { width: 140px; height: 400px; } }
 
 .bottle-wrapper:hover {
-  transform: scale(1.02);
+  transform: scale(1.05);
 }
 
 .bottle-svg {
   width: 100%;
   height: 100%;
   overflow: visible;
+  /* Make the bottle itself look more like an iron flask */
 }
 
-#water-rect-facu,
-#water-rect-alma {
-  transition: y 1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Shake Effect */
-@keyframes shake-bottle {
-  0% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(3deg);
-  }
-  50% {
-    transform: rotate(-3deg);
-  }
-  75% {
-    transform: rotate(1deg);
-  }
-  100% {
-    transform: rotate(0deg);
-  }
-}
-
-.shaking {
-  animation: shake-bottle 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-
-/* Bubbles */
-.svg-bubble {
-  fill: rgba(255, 255, 255, 0.3);
-  animation: rise-up 4s infinite ease-in;
-}
-
-@keyframes rise-up {
-  0% {
-    transform: translateY(0) scale(1);
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateY(-300px) scale(0.5);
-    opacity: 0;
-  }
-}
-
-/* Pouring Stream */
+/* Stream Drop */
 .stream {
   position: absolute;
   top: -20px;
   left: 50%;
   transform: translateX(-50%);
   width: 8px;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.8),
-    var(--water-primary)
-  );
-  border-radius: 4px;
+  border-radius: 0;
   height: 0;
   opacity: 0;
   z-index: 50;
   pointer-events: none;
   transition: height 0.2s ease-in;
 }
+.stream.active { opacity: 1; }
 
-.stream.active {
-  opacity: 1;
-}
+#water-stream-facu { background: var(--accent-facu) !important; box-shadow: 0 0 10px var(--accent-facu); }
+#water-stream-alma { background: var(--accent-alma) !important; box-shadow: 0 0 10px var(--accent-alma); }
 
-/* Info Overlay */
+/* SVG Gradients mapped to Neons */
+#water-grad-facu stop:first-child { stop-color: #00f0ff !important; }
+#water-grad-facu stop:last-child { stop-color: #007b82 !important; }
+
+#water-grad-alma stop:first-child { stop-color: #ff0055 !important; }
+#water-grad-alma stop:last-child { stop-color: #8c0030 !important; }
+
+/* Bottle info overlay */
 .bottle-info {
   position: absolute;
   top: 55%;
@@ -528,27 +314,55 @@ body.light .glass-panel {
   z-index: 20;
   width: 100%;
   pointer-events: none;
-  mix-blend-mode: normal; /* Default for Dark Mode: pure white text */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 0px #000;
 }
 
-body.light .bottle-info {
-  mix-blend-mode: multiply; /* Only for Light Mode */
-  text-shadow: none;
+#water-rect-facu, #water-rect-alma {
+  transition: y 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Range Input Customization */
+/* Shake Animation */
+@keyframes shake-bottle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  50% { transform: rotate(-3deg); }
+  75% { transform: rotate(1deg); }
+}
+.shaking { animation: shake-bottle 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+/* ==========================================================================
+   RANGE INPUTS (SLIDERS)
+   ========================================================================== */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: var(--bg-panel-alt) !important;
+  border: 2px solid var(--border-strong) !important;
+  height: 20px;
+}
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 16px;
+  height: 24px;
   width: 16px;
-  border-radius: 50%;
-  background: var(--water-secondary);
-  margin-top: -4px;
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.3);
-  transition: box-shadow 0.2s;
+  background: var(--accent-vigor);
+  border: 2px solid #000;
+  cursor: pointer;
+}
+#goal-input-facu::-webkit-slider-thumb { background: var(--accent-facu); }
+#goal-input-alma::-webkit-slider-thumb { background: var(--accent-alma); }
+
+/* ==========================================================================
+   PROGRESS BARS
+   ========================================================================== */
+#progress-bar, #week-facu-bar, #week-alma-bar, #water-progress-alma, #water-progress-facu {
+  border-radius: 0 !important;
 }
 
-input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.5);
+/* Fix mobile safe area */
+.header-safe-area {
+  padding-top: calc(1rem + env(safe-area-inset-top, 20px));
+  padding-bottom: 1rem;
 }
+@media (max-width: 640px) {
+  .header-safe-area { padding-top: calc(1.5rem + env(safe-area-inset-top, 24px)); }
+}
+

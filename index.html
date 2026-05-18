@@ -851,45 +851,55 @@
 
     <!-- Timer Modal -->
     <div id="timer-modal"
-        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-all duration-300"
+        class="fixed inset-0 bg-black/95 z-50 hidden items-center justify-center p-4 transition-all duration-300"
         data-minimized="false">
+        
+        <!-- Background Flash Effect -->
+        <div id="timer-bg-flash" class="absolute inset-0 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
         <!-- Full Timer Modal -->
         <div id="timer-full"
-            class="relative bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl shadow-emerald-500/10 transition-all duration-300">
+            class="relative bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-8 max-w-md w-full text-center transition-all duration-300 shadow-[8px_8px_0_#000]">
             <!-- Minimize Button -->
             <button id="timer-minimize-btn"
-                class="absolute top-4 right-4 p-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-all"
+                class="absolute top-4 right-4 p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none transition-all"
                 title="Minimizar">
-                <i data-lucide="minimize-2" class="w-5 h-5 text-slate-400"></i>
+                <i data-lucide="minimize-2" class="w-6 h-6 text-white"></i>
             </button>
-            <div class="mb-4">
-                <i data-lucide="timer" class="w-12 h-12 text-emerald-400 mx-auto mb-2"></i>
-                <h3 class="text-lg font-bold text-slate-300">Tiempo de Descanso</h3>
-                <p id="timer-exercise-name" class="text-sm text-slate-500 truncate"></p>
+            
+            <div class="mb-6 timer-header-anim animate-slide-up stagger-1">
+                <i data-lucide="timer" class="w-16 h-16 text-[var(--text-main)] mx-auto mb-4 animate-float"></i>
+                <h3 class="text-3xl font-black text-white tracking-widest uppercase">Descanso</h3>
+                <p id="timer-exercise-name" class="text-lg text-[var(--text-dim)] font-bold uppercase truncate mt-2"></p>
             </div>
-            <div id="timer-display" class="text-7xl font-mono font-bold text-emerald-400 mb-6 tabular-nums">
+            
+            <!-- Huge Brutalist Number Display -->
+            <div id="timer-display" class="text-[8rem] leading-none font-mono font-black text-[var(--accent-vigor)] mb-4 tabular-nums timer-text-anim animate-pop stagger-2 drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">
                 0:00
             </div>
-            <div id="timer-progress-ring" class="relative w-32 h-32 mx-auto mb-6">
-                <svg class="w-32 h-32 transform -rotate-90">
-                    <circle cx="64" cy="64" r="58" stroke="#1e293b" stroke-width="8" fill="none" />
-                    <circle id="timer-ring" cx="64" cy="64" r="58" stroke="#10b981" stroke-width="8" fill="none"
-                        stroke-linecap="round" stroke-dasharray="364.42" stroke-dashoffset="0"
+            
+            <div id="timer-progress-ring" class="relative w-40 h-40 mx-auto mb-8 animate-slide-up stagger-2 hidden">
+                <!-- Using purely numerical display in Brutalism, ring is optional but let's keep it styled -->
+                <svg class="w-40 h-40 transform -rotate-90 drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                    <circle cx="80" cy="80" r="72" stroke="var(--border-strong)" stroke-width="12" fill="none" />
+                    <circle id="timer-ring" cx="80" cy="80" r="72" stroke="var(--accent-vigor)" stroke-width="12" fill="none"
+                        stroke-dasharray="452.39" stroke-dashoffset="0"
                         class="transition-all duration-1000 ease-linear" />
                 </svg>
                 <div class="absolute inset-0 flex items-center justify-center">
-                    <span id="timer-seconds-left" class="text-3xl font-bold text-white"></span>
+                    <span id="timer-seconds-left" class="text-4xl font-black text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)]"></span>
                 </div>
             </div>
-            <div class="flex gap-3 justify-center">
+            
+            <div class="flex gap-4 justify-center animate-slide-up stagger-3">
                 <button id="timer-skip-btn"
-                    class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition-all flex items-center gap-2">
-                    <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                    class="px-8 py-4 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] text-white text-xl font-bold uppercase hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none transition-all flex items-center gap-2">
+                    <i data-lucide="skip-forward" class="w-6 h-6"></i>
                     Saltar
                 </button>
                 <button id="timer-add-btn"
-                    class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-all flex items-center gap-2">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    class="px-8 py-4 bg-[var(--accent-vigor)] border-2 border-black text-black text-xl font-bold uppercase hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none transition-all flex items-center gap-2">
+                    <i data-lucide="plus" class="w-6 h-6"></i>
                     30s
                 </button>
             </div>
@@ -903,79 +913,79 @@
 
     <!-- Plate Calculator Modal -->
     <div id="calculator-modal"
-        class="fixed inset-0 bg-black/90 z-[80] hidden items-center justify-center p-4 backdrop-blur-md transition-opacity duration-300">
+        class="fixed inset-0 bg-black/95 z-[80] hidden items-center justify-center p-4 transition-all duration-300">
         <div
-            class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative overflow-hidden">
+            class="bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-6 max-w-lg w-full shadow-[8px_8px_0_#000] relative overflow-hidden">
 
             <!-- Close Button -->
             <button onclick="closeCalculatorModal()"
-                class="absolute top-4 right-4 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-full transition-all z-10">
-                <i data-lucide="x" class="w-6 h-6"></i>
+                class="absolute top-4 right-4 p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none transition-all z-10">
+                <i data-lucide="x" class="w-6 h-6 text-white"></i>
             </button>
 
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center p-3 bg-blue-600/20 rounded-full mb-3">
-                    <i data-lucide="calculator" class="w-8 h-8 text-blue-400"></i>
+            <div class="text-center mb-6 mt-4">
+                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-facu)] border-2 border-black mb-4 shadow-[4px_4px_0_#000]">
+                    <i data-lucide="calculator" class="w-8 h-8 text-black"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-1">Calculadora de Discos</h3>
-                <p class="text-slate-400 text-sm">Objetivo total (Barra Olímpica 20kg)</p>
+                <h3 class="text-3xl font-black text-white uppercase tracking-widest mb-1">Calculadora</h3>
+                <p class="text-[var(--text-dim)] font-bold uppercase text-sm">Barra Olímpica 20kg</p>
             </div>
 
             <!-- Input -->
             <div class="flex justify-center mb-8">
                 <div class="relative">
                     <input type="number" id="calc-weight-input" placeholder="0"
-                        class="text-5xl font-bold bg-transparent text-white text-center w-48 border-b-2 border-slate-700 focus:border-blue-500 outline-none pb-2 transition-colors placeholder:text-slate-800"
+                        class="text-6xl font-black bg-[var(--bg-base)] border-2 border-[var(--border-strong)] text-white text-center w-48 p-4 focus:border-[var(--accent-facu)] outline-none transition-colors placeholder:text-[var(--border-strong)] shadow-[4px_4px_0_#000]"
                         oninput="calculatePlates(this.value)">
-                    <span class="absolute right-0 bottom-4 text-slate-500 font-bold text-xl">kg</span>
+                    <span class="absolute -right-4 -bottom-4 bg-[var(--accent-facu)] text-black border-2 border-black px-2 py-1 font-black text-xl shadow-[2px_2px_0_#000]">KG</span>
                 </div>
             </div>
 
             <!-- Visual Barbell -->
             <div
-                class="bg-slate-950 rounded-xl p-4 border border-slate-800 mb-6 flex flex-col items-center justify-center min-h-[120px]">
+                class="bg-[var(--bg-base)] border-2 border-[var(--border-strong)] p-4 mb-6 flex flex-col items-center justify-center min-h-[140px] shadow-[inset_4px_4px_0_rgba(0,0,0,0.5)]">
                 <div id="plate-display" class="flex items-center gap-1 h-32 w-full justify-center relative">
                     <!-- Barbell Center -->
-                    <div class="h-4 w-full bg-slate-600 absolute z-0 rounded-full"></div>
+                    <div class="h-6 w-full bg-[#404040] absolute z-0 border-y-2 border-black"></div>
                     <!-- Plates will be injected here as relative z-10 -->
-                    <span class="text-slate-600 text-xs font-bold absolute -top-2">LADO ÚNICO</span>
+                    <span class="text-[var(--accent-facu)] bg-black px-2 py-1 text-xs font-black absolute -top-4 border border-[var(--accent-facu)] tracking-widest">LADO ÚNICO</span>
                 </div>
-                <div id="plate-text" class="text-slate-300 font-mono text-sm mt-2 text-center h-5">Ingresa un peso...
+                <div id="plate-text" class="text-white font-mono font-bold text-sm mt-4 text-center h-5">INGRESA UN PESO...
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="calculatePlates(40)"
-                    class="p-2 rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 text-sm font-medium">40 kg
-                    (Calentamiento)</button>
+                    class="p-4 bg-[var(--bg-panel-alt)] border-2 border-[var(--border-strong)] text-white hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none font-black text-sm uppercase transition-all">40 kg
+                    (Calentar)</button>
                 <button onclick="calculatePlates(60)"
-                    class="p-2 rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 text-sm font-medium">60 kg (1
+                    class="p-4 bg-[var(--bg-panel-alt)] border-2 border-[var(--border-strong)] text-white hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none font-black text-sm uppercase transition-all">60 kg (1
                     Disco)</button>
             </div>
 
             <!-- 1RM Estimator Section -->
-            <div class="mt-6 pt-6 border-t border-slate-800">
-                <h4 class="text-slate-400 text-sm font-bold uppercase mb-3 flex items-center gap-2">
-                    <i data-lucide="biceps-flexed" class="w-4 h-4"></i> Estimador 1RM
+            <div class="mt-8 pt-6 border-t-[4px] border-[var(--border-strong)]">
+                <h4 class="text-[var(--accent-vigor)] text-lg font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <i data-lucide="biceps-flexed" class="w-6 h-6"></i> Estimador 1RM
                 </h4>
-                <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800 flex gap-4 items-center">
+                <div class="bg-[var(--bg-base)] p-4 border-2 border-[var(--border-strong)] shadow-[4px_4px_0_#000] flex gap-4 items-center">
                     <div>
-                        <label class="text-[10px] text-slate-500 block mb-1 uppercase font-bold">Peso (kg)</label>
+                        <label class="text-[10px] text-[var(--text-dim)] block mb-1 uppercase font-black tracking-widest">Peso (kg)</label>
                         <input type="number" id="rm-weight" oninput="calculate1RM()"
-                            class="w-20 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-center focus:border-emerald-500 outline-none transition-colors"
+                            class="w-20 bg-[var(--bg-panel)] border-2 border-[var(--border-strong)] p-2 text-white font-black text-center focus:border-[var(--accent-vigor)] outline-none transition-colors"
                             placeholder="0">
                     </div>
-                    <div class="text-slate-600 font-bold">x</div>
+                    <div class="text-[var(--border-strong)] font-black text-xl">X</div>
                     <div>
-                        <label class="text-[10px] text-slate-500 block mb-1 uppercase font-bold">Reps</label>
+                        <label class="text-[10px] text-[var(--text-dim)] block mb-1 uppercase font-black tracking-widest">Reps</label>
                         <input type="number" id="rm-reps" oninput="calculate1RM()"
-                            class="w-20 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-center focus:border-emerald-500 outline-none transition-colors"
+                            class="w-20 bg-[var(--bg-panel)] border-2 border-[var(--border-strong)] p-2 text-white font-black text-center focus:border-[var(--accent-vigor)] outline-none transition-colors"
                             placeholder="0">
                     </div>
                     <div class="flex-1 text-right">
-                        <div class="text-[10px] text-slate-500 uppercase font-bold">Fuerza Máxima</div>
-                        <div id="rm-result" class="text-2xl font-bold text-emerald-400">0 <span
-                                class="text-sm text-emerald-600">kg</span></div>
+                        <div class="text-[10px] text-[var(--text-dim)] uppercase font-black tracking-widest">Fuerza Máx</div>
+                        <div id="rm-result" class="text-3xl font-black text-[var(--accent-vigor)] drop-shadow-[2px_2px_0_#000]">0 <span
+                                class="text-sm">kg</span></div>
                     </div>
                 </div>
             </div>
@@ -1207,35 +1217,35 @@
     </div>
 
     <!-- Day Edit Modal -->
-    <div id="day-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl">
+    <div id="day-modal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4 transition-all duration-300">
+        <div class="bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-6 max-w-sm w-full shadow-[8px_8px_0_#000] relative">
             <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center p-3 bg-slate-800 rounded-full mb-3">
-                    <i data-lucide="calendar" class="w-8 h-8 text-emerald-400"></i>
+                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-vigor)] border-2 border-black mb-3 shadow-[4px_4px_0_#000]">
+                    <i data-lucide="calendar" class="w-8 h-8 text-black"></i>
                 </div>
-                <h3 id="day-modal-title" class="text-xl font-bold text-white">15/01/2026</h3>
-                <p id="day-modal-status" class="text-sm text-slate-400 mt-1">Sin registro</p>
+                <h3 id="day-modal-title" class="text-3xl font-black text-white tracking-widest uppercase mt-2">15/01</h3>
+                <p id="day-modal-status" class="text-sm text-[var(--text-dim)] font-bold uppercase mt-1">Sin registro</p>
             </div>
-            <div class="space-y-2">
+            <div class="space-y-4">
                 <button onclick="setDayTraining('alma')"
-                    class="w-full px-4 py-3 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 border border-pink-600/50 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-alma)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-alma)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all flex items-center justify-center gap-2">
                     <i data-lucide="user" class="w-5 h-5"></i> Solo Alma
                 </button>
                 <button onclick="setDayTraining('facu')"
-                    class="w-full px-4 py-3 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-600/50 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-facu)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all flex items-center justify-center gap-2">
                     <i data-lucide="user" class="w-5 h-5"></i> Solo Facu
                 </button>
                 <button onclick="setDayTraining('both')"
-                    class="w-full px-4 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-600/50 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-vigor)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-vigor)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all flex items-center justify-center gap-2">
                     <i data-lucide="users" class="w-5 h-5"></i> Ambos
                 </button>
                 <button onclick="setDayTraining('clear')"
-                    class="w-full px-4 py-3 bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-600/50 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+                    class="w-full px-4 py-4 bg-[#ff0055] text-white border-2 border-black hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all flex items-center justify-center gap-2 mt-4">
                     <i data-lucide="trash-2" class="w-4 h-4"></i> Borrar registro
                 </button>
             </div>
             <button onclick="closeDayModal()"
-                class="w-full mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl font-medium transition-all">
+                class="w-full mt-6 px-4 py-3 bg-transparent text-[var(--text-dim)] border-2 border-[var(--border-strong)] hover:text-white font-black uppercase transition-all">
                 Cancelar
             </button>
         </div>
@@ -1255,21 +1265,21 @@
 
     <!-- CONFIRMATION MODAL -->
     <div id="confirm-modal"
-        class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all duration-300 opacity-0 transform scale-95">
+        class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 transition-all duration-300 opacity-0 transform scale-95">
         <div
-            class="bg-slate-900 border border-slate-700/50 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-pop">
-            <div class="p-6 text-center">
-                <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="triangle-alert" class="w-8 h-8 text-red-500"></i>
+            class="bg-[var(--bg-panel)] border-[4px] border-[#ff0055] w-full max-w-sm overflow-hidden shadow-[8px_8px_0_#ff0055] animate-pop relative">
+            <div class="p-8 text-center">
+                <div class="inline-flex p-4 bg-[#ff0055] border-2 border-black mb-6 shadow-[4px_4px_0_#000] mx-auto">
+                    <i data-lucide="triangle-alert" class="w-8 h-8 text-white"></i>
                 </div>
-                <h3 id="confirm-title" class="text-xl font-bold text-slate-100 mb-2">¿Estás seguro?</h3>
-                <p id="confirm-message" class="text-slate-400 text-sm mb-6">Esta acción no se puede deshacer.</p>
+                <h3 id="confirm-title" class="text-3xl font-black text-white mb-2 uppercase tracking-widest">¿Estás seguro?</h3>
+                <p id="confirm-message" class="text-[var(--text-dim)] font-bold text-sm mb-8 uppercase">Esta acción no se puede deshacer.</p>
 
-                <div class="flex gap-3">
+                <div class="flex gap-4">
                     <button id="confirm-cancel-btn"
-                        class="flex-1 py-2.5 px-4 rounded-xl border border-slate-700 text-slate-300 font-medium hover:bg-slate-800 transition-colors">Cancelar</button>
+                        class="flex-1 py-3 px-4 border-2 border-[var(--border-strong)] text-[var(--text-dim)] hover:text-white hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all">Cancelar</button>
                     <button id="confirm-ok-btn"
-                        class="flex-1 py-2.5 px-4 rounded-xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/20 hover:bg-red-600 hover:scale-[1.02] transition-all">Confirmar</button>
+                        class="flex-1 py-3 px-4 bg-[#ff0055] text-white border-2 border-black hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all">Confirmar</button>
                 </div>
             </div>
         </div>
