@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "node build.js",
-    "cap:sync": "npm run build && npx cap sync"
+    "cap:sync": "npm run build && npx cap sync",
+    "apk:build": "npm run cap:sync && cd android && gradlew assembleDebug"
   },
   "repository": {
     "type": "git",
