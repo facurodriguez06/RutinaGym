@@ -413,6 +413,16 @@ let calendarMonth = new Date().getMonth();
 let calendarYear = new Date().getFullYear();
 let trainingHistory = {};
 let isSyncing = false;
+let _saveToCloudTimer = null;
+
+// Debounced save: batches rapid saves into one call (e.g. typing weights)
+function debouncedSaveToCloud(delay) {
+  clearTimeout(_saveToCloudTimer);
+  // Always save locally immediately
+  localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+  localStorage.setItem("gymGamification", JSON.stringify(gamification));
+  _saveToCloudTimer = setTimeout(() => saveToCloud(), delay || 2000);
+}
 
 // --- JSONBIN CONFIG ---
 // Historial compartido entre Alma y Facu via JSONBin.io
@@ -4033,6 +4043,7 @@ function init() {
         if (!setWeights[key]) setWeights[key] = {};
         setWeights[key][user] = value;
         localStorage.setItem("gymRoutineWeights", JSON.stringify(setWeights));
+        debouncedSaveToCloud(3000); // Batch cloud sync while typing
       }
     }
   });
@@ -6030,14 +6041,14 @@ setTimeout(() => {
     console.log("🛡️ Running Fix V6...");
     const interval = setInterval(() => {
       attemptFix();
-    }, 3000); // Check every 3 seconds
+    }, 2000); // Check every 2 seconds
 
-    // Stop checking after 15 seconds
-    setTimeout(() => clearInterval(interval), 15000);
+    // Stop checking after 8 seconds
+    setTimeout(() => clearInterval(interval), 8000);
   } catch (e) {
     console.error("Fix v6 error:", e);
   }
-}, 2000);
+}, 1500);
 
 // --- REAL WEATHER IMPLEMENTATION ---
 
@@ -6112,7 +6123,8 @@ document.addEventListener("DOMContentLoaded", () => {
       splash.classList.add("opacity-0", "pointer-events-none");
       setTimeout(() => {
         splash.remove();
-      }, 500); // Wait for transition
+      }, 400); // Wait for transition
     }
-  }, 2000); // 2 seconds delay
+  }, 800); // Reduced from 2s since native splash already shows
 });
+
