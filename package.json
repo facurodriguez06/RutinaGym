@@ -1,0 +1,31 @@
+{
+  "name": "rutina-gym",
+  "version": "1.0.0",
+  "description": "",
+  "main": "recovery_script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build.js",
+    "cap:sync": "npm run build && npx cap sync"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facurodriguez06/RutinaGym.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/facurodriguez06/RutinaGym/issues"
+  },
+  "homepage": "https://github.com/facurodriguez06/RutinaGym#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.3.4"
+  }
+}
