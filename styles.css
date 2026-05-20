@@ -31,6 +31,39 @@
   --brutal-shadow-active: 0px 0px 0px var(--shadow-color);
 }
 
+body.light {
+  /* Core Colors */
+  --bg-base: #f9fafb;     /* Very light gray base */
+  --bg-panel: #ffffff;    /* Pure white panels */
+  --bg-panel-alt: #f3f4f6;/* Slightly darker gray for secondary panels */
+  
+  --border-dim: #e5e7eb;  /* Light border */
+  --border-strong: #111827;/* Strong dark border for Neo-brutalist design */
+  
+  --text-main: #111827;   /* Dark text */
+  --text-dim: #4b5563;    /* Muted gray-dark text */
+  
+  /* Legible vibrant brand colors for white background */
+  --accent-vigor: #5a8500;/* Legible vibrant green */
+  --accent-facu: #0284c7; /* Legible cyber blue */
+  --accent-alma: #db2777; /* Legible vibrant pink */
+  
+  /* Adjusted background image grid for light mode */
+  background-image: 
+    linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px) !important;
+}
+
+body.light [class*="bg-slate-800"] {
+  background-color: var(--bg-panel-alt) !important;
+}
+body.light [class*="bg-slate-900"] {
+  background-color: var(--bg-panel) !important;
+}
+body.light [class*="bg-slate-950"] {
+  background-color: var(--bg-panel-alt) !important; /* Panel alt for deep elements */
+}
+
 body {
   font-family: "Inter", sans-serif;
   background-color: var(--bg-base) !important;
@@ -143,7 +176,7 @@ button:active {
 .bg-red-500, .bg-red-600 { background-color: #ff3333 !important; color: #000 !important; }
 
 /* Texts */
-.text-slate-200, .text-white { color: var(--text-main) !important; }
+.text-slate-100, .text-slate-200, .text-slate-300, .text-white { color: var(--text-main) !important; }
 .text-slate-400, .text-slate-500 { color: var(--text-dim) !important; }
 
 /* Nav / Tabs */
@@ -162,6 +195,50 @@ button:active {
 }
 
 /* Modals */
+#timer-modal,
+#calculator-modal,
+#history-details-modal,
+#shop-modal,
+#muscle-map-modal,
+#profile-modal,
+#day-modal,
+#confirm-modal,
+#permission-modal,
+#achievement-modal,
+#rescue-modal {
+  overflow-y: auto !important;
+}
+
+#timer-modal:not(.hidden),
+#calculator-modal:not(.hidden),
+#history-details-modal:not(.hidden),
+#shop-modal:not(.hidden),
+#muscle-map-modal:not(.hidden),
+#profile-modal:not(.hidden),
+#day-modal:not(.hidden),
+#confirm-modal:not(.hidden),
+#permission-modal:not(.hidden),
+#achievement-modal:not(.hidden),
+#rescue-modal:not(.hidden) {
+  display: flex !important;
+  padding: 1.5rem 1rem !important;
+}
+
+#timer-modal > div,
+#calculator-modal > div,
+#history-details-modal > div,
+#shop-modal > div,
+#muscle-map-modal > div,
+#profile-modal > div,
+#day-modal > div,
+#confirm-modal > div,
+#permission-modal > div,
+#achievement-modal > div,
+#rescue-modal > div {
+  margin: auto !important;
+  max-height: none !important;
+}
+
 .fixed > .bg-slate-900 {
   border: 4px solid var(--border-strong) !important;
   box-shadow: 12px 12px 0px var(--shadow-color) !important;
@@ -364,5 +441,10 @@ input[type="range"]::-webkit-slider-thumb {
 }
 @media (max-width: 640px) {
   .header-safe-area { padding-top: calc(1.5rem + env(safe-area-inset-top, 24px)); }
+}
+
+/* Plate outline for calculator in light mode */
+body.light #plate-display [title$="kg"] {
+  border: 2px solid var(--border-strong) !important;
 }
 

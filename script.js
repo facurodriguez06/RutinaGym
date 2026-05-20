@@ -694,19 +694,24 @@ function applyTheme() {
   const body = document.body;
   const html = document.documentElement; // Tailwind looks here by default
   const icon = document.getElementById("theme-icon");
+  const sidebarIcon = document.getElementById("theme-icon-sidebar");
 
   if (currentTheme === "light") {
     body.classList.add("light");
     body.classList.remove("dark");
     html.classList.remove("dark"); // Remove from HTML
     if (icon) icon.setAttribute("data-lucide", "sun");
+    if (sidebarIcon) sidebarIcon.setAttribute("data-lucide", "sun");
   } else {
     body.classList.remove("light");
     body.classList.add("dark");
     html.classList.add("dark"); // Add to HTML for Tailwind
     if (icon) icon.setAttribute("data-lucide", "moon");
+    if (sidebarIcon) sidebarIcon.setAttribute("data-lucide", "moon");
   }
-  lucide.createIcons();
+  if (typeof lucide !== "undefined" && lucide.createIcons) {
+    lucide.createIcons();
+  }
 }
 
 // Apply saved theme on load
@@ -2097,6 +2102,36 @@ async function releaseWakeLock() {
   }
 }
 
+function updateBodyScrollLock() {
+  const needsLock = !!(
+    activeFullModalUser &&
+    timerState[activeFullModalUser].active &&
+    !timerState[activeFullModalUser].minimized
+  );
+
+  const isCurrentlyLocked = document.body.style.position === "fixed";
+
+  if (needsLock) {
+    if (!isCurrentlyLocked) {
+      savedScrollY = window.scrollY; // Capture original position before lock
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${savedScrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.touchAction = "none";
+    }
+  } else {
+    if (isCurrentlyLocked) {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.touchAction = "";
+      window.scrollTo(0, savedScrollY);
+    }
+  }
+}
+
 function showTimer(user, exerciseName, seconds) {
   // 1. Set State for this user
   timerState[user] = {
@@ -2120,18 +2155,13 @@ function showTimer(user, exerciseName, seconds) {
 
   activeFullModalUser = user;
   timerState[user].minimized = false;
-  savedScrollY = window.scrollY; // Update scroll position
+
+  // Manage Scroll Lock
+  updateBodyScrollLock();
 
   // 3. Render and Start
   renderTimerUI();
   startGlobalTimerIfNeeded();
-
-  // 4. System controls
-  document.body.style.overflow = "hidden";
-  document.body.style.position = "fixed";
-  document.body.style.top = `-${savedScrollY}px`;
-  document.body.style.width = "100%";
-  document.body.style.touchAction = "none";
 
   // Audio & Lock
   requestWakeLock();
@@ -2579,50 +2609,27 @@ function hideTimer(user) {
     }
   }
 
-  renderTimerUI();
+  // Manage Scroll Lock
+  updateBodyScrollLock();
 
-  // Cleanup if nobody active handled by startGlobalTimerIfNeeded loop,
-  // but we should explicit cleanup layout if empty.
-  if (!timerState.facu.active && !timerState.alma.active) {
-    document.body.style.overflow = "";
-    document.body.style.position = "";
-    document.body.style.top = "";
-    document.body.style.width = "";
-    document.body.style.touchAction = "";
-    window.scrollTo(0, savedScrollY);
-  }
+  renderTimerUI();
 }
 
 // --- TIMER MINIMIZE/EXPAND FUNCTIONS ---
 function minimizeTimer() {
   if (activeFullModalUser) {
     timerState[activeFullModalUser].minimized = true;
+    updateBodyScrollLock();
     renderTimerUI();
-
-    // Restore body scroll since we are minimized
-    document.body.style.overflow = "";
-    document.body.style.position = "";
-    document.body.style.top = "";
-    document.body.style.width = "";
-    document.body.style.touchAction = "";
-    window.scrollTo(0, savedScrollY);
   }
 }
 
 function expandTimer(user) {
   if (timerState[user].active) {
-    // Restore scroll lock
-    savedScrollY = window.scrollY; // Update position
-
     activeFullModalUser = user;
     timerState[user].minimized = false;
+    updateBodyScrollLock();
     renderTimerUI();
-
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${savedScrollY}px`;
-    document.body.style.width = "100%";
-    document.body.style.touchAction = "none";
   }
 }
 
@@ -5205,7 +5212,7 @@ function updateGamificationUI() {
     container.classList.remove("hidden");
     // Mobile: Stacked vertical for full width and "bonito" look. Desktop: Horizontal.
     container.className =
-      "grid grid-cols-2 md:flex md:flex-row gap-2 md:gap-3 md:justify-start pb-3";
+      "grid grid-cols-2 md:flex md:flex-row gap-2 md:gap-3 md:justify-start mt-3 pb-3";
 
     container.innerHTML = `
             <div class="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 bg-slate-800/80 px-2 md:px-4 py-2 md:py-2 rounded-xl border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('facu')">
