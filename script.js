@@ -1,5 +1,5 @@
 // --- DATA ---
-const routineData = [
+const DEFAULT_ROUTINE = [
   {
     day: "Lunes",
     title: "Juntos - Pierna y Glúteo",
@@ -366,6 +366,67 @@ const routineData = [
   },
 ];
 
+let routinesList = [];
+let activeRoutineId = 'routine-1';
+let routineData = [];
+let completedSets = {};
+let setWeights = {};
+
+// Data Migration for legacy users (preserves weights & progress under routine-1)
+function migrateLegacyData() {
+  const legacySets = localStorage.getItem("gymRoutineSets");
+  if (legacySets) {
+    localStorage.setItem("gymRoutineSets_routine-1", legacySets);
+    localStorage.removeItem("gymRoutineSets");
+  }
+  const legacyWeights = localStorage.getItem("gymRoutineWeights");
+  if (legacyWeights) {
+    localStorage.setItem("gymRoutineWeights_routine-1", legacyWeights);
+    localStorage.removeItem("gymRoutineWeights");
+  }
+}
+
+// Load routine weights and sets for the active routine ID
+function loadActiveRoutineState() {
+  completedSets = JSON.parse(localStorage.getItem("gymRoutineSets_" + activeRoutineId)) || {};
+  setWeights = JSON.parse(localStorage.getItem("gymRoutineWeights_" + activeRoutineId)) || {};
+}
+
+function initializeRoutines() {
+  migrateLegacyData();
+  
+  const storedList = localStorage.getItem("gymRoutinesList");
+  const storedActiveId = localStorage.getItem("gymActiveRoutineId");
+  
+  if (storedList) {
+    routinesList = JSON.parse(storedList);
+  } else {
+    // Initializer
+    routinesList = [
+      {
+        id: "routine-1",
+        name: "Rutina 1",
+        data: DEFAULT_ROUTINE
+      }
+    ];
+    localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+  }
+  
+  if (storedActiveId) {
+    activeRoutineId = storedActiveId;
+  } else {
+    activeRoutineId = "routine-1";
+    localStorage.setItem("gymActiveRoutineId", activeRoutineId);
+  }
+  
+  // Set routineData global variable
+  const activeRoutine = routinesList.find(r => r.id === activeRoutineId) || routinesList[0];
+  routineData = activeRoutine.data;
+}
+
+// Initialize routines early
+initializeRoutines();
+
 // --- STATE ---
 // Auto-select Day
 const currentDayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
@@ -377,11 +438,18 @@ let activeTab =
 const todayStr = new Date().toDateString();
 const lastVisit = localStorage.getItem("gymLastVisitDate");
 if (lastVisit !== todayStr) {
-  localStorage.removeItem("gymRoutineSets");
+  // Clear all routine sets for all routines
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key === "gymRoutineSets" || key.startsWith("gymRoutineSets_"))) {
+      localStorage.removeItem(key);
+      i--; // Adjust index since we removed an item
+    }
+  }
   localStorage.setItem("gymLastVisitDate", todayStr);
 }
 
-let completedSets = JSON.parse(localStorage.getItem("gymRoutineSets")) || {};
+loadActiveRoutineState();
 
 // --- TIMER STATE ---
 const timerState = {
@@ -471,6 +539,37 @@ async function loadFromCloud() {
         }
         delete cloudHistory.gamificationState; // Remove so it doesn't pollute history iteration
       }
+
+      // 1.5 Sync multiple routines from cloud
+      if (cloudHistory.routinesListData) {
+        cloudHistory.routinesListData.forEach(r => {
+          localStorage.setItem("gymRoutineWeights_" + r.id, JSON.stringify(r.weights || {}));
+          localStorage.setItem("gymRoutineSets_" + r.id, JSON.stringify(r.sets || {}));
+        });
+        
+        routinesList = cloudHistory.routinesListData.map(r => ({
+          id: r.id,
+          name: r.name,
+          data: r.data
+        }));
+        localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+        delete cloudHistory.routinesListData;
+      }
+      if (cloudHistory.activeRoutineIdState) {
+        activeRoutineId = cloudHistory.activeRoutineIdState;
+        localStorage.setItem("gymActiveRoutineId", activeRoutineId);
+        
+        // Update global routineData pointing to active routine data
+        const activeRoutine = routinesList.find(r => r.id === activeRoutineId);
+        if (activeRoutine) {
+          routineData = activeRoutine.data;
+        }
+        
+        delete cloudHistory.activeRoutineIdState;
+      }
+      
+      // Reload current routine weights and sets
+      loadActiveRoutineState();
 
       // 2. Sync Exercise Weights from cloud
       if (cloudHistory.weightsState) {
@@ -641,6 +740,20 @@ async function saveToCloud() {
     trainingHistory.weightsState = JSON.parse(savedWeights);
   }
 
+  // Sync all routines, their weights, sets, and active ID
+  if (typeof routinesList !== "undefined" && routinesList.length > 0) {
+    trainingHistory.routinesListData = routinesList.map(r => {
+      return {
+        id: r.id,
+        name: r.name,
+        data: r.data,
+        weights: JSON.parse(localStorage.getItem("gymRoutineWeights_" + r.id) || "{}"),
+        sets: JSON.parse(localStorage.getItem("gymRoutineSets_" + r.id) || "{}")
+      };
+    });
+    trainingHistory.activeRoutineIdState = activeRoutineId;
+  }
+
   try {
     isSyncing = true;
     const response = await fetch(
@@ -786,6 +899,7 @@ function navigateTo(view) {
     "view-water",
     "view-stats",
     "view-achievements",
+    "ai-routine-view"
   ];
   viewIds.forEach((id) => {
     const el = document.getElementById(id);
@@ -817,6 +931,12 @@ function navigateTo(view) {
     if (achievementsView) {
       achievementsView.classList.remove("hidden");
       renderAchievements();
+    }
+  } else if (view === "ai-routine") {
+    const aiView = document.getElementById("ai-routine-view");
+    if (aiView) {
+      aiView.classList.remove("hidden");
+      initAIChat();
     }
   }
 
@@ -1625,6 +1745,11 @@ function openProfileModal() {
   document.getElementById("profile-age-facu").value = userProfile.facu.age;
   document.getElementById("profile-age-alma").value = userProfile.alma.age;
 
+  const apiKeyInput = document.getElementById("gemini-api-key-input");
+  if (apiKeyInput) {
+    apiKeyInput.value = localStorage.getItem("gymGeminiApiKey") || "";
+  }
+
   const modal = document.getElementById("profile-modal");
   modal.classList.remove("hidden");
   modal.classList.add("flex");
@@ -1663,6 +1788,11 @@ function saveProfile() {
   if (aAlma) userProfile.alma.age = parseInt(aAlma);
 
   localStorage.setItem("gymUserProfile", JSON.stringify(userProfile));
+
+  const apiKeyInput = document.getElementById("gemini-api-key-input");
+  if (apiKeyInput) {
+    localStorage.setItem("gymGeminiApiKey", apiKeyInput.value.trim());
+  }
 
   // Recalculate water goals based on new profile
   waterState.facuGoal = calculateSmartWaterGoal("facu");
@@ -3938,9 +4068,6 @@ if (Object.keys(trainingHistory).length === 0) {
   }
 }
 
-// --- STATE (Weights) ---
-let setWeights = JSON.parse(localStorage.getItem("gymRoutineWeights")) || {};
-
 // --- SMART AUTOFILL HELPER ---
 function getLastWeight(exerciseName, user, dayIndex) {
   // Scans trainingHistory backwards to find the last weight for this exercise
@@ -4042,7 +4169,7 @@ function init() {
       if (key && user) {
         if (!setWeights[key]) setWeights[key] = {};
         setWeights[key][user] = value;
-        localStorage.setItem("gymRoutineWeights", JSON.stringify(setWeights));
+        localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
         debouncedSaveToCloud(3000); // Batch cloud sync while typing
       }
     }
@@ -4050,6 +4177,9 @@ function init() {
 }
 
 function renderTabs() {
+  if (activeTab >= routineData.length) {
+    activeTab = 0;
+  }
   const container = document.getElementById("tabs-container");
   container.innerHTML = "";
 
@@ -4301,6 +4431,9 @@ window.resetWarmupTimer = resetWarmupTimer;
 window.skipWarmupTimer = skipWarmupTimer;
 
 function renderContent() {
+  if (activeTab >= routineData.length) {
+    activeTab = 0;
+  }
   const dayData = routineData[activeTab];
 
   // Determine active color theme
@@ -4721,7 +4854,7 @@ function renderContent() {
           "Se borrará todo lo que hiciste hoy. ¿Estás seguro?",
           () => {
             completedSets = {};
-            localStorage.removeItem("gymRoutineSets");
+            localStorage.removeItem("gymRoutineSets_" + activeRoutineId);
             renderContent();
           },
         );
@@ -4761,7 +4894,7 @@ function renderContent() {
         completedSets[setKey][user] = false;
       }
 
-      localStorage.setItem("gymRoutineSets", JSON.stringify(completedSets));
+      localStorage.setItem("gymRoutineSets_" + activeRoutineId, JSON.stringify(completedSets));
       renderContent();
     });
   });
@@ -4778,7 +4911,7 @@ function renderContent() {
       }
       setWeights[setKey][user] = val;
 
-      localStorage.setItem("gymRoutineWeights", JSON.stringify(setWeights));
+      localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
     });
 
     // Auto-select on focus
@@ -6126,5 +6259,476 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 400); // Wait for transition
     }
   }, 800); // Reduced from 2s since native splash already shows
+});
+
+// --- MULTIPLE ROUTINES MANAGER FUNCTIONS ---
+
+function openRoutinesManagerModal() {
+  const modal = document.getElementById("routines-manager-modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    renderRoutinesList();
+  }
+}
+
+function closeRoutinesManagerModal() {
+  const modal = document.getElementById("routines-manager-modal");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+}
+
+function renderRoutinesList() {
+  const container = document.getElementById("routines-list-container");
+  if (!container) return;
+  
+  container.innerHTML = "";
+  
+  routinesList.forEach((routine) => {
+    const isActive = routine.id === activeRoutineId;
+    
+    const card = document.createElement("div");
+    card.className = `p-4 rounded-xl border transition-all flex items-center justify-between gap-3 ${
+      isActive 
+        ? "bg-slate-800/80 border-cyan-500/50 shadow-md ring-1 ring-cyan-500/20" 
+        : "bg-slate-900 border-slate-700 hover:bg-slate-800/40"
+    }`;
+    
+    // Left: Active state radio & Name
+    const leftSec = document.createElement("div");
+    leftSec.className = "flex items-center gap-3 cursor-pointer flex-1 min-w-0";
+    leftSec.onclick = () => selectActiveRoutine(routine.id);
+    
+    const radio = document.createElement("div");
+    radio.className = `w-5 h-5 rounded-full flex items-center justify-center border flex-shrink-0 transition-all ${
+      isActive 
+        ? "border-cyan-500 bg-cyan-950 text-cyan-400" 
+        : "border-slate-500 bg-slate-950"
+    }`;
+    if (isActive) {
+      radio.innerHTML = '<div class="w-2.5 h-2.5 rounded-full bg-cyan-500"></div>';
+    }
+    
+    const nameSpan = document.createElement("span");
+    nameSpan.className = `font-semibold truncate text-sm ${isActive ? "text-white" : "text-slate-300"}`;
+    nameSpan.textContent = routine.name;
+    
+    leftSec.appendChild(radio);
+    leftSec.appendChild(nameSpan);
+    
+    // Right: Action buttons (Rename, Delete)
+    const rightSec = document.createElement("div");
+    rightSec.className = "flex items-center gap-2 flex-shrink-0";
+    
+    // Rename button
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all active:scale-90";
+    renameBtn.title = "Renombrar";
+    renameBtn.innerHTML = '<i data-lucide="edit-2" class="w-4 h-4"></i>';
+    renameBtn.onclick = (e) => {
+      e.stopPropagation();
+      renameRoutine(routine.id);
+    };
+    
+    // Delete button
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = `p-2 rounded-lg transition-all active:scale-90 ${
+      isActive || routinesList.length <= 1
+        ? "bg-slate-850 text-slate-650 cursor-not-allowed opacity-30"
+        : "bg-slate-800 hover:bg-red-950/40 hover:text-red-400 text-slate-400"
+    }`;
+    deleteBtn.title = "Eliminar";
+    deleteBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
+    if (!isActive && routinesList.length > 1) {
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteRoutine(routine.id);
+      };
+    } else {
+      deleteBtn.disabled = true;
+    }
+    
+    rightSec.appendChild(renameBtn);
+    rightSec.appendChild(deleteBtn);
+    
+    card.appendChild(leftSec);
+    card.appendChild(rightSec);
+    
+    container.appendChild(card);
+  });
+  
+  lucide.createIcons();
+}
+
+function selectActiveRoutine(id) {
+  activeRoutineId = id;
+  localStorage.setItem("gymActiveRoutineId", id);
+  
+  // Set routineData global variable
+  const activeRoutine = routinesList.find(r => r.id === activeRoutineId) || routinesList[0];
+  routineData = activeRoutine.data;
+  
+  // Reload weights and completed sets
+  loadActiveRoutineState();
+  
+  // Re-render routines list
+  renderRoutinesList();
+  
+  // Re-render tabs and training content
+  renderTabs();
+  renderContent();
+  
+  // Show toast/log
+  logToScreen(`Rutina activa: "${activeRoutine.name}"`, "success");
+}
+
+function renameRoutine(id) {
+  const routine = routinesList.find(r => r.id === id);
+  if (!routine) return;
+  
+  const newName = prompt("Ingresa el nuevo nombre para la rutina:", routine.name);
+  if (newName === null) return; // cancelled
+  const trimmed = newName.trim();
+  if (trimmed === "") {
+    alert("El nombre de la rutina no puede estar vacío.");
+    return;
+  }
+  
+  routine.name = trimmed;
+  localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+  renderRoutinesList();
+  logToScreen(`Rutina renombrada a "${trimmed}"`, "success");
+}
+
+function deleteRoutine(id) {
+  if (id === activeRoutineId) {
+    alert("No puedes borrar la rutina que está activa.");
+    return;
+  }
+  if (routinesList.length <= 1) {
+    alert("Debes tener al menos una rutina guardada.");
+    return;
+  }
+  
+  const routine = routinesList.find(r => r.id === id);
+  if (!routine) return;
+  
+  showConfirmModal(
+    "¿Eliminar Rutina?",
+    `¿Estás seguro de que quieres eliminar la rutina "${routine.name}"? Esta acción no se puede deshacer y borrará sus pesos registrados.`,
+    () => {
+      routinesList = routinesList.filter(r => r.id !== id);
+      localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+      
+      // Clean up localstorage sets & weights for that routine
+      localStorage.removeItem("gymRoutineSets_" + id);
+      localStorage.removeItem("gymRoutineWeights_" + id);
+      
+      renderRoutinesList();
+      logToScreen(`Rutina "${routine.name}" eliminada.`, "success");
+    }
+  );
+}
+
+// --- AI ROUTINE GENERATOR CHAT FUNCTIONS ---
+
+let chatMessages = [];
+
+function initAIChat() {
+  const container = document.getElementById("ai-chat-messages");
+  if (!container) return;
+  
+  // Clear chat
+  container.innerHTML = "";
+  chatMessages = [];
+  
+  const welcomeText = `¡Hola, Ing. Rodriguez! Soy **Coach Vigor**, tu entrenador personal con IA.
+
+Estoy listo para armar tu rutina especializada y llevar tus entrenamientos al siguiente nivel. Para diseñarla a tu medida, por favor cuéntame:
+
+1. **¿Para quién es la rutina?** (¿Solo Facu, solo Alma, o entrenan juntos?)
+2. **¿Cuántos días por semana** pueden entrenar?
+3. **¿Cuál es su objetivo físico** principal? (Fuerza, hipertrofia, tonificación, pérdida de grasa)
+4. **¿Tienen alguna limitación, lesión o preferencia** de ejercicios?
+5. Si quieren aportar peso, altura u otros detalles, ¡adelante!
+
+¿Comenzamos?`;
+
+  addChatMessage("assistant", welcomeText);
+}
+
+function addChatMessage(sender, text) {
+  const container = document.getElementById("ai-chat-messages");
+  if (!container) return;
+  
+  const bubble = document.createElement("div");
+  bubble.className = `flex gap-3 max-w-[85%] mb-4 ${sender === "user" ? "self-end flex-row-reverse" : "self-start"}`;
+  
+  const iconBg = sender === "user" ? "bg-slate-700" : "bg-emerald-500/10 border border-emerald-500/20";
+  const iconColor = sender === "user" ? "text-slate-300" : "text-emerald-400";
+  const iconName = sender === "user" ? "user" : "sparkles";
+  
+  const bubbleContent = document.createElement("div");
+  bubbleContent.className = `p-4 rounded-2xl text-sm leading-relaxed ${
+    sender === "user" 
+      ? "bg-slate-800 text-white rounded-tr-none" 
+      : "bg-slate-900 border border-slate-700 text-slate-200 rounded-tl-none"
+  }`;
+  
+  // Format text: Convert markdown-like syntax to HTML safely
+  let formattedText = escapeHTML(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\`([^`\n]+)\`/g, '<code class="bg-slate-950 px-1 py-0.5 rounded text-cyan-400 font-mono text-xs">$1</code>')
+    .replace(/\n/g, '<br>');
+    
+  // Check if assistant sent a JSON routine block
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  let parsedRoutine = null;
+  
+  if (jsonMatch) {
+    try {
+      parsedRoutine = JSON.parse(jsonMatch[1]);
+      // Exclude JSON code block from rendering in standard message text
+      const startIdx = text.indexOf("```json");
+      const endIdx = text.indexOf("```", startIdx + 7);
+      if (startIdx !== -1 && endIdx !== -1) {
+        const rawTextBefore = text.substring(0, startIdx);
+        const rawTextAfter = text.substring(endIdx + 3);
+        formattedText = (escapeHTML(rawTextBefore) + escapeHTML(rawTextAfter))
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/\`([^`\n]+)\`/g, '<code class="bg-slate-950 px-1 py-0.5 rounded text-cyan-400 font-mono text-xs">$1</code>')
+          .replace(/\n/g, '<br>');
+      }
+    } catch (e) {
+      console.error("Error parsing routine JSON:", e);
+    }
+  }
+  
+  bubbleContent.innerHTML = formattedText;
+  
+  // Apply button container
+  if (parsedRoutine) {
+    const applyContainer = document.createElement("div");
+    applyContainer.className = "mt-4 p-3 bg-slate-950/60 border border-slate-700/60 rounded-xl flex flex-col gap-2 items-start";
+    
+    const infoText = document.createElement("span");
+    infoText.className = "text-xs text-slate-400";
+    infoText.textContent = "Coach Vigor ha generado una rutina personalizada. ¿Quieres guardarla y aplicarla?";
+    
+    const applyBtn = document.createElement("button");
+    applyBtn.className = "px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1.5 transition-all active:scale-95";
+    applyBtn.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> APLICAR RUTINA';
+    applyBtn.onclick = () => applyGeneratedRoutine(parsedRoutine);
+    
+    applyContainer.appendChild(infoText);
+    applyContainer.appendChild(applyBtn);
+    bubbleContent.appendChild(applyContainer);
+  }
+  
+  bubble.innerHTML = `
+    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg} ${iconColor}">
+      <i data-lucide="${iconName}" class="w-4 h-4"></i>
+    </div>
+  `;
+  bubble.appendChild(bubbleContent);
+  container.appendChild(bubble);
+  
+  // Scroll to bottom
+  container.scrollTop = container.scrollHeight;
+  lucide.createIcons();
+}
+
+function escapeHTML(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function sendAIChatMessage() {
+  const inputEl = document.getElementById("ai-chat-input");
+  if (!inputEl) return;
+  
+  const text = inputEl.value.trim();
+  if (!text) return;
+  
+  // Clear input
+  inputEl.value = "";
+  
+  // Add user message
+  addChatMessage("user", text);
+  chatMessages.push({ role: "user", content: text });
+  
+  // Get API Key
+  const apiKey = localStorage.getItem("gymGeminiApiKey");
+  if (!apiKey) {
+    addChatMessage("assistant", "⚠️ **Clave API de Gemini no configurada.** Por favor, ve al menú lateral, abre tu Perfil (icono de engranaje arriba) e introduce una API Key válida de Gemini para poder hablar conmigo y armar la rutina.");
+    return;
+  }
+  
+  // Add loader
+  const container = document.getElementById("ai-chat-messages");
+  const loader = document.createElement("div");
+  loader.id = "ai-chat-loader";
+  loader.className = "flex gap-2 items-center p-3 bg-slate-900 border border-slate-800 text-slate-400 text-xs rounded-xl self-start max-w-[80%] mb-4";
+  loader.innerHTML = `
+    <div class="flex space-x-1">
+      <div class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+      <div class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+      <div class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+    </div>
+    <span>Coach Vigor está analizando...</span>
+  `;
+  container.appendChild(loader);
+  container.scrollTop = container.scrollHeight;
+  
+  try {
+    const systemPrompt = `Eres Coach Vigor, un entrenador personal legendario con miles de certificaciones en cambio físico, ganancia de masa muscular y pérdida de grasa.
+Llamas siempre "Ing. Rodriguez" al usuario Facu (él y su novia Alma entrenarán). Sé muy motivador, profesional y directo.
+
+Tu objetivo es hacerle preguntas al usuario (de manera concisa) para recopilar los siguientes datos necesarios:
+1. Para quién es la rutina (Facu, Alma o ambos juntos).
+2. Días disponibles para entrenar (de 1 a 5 días).
+3. Objetivo físico (hipertrofia, definición, fuerza, etc.).
+4. Si tienen alguna lesión o limitación.
+
+Una vez que tengas TODOS los datos necesarios, diseña la rutina de entrenamiento completa.
+IMPORTANTE: Debes presentar la rutina respondiendo con tu explicación y al final incluir un bloque de código JSON con formato \`\`\`json [JSON_DATA] \`\`\` que represente la rutina completa estructurada.
+El JSON DEBE seguir este esquema exacto para poder integrarse en la aplicación:
+[
+  {
+    "day": "Lunes",
+    "title": "Enfoque del Día (ej: Pierna y Glúteo)",
+    "exercises": [
+      {
+        "name": "Nombre del Ejercicio",
+        "sets": "Número de series (ej: 3)",
+        "reps": "Número de repeticiones (ej: 10-12)",
+        "rir": "RIR (ej: RIR 2)",
+        "notes": "Detalles del ejercicio, consejos de técnica y tiempo de descanso (ej: Descanso: 2 min)",
+        "muscles": {
+          "primary": ["quads", "glutes", "hamstrings", "calves", "chest", "back", "shoulders", "biceps", "triceps", "abs", "adductors", "lower_back"],
+          "secondary": ["quads", "glutes", "hamstrings", "calves", "chest", "back", "shoulders", "biceps", "triceps", "abs", "adductors", "lower_back"]
+        }
+      }
+    ]
+  }
+]
+Asegúrate de que los músculos primarios y secundarios estén elegidos de la lista válida anterior (todo en minúsculas y sin acentos).
+No inventes propiedades adicionales en el JSON. No uses bloques adicionales de formato aparte de \`\`\`json.`;
+
+    const contents = [
+      {
+        role: "user",
+        parts: [{ text: systemPrompt }]
+      }
+    ];
+    
+    // Add chat history
+    chatMessages.forEach(msg => {
+      contents.push({
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: msg.content }]
+      });
+    });
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: contents,
+        generationConfig: {
+          temperature: 0.7
+        }
+      })
+    });
+    
+    loader.remove();
+    
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData?.error?.message || `Error del servidor (${response.status})`);
+    }
+    
+    const resData = await response.json();
+    const aiText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!aiText) {
+      throw new Error("No se recibió respuesta válida de Coach Vigor.");
+    }
+    
+    addChatMessage("assistant", aiText);
+    chatMessages.push({ role: "assistant", content: aiText });
+    
+  } catch (error) {
+    loader.remove();
+    console.error("Gemini API Error:", error);
+    addChatMessage("assistant", `❌ **Error al consultar a Coach Vigor:** ${error.message}. Por favor verifica tu Clave API e inténtalo de nuevo.`);
+  }
+}
+
+function selectAIChatChip(text) {
+  const inputEl = document.getElementById("ai-chat-input");
+  if (inputEl) {
+    inputEl.value = text;
+    sendAIChatMessage();
+  }
+}
+
+function applyGeneratedRoutine(routineDataArray) {
+  showConfirmModal(
+    "¿Guardar y Aplicar Rutina?",
+    "Esto guardará la rutina diseñada por Coach Vigor como una nueva rutina disponible. Podrás cambiar entre tus rutinas en cualquier momento.",
+    () => {
+      const newIndex = routinesList.length + 1;
+      const newRoutine = {
+        id: `routine-${Date.now()}`,
+        name: `Rutina ${newIndex} (IA)`,
+        data: routineDataArray
+      };
+      
+      routinesList.push(newRoutine);
+      localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+      
+      // Select it immediately
+      selectActiveRoutine(newRoutine.id);
+      
+      // Navigate to main routine view
+      navigateTo("routine");
+      
+      logToScreen(`¡Rutina "${newRoutine.name}" guardada y aplicada con éxito!`, "success");
+    }
+  );
+}
+
+// Wire up global variables so that elements inline events can call them
+window.openRoutinesManagerModal = openRoutinesManagerModal;
+window.closeRoutinesManagerModal = closeRoutinesManagerModal;
+window.selectActiveRoutine = selectActiveRoutine;
+window.renameRoutine = renameRoutine;
+window.deleteRoutine = deleteRoutine;
+window.sendAIChatMessage = sendAIChatMessage;
+window.selectAIChatChip = selectAIChatChip;
+window.applyGeneratedRoutine = applyGeneratedRoutine;
+
+// Enter key submit on AI chat input
+document.addEventListener("DOMContentLoaded", () => {
+  const inputEl = document.getElementById("ai-chat-input");
+  if (inputEl) {
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendAIChatMessage();
+      }
+    });
+  }
 });
 
