@@ -936,7 +936,10 @@ function navigateTo(view) {
     const aiView = document.getElementById("ai-routine-view");
     if (aiView) {
       aiView.classList.remove("hidden");
-      initAIChat();
+      // Only initialize if no existing conversation
+      if (chatMessages.length === 0) {
+        initAIChat();
+      }
     }
   }
 
@@ -6459,6 +6462,13 @@ Estoy listo para armar tu rutina especializada y llevar tus entrenamientos al si
   addChatMessage("assistant", welcomeText);
 }
 
+function resetAIChat() {
+  chatMessages = [];
+  const container = document.getElementById("ai-chat-messages");
+  if (container) container.innerHTML = "";
+  initAIChat();
+}
+
 function addChatMessage(sender, text) {
   const container = document.getElementById("ai-chat-messages");
   if (!container) return;
@@ -6718,6 +6728,7 @@ window.deleteRoutine = deleteRoutine;
 window.sendAIChatMessage = sendAIChatMessage;
 window.selectAIChatChip = selectAIChatChip;
 window.applyGeneratedRoutine = applyGeneratedRoutine;
+window.resetAIChat = resetAIChat;
 
 // Enter key submit on AI chat input (textarea)
 document.addEventListener("DOMContentLoaded", () => {
