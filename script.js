@@ -1745,7 +1745,7 @@ function openProfileModal() {
   document.getElementById("profile-age-facu").value = userProfile.facu.age;
   document.getElementById("profile-age-alma").value = userProfile.alma.age;
 
-  const apiKeyInput = document.getElementById("gemini-api-key-input");
+  const apiKeyInput = document.getElementById("profile-gemini-key");
   if (apiKeyInput) {
     apiKeyInput.value = localStorage.getItem("gymGeminiApiKey") || "";
   }
@@ -1789,7 +1789,7 @@ function saveProfile() {
 
   localStorage.setItem("gymUserProfile", JSON.stringify(userProfile));
 
-  const apiKeyInput = document.getElementById("gemini-api-key-input");
+  const apiKeyInput = document.getElementById("profile-gemini-key");
   if (apiKeyInput) {
     localStorage.setItem("gymGeminiApiKey", apiKeyInput.value.trim());
   }
