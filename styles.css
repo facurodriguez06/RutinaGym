@@ -470,3 +470,53 @@ body.light #plate-display [title$="kg"] {
   border: 2px solid var(--border-strong) !important;
 }
 
+/* ==========================================================================
+   AI ROUTINE BUTTON HIGHLIGHT (NEO-BRUTALIST CYBER CYAN)
+   ========================================================================== */
+.btn-ai-routine {
+  border: 2px solid var(--accent-facu) !important;
+  background-color: rgba(0, 240, 255, 0.08) !important;
+  color: var(--accent-facu) !important;
+  box-shadow: 3px 3px 0px var(--accent-facu) !important;
+}
+
+body.light .btn-ai-routine {
+  border: 2px solid var(--accent-facu) !important;
+  background-color: rgba(2, 132, 199, 0.08) !important;
+  color: var(--accent-facu) !important;
+  box-shadow: 3px 3px 0px var(--accent-facu) !important;
+}
+
+.btn-ai-routine i {
+  color: var(--accent-facu) !important;
+}
+
+.btn-ai-routine:hover {
+  background-color: var(--accent-facu) !important;
+  color: #000000 !important;
+  border-color: var(--accent-facu) !important;
+  box-shadow: 5px 5px 0px var(--accent-facu) !important;
+}
+
+.btn-ai-routine:hover i {
+  color: #000000 !important;
+}
+
+.btn-ai-routine:active {
+  transform: translate(3px, 3px) !important;
+  box-shadow: none !important;
+}
+
+/* Selected state */
+.btn-ai-routine.active-nav-item {
+  background-color: var(--accent-facu) !important;
+  color: #000000 !important;
+  border-color: var(--accent-facu) !important;
+  box-shadow: 3px 3px 0px var(--shadow-color) !important;
+}
+
+.btn-ai-routine.active-nav-item i {
+  color: #000000 !important;
+}
+
+

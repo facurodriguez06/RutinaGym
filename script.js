@@ -6719,16 +6719,26 @@ window.sendAIChatMessage = sendAIChatMessage;
 window.selectAIChatChip = selectAIChatChip;
 window.applyGeneratedRoutine = applyGeneratedRoutine;
 
-// Enter key submit on AI chat input
+// Enter key submit on AI chat input (textarea)
 document.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("ai-chat-input");
   if (inputEl) {
+    // Auto-resize textarea as user types
+    inputEl.addEventListener("input", () => {
+      inputEl.style.height = "auto";
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+    });
+
     inputEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         sendAIChatMessage();
+        // Reset height after sending
+        inputEl.style.height = "auto";
       }
+      // Shift+Enter: default behavior (inserts newline in textarea)
     });
   }
 });
+
 
