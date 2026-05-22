@@ -399,14 +399,18 @@ function initializeRoutines() {
   const storedActiveId = localStorage.getItem("gymActiveRoutineId");
   
   if (storedList) {
-    routinesList = JSON.parse(storedList);
+    routinesList = JSON.parse(storedList).map(r => ({
+      ...r,
+      isBase: r.isBase || r.id === "routine-1",
+    }));
   } else {
     // Initializer
     routinesList = [
       {
         id: "routine-1",
-        name: "Rutina 1",
-        data: DEFAULT_ROUTINE
+        name: "Rutina Base",
+        data: DEFAULT_ROUTINE,
+        isBase: true,
       }
     ];
     localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
@@ -550,7 +554,8 @@ async function loadFromCloud() {
         routinesList = cloudHistory.routinesListData.map(r => ({
           id: r.id,
           name: r.name,
-          data: r.data
+          data: r.data,
+          isBase: r.isBase || r.id === "routine-1"
         }));
         localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
         delete cloudHistory.routinesListData;
@@ -663,6 +668,7 @@ let gamification = JSON.parse(localStorage.getItem("gymGamification")) || {
     streak: 0,
     freezes: 0,
     frozenDays: [],
+    lastRescuePromptDate: null,
     achievements: [],
     lastReset: 0,
   },
@@ -671,6 +677,7 @@ let gamification = JSON.parse(localStorage.getItem("gymGamification")) || {
     streak: 0,
     freezes: 0,
     frozenDays: [],
+    lastRescuePromptDate: null,
     achievements: [],
     lastReset: 0,
   },
@@ -684,6 +691,7 @@ let gamification = JSON.parse(localStorage.getItem("gymGamification")) || {
       streak: 0,
       freezes: 0,
       frozenDays: [],
+      lastRescuePromptDate: null,
       achievements: [],
       lastReset: 0,
     };
@@ -693,6 +701,8 @@ let gamification = JSON.parse(localStorage.getItem("gymGamification")) || {
     delete gamification[u].frozenWeeks;
   }
   if (!gamification[u].frozenDays) gamification[u].frozenDays = [];
+  if (gamification[u].lastRescuePromptDate === undefined)
+    gamification[u].lastRescuePromptDate = null;
   if (gamification[u].lastReset === undefined) gamification[u].lastReset = 0;
   if (!gamification[u].achievements) gamification[u].achievements = [];
   if (gamification[u].streak === undefined) gamification[u].streak = 0;
@@ -5532,49 +5542,59 @@ function checkForStreakRescue(user) {
   // Solo si tiene freezes disponibles
   if (gamification[user].freezes <= 0) return;
 
-  // Analizar si perdió la racha ayer o hoy por falta
+  // Analizar solo la primera ausencia que rompió la racha
   const today = new Date();
+  const todayKey = getDateKey(today);
   const SCHEDULE = {
     facu: [1, 2, 3, 4, 5],
     alma: [1, 3, 5],
   };
 
-  // Buscar un día perdido RECIENTE (ayer o hoy)
-  for (let i = 1; i <= 1; i++) {
-    // Solo miramos ayer (i=1)
-    const d = new Date();
-    d.setDate(today.getDate() - i);
-    const key = getDateKey(d);
-    const dayOfWeek = d.getDay();
+  // No repetir el aviso el mismo día
+  if (gamification[user].lastRescuePromptDate === todayKey) return;
 
-    // Si ya entrenó o es finde o no es requerido, seguir
-    // (Lógica simplificada, idealmente reutilizaríamos userDates pero acá lo hacemos rápido)
-    // Para simplificar: asumimos que si la racha actual es baja (0 o 1) y hay un hueco ayer, ofrecemos.
+  // Buscar el último día entrenado antes de hoy
+  let lastTrainingDate = null;
+  Object.keys(trainingHistory).forEach((hKey) => {
+    if (!trainingHistory[hKey][user] || trainingHistory[hKey].deleted) return;
 
-    // Verificamos "alreadyFrozen"
-    if (gamification[user].frozenDays.includes(key)) continue;
+    const d = new Date(hKey);
+    if (isNaN(d) || d >= today) return;
 
-    const isRequired = SCHEDULE[user].includes(dayOfWeek);
-    if (!isRequired) continue;
-
-    // Verificar si entrenó: miramos trainingHistory
-    // Esto es costoso iterar todo, mejor ver si NO entrenó
-    // Reutilizamos la lógica de "si streak rompió ayer"
-
-    let trained = false;
-    Object.keys(trainingHistory).forEach((hKey) => {
-      if (hKey === key || new Date(hKey).toDateString() === d.toDateString()) {
-        if (trainingHistory[hKey][user] && !trainingHistory[hKey].deleted)
-          trained = true;
-      }
-    });
-
-    if (!trained) {
-      // ¡CANDIDATO A RESCATE!
-      // Mostramos modal
-      openRescueModal(user, key);
-      return; // Solo un rescate a la vez
+    if (!lastTrainingDate || d > lastTrainingDate) {
+      lastTrainingDate = d;
     }
+  });
+
+  if (!lastTrainingDate) return;
+
+  // Encontrar el primer día requerido no entrenado después de ese último entrenamiento
+  const firstMissedDate = new Date(lastTrainingDate);
+  firstMissedDate.setDate(firstMissedDate.getDate() + 1);
+
+  while (firstMissedDate < today) {
+    const key = getDateKey(firstMissedDate);
+    const dayOfWeek = firstMissedDate.getDay();
+
+    if (dayOfWeek !== 0 && dayOfWeek !== 6 && SCHEDULE[user].includes(dayOfWeek)) {
+      const alreadyFrozen = gamification[user].frozenDays.includes(key);
+      const trained = !!(trainingHistory[key] && trainingHistory[key][user] && !trainingHistory[key].deleted);
+
+      if (!trained && !alreadyFrozen) {
+        const rescueDeadline = new Date(firstMissedDate);
+        rescueDeadline.setDate(rescueDeadline.getDate() + 1);
+
+        // Solo ofrecer el rescate el día inmediatamente posterior a la pérdida
+        if (getDateKey(rescueDeadline) === todayKey) {
+          gamification[user].lastRescuePromptDate = todayKey;
+          saveToCloud();
+          openRescueModal(user, key);
+        }
+        return;
+      }
+    }
+
+    firstMissedDate.setDate(firstMissedDate.getDate() + 1);
   }
 }
 
@@ -6271,7 +6291,19 @@ function openRoutinesManagerModal() {
   if (modal) {
     modal.classList.remove("hidden");
     modal.classList.add("flex");
-    renderRoutinesList();
+    try {
+      renderRoutinesList();
+    } catch (error) {
+      console.error("Error rendering routines list:", error);
+      const container = document.getElementById("routines-list-container");
+      if (container) {
+        container.innerHTML = `
+          <div class="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-200 text-sm">
+            No se pudo cargar la lista de rutinas. Recargá la app o revisá los datos guardados.
+          </div>
+        `;
+      }
+    }
   }
 }
 
@@ -6288,9 +6320,28 @@ function renderRoutinesList() {
   if (!container) return;
   
   container.innerHTML = "";
+  const normalizedRoutines = Array.isArray(routinesList)
+    ? routinesList.filter(r => r && r.id && r.data)
+    : [];
+
+  if (!normalizedRoutines.length) {
+    container.innerHTML = `
+      <div class="p-4 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 text-sm">
+        No hay rutinas guardadas.
+      </div>
+    `;
+    return;
+  }
+
+  const sortedRoutines = [...normalizedRoutines].sort((a, b) => {
+    if (a.isBase && !b.isBase) return -1;
+    if (!a.isBase && b.isBase) return 1;
+    return 0;
+  });
   
-  routinesList.forEach((routine) => {
+  sortedRoutines.forEach((routine) => {
     const isActive = routine.id === activeRoutineId;
+    const isBase = !!routine.isBase;
     
     const card = document.createElement("div");
     card.className = `p-4 rounded-xl border transition-all flex items-center justify-between gap-3 ${
@@ -6317,9 +6368,21 @@ function renderRoutinesList() {
     const nameSpan = document.createElement("span");
     nameSpan.className = `font-semibold truncate text-sm ${isActive ? "text-white" : "text-slate-300"}`;
     nameSpan.textContent = routine.name;
-    
-    leftSec.appendChild(radio);
-    leftSec.appendChild(nameSpan);
+
+    if (isBase) {
+      const baseBadge = document.createElement("span");
+      baseBadge.className = "ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+      baseBadge.textContent = "Base";
+      const nameWrap = document.createElement("div");
+      nameWrap.className = "flex items-center min-w-0";
+      nameWrap.appendChild(nameSpan);
+      nameWrap.appendChild(baseBadge);
+      leftSec.appendChild(radio);
+      leftSec.appendChild(nameWrap);
+    } else {
+      leftSec.appendChild(radio);
+      leftSec.appendChild(nameSpan);
+    }
     
     // Right: Action buttons (Rename, Delete)
     const rightSec = document.createElement("div");
@@ -6334,17 +6397,36 @@ function renderRoutinesList() {
       e.stopPropagation();
       renameRoutine(routine.id);
     };
+    if (isBase) {
+      renameBtn.disabled = true;
+      renameBtn.classList.add("opacity-30", "cursor-not-allowed");
+    }
     
     // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.className = `p-2 rounded-lg transition-all active:scale-90 ${
-      isActive || routinesList.length <= 1
+      isActive || routinesList.length <= 1 || isBase
         ? "bg-slate-850 text-slate-650 cursor-not-allowed opacity-30"
         : "bg-slate-800 hover:bg-red-950/40 hover:text-red-400 text-slate-400"
     }`;
+
+    if (isBase) {
+      const baseAction = document.createElement("button");
+      baseAction.className = "mb-3 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider transition-all active:scale-95";
+      baseAction.textContent = "Volver a Rutina Base";
+      baseAction.onclick = (e) => {
+        e.stopPropagation();
+        selectBaseRoutine();
+        closeRoutinesManagerModal();
+      };
+      card.style.flexDirection = "column";
+      card.style.alignItems = "stretch";
+      card.style.gap = "0.75rem";
+      card.appendChild(baseAction);
+    }
     deleteBtn.title = "Eliminar";
     deleteBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
-    if (!isActive && routinesList.length > 1) {
+    if (!isActive && routinesList.length > 1 && !isBase) {
       deleteBtn.onclick = (e) => {
         e.stopPropagation();
         deleteRoutine(routine.id);
@@ -6366,11 +6448,17 @@ function renderRoutinesList() {
 }
 
 function selectActiveRoutine(id) {
+  const targetRoutine = routinesList.find(r => r.id === id);
+  if (!targetRoutine) {
+    console.warn("Routine not found:", id);
+    return;
+  }
+
   activeRoutineId = id;
   localStorage.setItem("gymActiveRoutineId", id);
   
   // Set routineData global variable
-  const activeRoutine = routinesList.find(r => r.id === activeRoutineId) || routinesList[0];
+  const activeRoutine = targetRoutine || routinesList[0];
   routineData = activeRoutine.data;
   
   // Reload weights and completed sets
@@ -6385,6 +6473,10 @@ function selectActiveRoutine(id) {
   
   // Show toast/log
   logToScreen(`Rutina activa: "${activeRoutine.name}"`, "success");
+}
+
+function selectBaseRoutine() {
+  selectActiveRoutine("routine-1");
 }
 
 function renameRoutine(id) {
@@ -6410,12 +6502,15 @@ function deleteRoutine(id) {
     alert("No puedes borrar la rutina que está activa.");
     return;
   }
+  const routine = routinesList.find(r => r.id === id);
+  if (routine?.isBase) {
+    alert("No puedes borrar la rutina base.");
+    return;
+  }
   if (routinesList.length <= 1) {
     alert("Debes tener al menos una rutina guardada.");
     return;
   }
-  
-  const routine = routinesList.find(r => r.id === id);
   if (!routine) return;
   
   showConfirmModal(
@@ -6561,6 +6656,83 @@ function escapeHTML(str) {
     .replace(/'/g, "&#039;");
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function requestGeminiText(apiKey, contents) {
+  const models = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+  ];
+
+  let lastError = null;
+
+  for (const model of models) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents,
+              generationConfig: {
+                temperature: 0.7,
+              },
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const message = errData?.error?.message || `Error del servidor (${response.status})`;
+          const isBusy =
+            response.status === 429 ||
+            response.status === 503 ||
+            /high demand|quota|temporarily unavailable|busy/i.test(message);
+
+          if (isBusy && attempt === 0) {
+            lastError = new Error(message);
+            await sleep(1500);
+            continue;
+          }
+
+          if (isBusy && model !== models[models.length - 1]) {
+            lastError = new Error(message);
+            await sleep(1000);
+            break;
+          }
+
+          throw new Error(message);
+        }
+
+        const resData = await response.json();
+        const aiText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!aiText) {
+          throw new Error("No se recibió respuesta válida de Coach Vigor.");
+        }
+
+        return aiText;
+      } catch (error) {
+        lastError = error;
+        if (attempt === 0 && model !== models[models.length - 1]) {
+          await sleep(1000);
+          continue;
+        }
+        break;
+      }
+    }
+  }
+
+  throw lastError || new Error("No se pudo consultar a Gemini.");
+}
+
 async function sendAIChatMessage() {
   const inputEl = document.getElementById("ai-chat-input");
   if (!inputEl) return;
@@ -6648,32 +6820,9 @@ No inventes propiedades adicionales en el JSON. No uses bloques adicionales de f
       });
     });
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: contents,
-        generationConfig: {
-          temperature: 0.7
-        }
-      })
-    });
-    
     loader.remove();
-    
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData?.error?.message || `Error del servidor (${response.status})`);
-    }
-    
-    const resData = await response.json();
-    const aiText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!aiText) {
-      throw new Error("No se recibió respuesta válida de Coach Vigor.");
-    }
+
+    const aiText = await requestGeminiText(apiKey, contents);
     
     addChatMessage("assistant", aiText);
     chatMessages.push({ role: "assistant", content: aiText });
@@ -6681,7 +6830,13 @@ No inventes propiedades adicionales en el JSON. No uses bloques adicionales de f
   } catch (error) {
     loader.remove();
     console.error("Gemini API Error:", error);
-    addChatMessage("assistant", `❌ **Error al consultar a Coach Vigor:** ${error.message}. Por favor verifica tu Clave API e inténtalo de nuevo.`);
+    const isBusy = /high demand|quota|temporarily unavailable|busy|429|503/i.test(error.message || "");
+    addChatMessage(
+      "assistant",
+      isBusy
+        ? "⚠️ **Coach Vigor está saturado ahora mismo.** Probá de nuevo en unos segundos; ya intenté con modelos alternativos automáticamente."
+        : `❌ **Error al consultar a Coach Vigor:** ${error.message}. No parece ser tu clave API; probá de nuevo en unos segundos.`,
+    );
   }
 }
 
@@ -6698,11 +6853,14 @@ function applyGeneratedRoutine(routineDataArray) {
     "¿Guardar y Aplicar Rutina?",
     "Esto guardará la rutina diseñada por Coach Vigor como una nueva rutina disponible. Podrás cambiar entre tus rutinas en cualquier momento.",
     () => {
-      const newIndex = routinesList.length + 1;
+      const newIndex = routinesList.filter(r => !r.isBase).length + 2;
+      const lastUserMessage = [...chatMessages].reverse().find(m => m.role === "user")?.content || "";
+      const routineFocus = getRoutineFocusName(lastUserMessage);
       const newRoutine = {
         id: `routine-${Date.now()}`,
-        name: `Rutina ${newIndex} (IA)`,
-        data: routineDataArray
+        name: `Rutina ${newIndex} - ${routineFocus}`,
+        data: routineDataArray,
+        isBase: false,
       };
       
       routinesList.push(newRoutine);
@@ -6719,10 +6877,24 @@ function applyGeneratedRoutine(routineDataArray) {
   );
 }
 
+function getRoutineFocusName(text) {
+  const normalized = (text || "").toLowerCase();
+
+  if (/fuerza|powerlifting|potencia/.test(normalized)) return "Fuerza";
+  if (/hipertrofia|masa muscular|volumen|ganar musculo|ganar masa/.test(normalized)) return "Hipertrofia";
+  if (/definici[oó]n|perdida de grasa|p[eé]rdida de grasa|bajar de peso|quema grasa/.test(normalized)) return "Definicion";
+  if (/gl[uú]te|pierna|legs/.test(normalized)) return "Pierna";
+  if (/full body|cuerpo completo/.test(normalized)) return "Full Body";
+  if (/torso/.test(normalized)) return "Torso";
+
+  return "Personalizada";
+}
+
 // Wire up global variables so that elements inline events can call them
 window.openRoutinesManagerModal = openRoutinesManagerModal;
 window.closeRoutinesManagerModal = closeRoutinesManagerModal;
 window.selectActiveRoutine = selectActiveRoutine;
+window.selectBaseRoutine = selectBaseRoutine;
 window.renameRoutine = renameRoutine;
 window.deleteRoutine = deleteRoutine;
 window.sendAIChatMessage = sendAIChatMessage;
