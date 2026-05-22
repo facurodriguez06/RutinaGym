@@ -428,6 +428,194 @@ function initializeRoutines() {
   routineData = activeRoutine.data;
 }
 
+function getCloudUserId() {
+  let userId = localStorage.getItem("gymCloudUserId");
+  if (!userId) {
+    userId = makeRowId("gym-user");
+    localStorage.setItem("gymCloudUserId", userId);
+  }
+  return userId;
+}
+
+const cloudAdapter = {
+  stateEndpoint() {
+    if (window.location.protocol === "file:") {
+      return "http://localhost:3000/api/state";
+    }
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      if (window.__CLOUD_PORT__) {
+        return `http://localhost:${window.__CLOUD_PORT__}/api/state`;
+      }
+      return "http://localhost:3000/api/state";
+    }
+    return `${window.location.origin}/api/state`;
+  },
+  async getState() {
+    try {
+      const response = await fetch(this.stateEndpoint(), { method: "GET" });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  },
+  async saveState(payload) {
+    try {
+      const response = await fetch(this.stateEndpoint(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", payload }),
+      });
+      if (!response.ok) {
+        console.warn("Cloud save failed", response.status, await response.text().catch(() => ""));
+        return false;
+      }
+      return true;
+    } catch {
+      console.warn("Cloud save failed: network error");
+      return false;
+    }
+  },
+};
+
+async function fetchCloudState() {
+  return cloudAdapter.getState();
+}
+
+function buildCloudPayload() {
+  const profile = {
+    id: getCloudUserId(),
+    display_name: localStorage.getItem("gymUserDisplayName") || "VIGOR User",
+  };
+
+  const routines = (routinesList || []).map((routine) => ({
+    id: routine.id,
+    user_id: getCloudUserId(),
+    name: routine.name,
+    is_base: !!routine.isBase,
+    is_active: routine.id === activeRoutineId,
+    source: routine.isBase ? "base" : "ai",
+  }));
+
+  const routineTables = (routinesList || []).flatMap((routine) => {
+    const { days, exercises } = buildRoutineTablesFromData(routine.id, routine.data || DEFAULT_ROUTINE);
+    return [
+      ...days,
+      ...exercises,
+    ];
+  });
+
+  const routine_days = routineTables.filter((row) => Object.prototype.hasOwnProperty.call(row, "day_index"));
+  const routine_exercises = routineTables.filter((row) => Object.prototype.hasOwnProperty.call(row, "routine_day_id"));
+
+  const training_history = Object.entries(trainingHistory || {}).map(([date_key, entry]) => ({
+    user_id: getCloudUserId(),
+    date_key,
+    routine_id: activeRoutineId || null,
+    facu_trained: !!entry?.facu,
+    alma_trained: !!entry?.alma,
+    deleted: !!entry?.deleted,
+    water: entry?.water || null,
+    weights: entry?.weights || null,
+  }));
+
+  const facu = gamification.facu || {};
+
+  return {
+    profile,
+    routines,
+    routine_days,
+    routine_exercises,
+    training_history,
+    gamification: {
+      user_id: getCloudUserId(),
+      points: facu.points || 0,
+      streak: facu.streak || 0,
+      freezes: facu.freezes || 0,
+      frozen_days: facu.frozenDays || [],
+      achievements: facu.achievements || [],
+      last_reset: facu.lastReset || 0,
+      last_rescue_prompt_date: facu.lastRescuePromptDate || null,
+    },
+    water_state: {
+      user_id: getCloudUserId(),
+      current_water_ml: waterState.facu || 0,
+      goal_ml: waterState.facuGoal || 2500,
+      last_updated_date: waterState.date || new Date().toDateString(),
+    },
+  };
+}
+
+function applyCloudState(state) {
+  if (!state) return false;
+
+  const profile = state.profiles?.[0];
+  if (profile?.display_name) {
+    localStorage.setItem("gymUserDisplayName", profile.display_name);
+  }
+
+  if (Array.isArray(state.routines) && state.routines.length) {
+    routinesList = state.routines.map((routine) => ({
+      id: routine.id,
+      name: routine.name,
+      isBase: !!routine.is_base,
+      data: routine.data || DEFAULT_ROUTINE,
+    }));
+    localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+    const active = state.routines.find((r) => r.is_active) || state.routines[0];
+    if (active) {
+      activeRoutineId = active.id;
+      localStorage.setItem("gymActiveRoutineId", activeRoutineId);
+      routineData = active.data || DEFAULT_ROUTINE;
+    }
+  }
+
+  if (Array.isArray(state.training_history) && state.training_history.length) {
+    const merged = {};
+    state.training_history.forEach((row) => {
+      merged[row.date_key] = {
+        alma: row.alma_trained,
+        facu: row.facu_trained,
+        deleted: row.deleted,
+        weights: row.weights || {},
+        water: row.water || {},
+      };
+    });
+    trainingHistory = merged;
+    localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+  }
+
+  if (Array.isArray(state.gamification) && state.gamification.length) {
+    const g = state.gamification[0];
+    gamification.facu = {
+      ...gamification.facu,
+      points: g.points || 0,
+      streak: g.streak || 0,
+      freezes: g.freezes || 0,
+      frozenDays: g.frozen_days || [],
+      achievements: g.achievements || [],
+      lastReset: g.last_reset || 0,
+      lastRescuePromptDate: g.last_rescue_prompt_date || null,
+    };
+    localStorage.setItem("gymGamification", JSON.stringify(gamification));
+  }
+
+  if (Array.isArray(state.water_state) && state.water_state.length) {
+    const w = state.water_state[0];
+    waterState.facu = w.current_water_ml || 0;
+    waterState.facuGoal = w.goal_ml || 2500;
+    localStorage.setItem("water_tracker_state", JSON.stringify(waterState));
+  }
+
+  return true;
+}
+
+async function syncFromCloud() {
+  const state = await cloudAdapter.getState();
+  if (!state || state.error) return false;
+  return applyCloudState(state);
+}
+
 // Initialize routines early
 initializeRoutines();
 
@@ -454,6 +642,13 @@ if (lastVisit !== todayStr) {
 }
 
 loadActiveRoutineState();
+
+// Try cloud sync on boot, fallback remains localStorage
+syncFromCloud().then(() => {
+  seedCloudIfEmpty();
+  if (typeof updateGamificationUI === "function") updateGamificationUI();
+  if (typeof renderAquaFlow === "function") renderAquaFlow();
+});
 
 // --- TIMER STATE ---
 const timerState = {
@@ -496,168 +691,11 @@ function debouncedSaveToCloud(delay) {
   _saveToCloudTimer = setTimeout(() => saveToCloud(), delay || 2000);
 }
 
-// --- JSONBIN CONFIG ---
-// Historial compartido entre Alma y Facu via JSONBin.io
-const JSONBIN_API_KEY =
-  "$2a$10$ARqbaMZJCBkzpOxFKlDU6.QpRQOwWN.7KMBcx7a7IH/pKOZD5uNye";
-const JSONBIN_BIN_ID = "69697104ae596e708fdf28e7";
-const JSONBIN_ENABLED = true;
-
 // --- CLOUD SYNC FUNCTIONS ---
 async function loadFromCloud() {
-  if (!JSONBIN_ENABLED) {
-    // Fallback to localStorage
-    trainingHistory =
-      JSON.parse(localStorage.getItem("gymTrainingHistory")) || {};
-    return;
-  }
-
-  try {
-    isSyncing = true;
-    const response = await fetch(
-      `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`,
-      {
-        method: "GET",
-        headers: {
-          "X-Master-Key": JSONBIN_API_KEY,
-        },
-      },
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      const cloudHistory = data.record || {};
-
-      // 1. Extract and Sync Gamification
-      if (cloudHistory.gamificationState) {
-        // Simple strategy: Cloud wins for gamification state (to prevent infinite point glitches)
-        if (
-          JSON.stringify(gamification) !==
-          JSON.stringify(cloudHistory.gamificationState)
-        ) {
-          gamification = cloudHistory.gamificationState;
-          localStorage.setItem("gymGamification", JSON.stringify(gamification));
-          if (typeof updateGamificationUI === "function") {
-            updateGamificationUI();
-          }
-        }
-        delete cloudHistory.gamificationState; // Remove so it doesn't pollute history iteration
-      }
-
-      // 1.5 Sync multiple routines from cloud
-      if (cloudHistory.routinesListData) {
-        cloudHistory.routinesListData.forEach(r => {
-          localStorage.setItem("gymRoutineWeights_" + r.id, JSON.stringify(r.weights || {}));
-          localStorage.setItem("gymRoutineSets_" + r.id, JSON.stringify(r.sets || {}));
-        });
-        
-        routinesList = cloudHistory.routinesListData.map(r => ({
-          id: r.id,
-          name: r.name,
-          data: r.data,
-          isBase: r.isBase || r.id === "routine-1"
-        }));
-        localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
-        delete cloudHistory.routinesListData;
-      }
-      if (cloudHistory.activeRoutineIdState) {
-        activeRoutineId = cloudHistory.activeRoutineIdState;
-        localStorage.setItem("gymActiveRoutineId", activeRoutineId);
-        
-        // Update global routineData pointing to active routine data
-        const activeRoutine = routinesList.find(r => r.id === activeRoutineId);
-        if (activeRoutine) {
-          routineData = activeRoutine.data;
-        }
-        
-        delete cloudHistory.activeRoutineIdState;
-      }
-      
-      // Reload current routine weights and sets
-      loadActiveRoutineState();
-
-      // 2. Sync Exercise Weights from cloud
-      if (cloudHistory.weightsState) {
-        // Merge with local weights (preserve local if newer)
-        const localWeights = JSON.parse(
-          localStorage.getItem("gymRoutineWeights") || "{}",
-        );
-        const mergedWeights = { ...cloudHistory.weightsState, ...localWeights };
-
-        // Check if data actually changed before re-rendering to avoid flicker
-        if (JSON.stringify(setWeights) !== JSON.stringify(mergedWeights)) {
-          setWeights = mergedWeights;
-          localStorage.setItem(
-            "gymRoutineWeights",
-            JSON.stringify(mergedWeights),
-          );
-          console.log("⚖️ Pesos sincronizados desde la nube");
-
-          // Refresh UI to show loaded weights
-          if (typeof renderContent === "function") {
-            renderContent();
-            lucide.createIcons();
-          }
-        }
-        delete cloudHistory.weightsState;
-      }
-
-      // 3. Merge Training History (Preserve local keys that aren't in cloud)
-      // This prevents losing today's offline workout if we sync with yesterday's cloud data.
-      const mergedHistory = { ...trainingHistory, ...cloudHistory };
-
-      if (JSON.stringify(trainingHistory) !== JSON.stringify(mergedHistory)) {
-        trainingHistory = mergedHistory;
-        localStorage.setItem(
-          "gymTrainingHistory",
-          JSON.stringify(trainingHistory),
-        );
-        console.log("✅ Historial cargado desde la nube");
-      }
-
-      // --- SYNC HYDRATION FROM CLOUD TO LOCAL ---
-      const todayKey = getDateKey(new Date());
-      if (trainingHistory[todayKey] && trainingHistory[todayKey].water) {
-        // We found water data for today in cloud
-        const cloudWater = trainingHistory[todayKey].water;
-
-        // Merge logic: Trust cloud if it seems valid/newer.
-        // FIX: User reported local progress (1500ml) being overwritten by 0 from cloud.
-        // To prevent this data loss, we will use a MAX strategy for now.
-        // This means we can't "reset" via cloud sync easily, but we won't lose progress.
-
-        let changed = false;
-        if (cloudWater.facu !== undefined) {
-          const newVal = Math.max(waterState.facu || 0, cloudWater.facu);
-          if (newVal !== waterState.facu) {
-            waterState.facu = newVal;
-            changed = true;
-          }
-        }
-        if (cloudWater.alma !== undefined) {
-          const newVal = Math.max(waterState.alma || 0, cloudWater.alma);
-          if (newVal !== waterState.alma) {
-            waterState.alma = newVal;
-            changed = true;
-          }
-        }
-
-        if (changed) {
-          saveWaterState(); // Save to local storage
-          if (typeof renderAquaFlow === "function") renderAquaFlow(); // Update UI
-          console.log("💧 Hidratación sincronizada desde la nube");
-        }
-      }
-    }
-  } catch (error) {
-    console.warn(
-      "⚠️ Error cargando desde la nube, usando datos locales:",
-      error,
-    );
-    trainingHistory =
-      JSON.parse(localStorage.getItem("gymTrainingHistory")) || {};
-  } finally {
-    isSyncing = false;
+  const loaded = await syncFromCloud();
+  if (!loaded) {
+    trainingHistory = JSON.parse(localStorage.getItem("gymTrainingHistory")) || {};
   }
 }
 
@@ -714,78 +752,46 @@ if (typeof updateGamificationUI === "function") {
 }
 
 async function saveToCloud() {
-  // Check Achievements before saving (to include any new unlocks in this sync)
-  // Avoid recursion if this function is called FROM checkAchievements
-  // We can pass a flag or just assume checks act on local state which settles.
-  // Actually, let's call it here safely.
-  try {
-    // Only check if function exists (safeguard)
-    if (typeof checkAchievements === "function") {
-      // We won't await it, just run it.
-      // But wait, checkAchievements calls saveToCloud() on unlock.
-      // If we call checkAchievements here, we might double-save.
-      // Better to NOT call it here, but call it where state changes (addWater, addSet).
-    }
-  } catch (e) {}
-
   // Always save locally first
   localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
-  localStorage.setItem("gymGamification", JSON.stringify(gamification)); // Save Gamification
-
-  if (!JSONBIN_ENABLED) return;
-  // ... rest of saveToCloud functionality wraps gamification too?
-  // Since we are using JSONBIN, we should structure the payload to include both or have a separate bin.
-  // Current implementation saves `trainingHistory` directly as the body.
-  // To avoid breaking changes or complex migration of the bin structure,
-  // I will attach gamification to the trainingHistory object TEMPORARILY as a hidden field `_gamification`.
-  // Or better, I'll update the structure if I can.
-  // User said "trainingHistory = data.record".
-  // Let's attach it to trainingHistory as a special key "gamificationState".
-
-  trainingHistory.gamificationState = gamification;
-
-  // Also sync exercise weights (setWeights)
-  const savedWeights = localStorage.getItem("gymRoutineWeights");
-  if (savedWeights) {
-    trainingHistory.weightsState = JSON.parse(savedWeights);
+  localStorage.setItem("gymGamification", JSON.stringify(gamification));
+  localStorage.setItem("water_tracker_state", JSON.stringify(waterState));
+  const ok = await cloudAdapter.saveState(buildCloudPayload());
+  if (!ok) {
+    console.warn("Cloud save failed");
   }
+  isSyncing = false;
+}
 
-  // Sync all routines, their weights, sets, and active ID
-  if (typeof routinesList !== "undefined" && routinesList.length > 0) {
-    trainingHistory.routinesListData = routinesList.map(r => {
-      return {
-        id: r.id,
-        name: r.name,
-        data: r.data,
-        weights: JSON.parse(localStorage.getItem("gymRoutineWeights_" + r.id) || "{}"),
-        sets: JSON.parse(localStorage.getItem("gymRoutineSets_" + r.id) || "{}")
-      };
-    });
-    trainingHistory.activeRoutineIdState = activeRoutineId;
+async function seedCloudIfEmpty() {
+  const state = await cloudAdapter.getState();
+  if (!state) return false;
+
+  const hasAnyData =
+    (state.profiles && state.profiles.length) ||
+    (state.routines && state.routines.length) ||
+    (state.routine_days && state.routine_days.length) ||
+    (state.routine_exercises && state.routine_exercises.length) ||
+    (state.training_history && state.training_history.length) ||
+    (state.gamification && state.gamification.length) ||
+    (state.water_state && state.water_state.length);
+
+  if (hasAnyData) return false;
+
+  const res = await fetch("./api/state", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ payload: buildCloudPayload() }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    console.error("Seed failed:", res.status, errText);
+    showToast("alert-circle", "text-red-400", `Seed error: ${errText.slice(0, 60)}`);
   }
+  const seeded = res.ok;
 
-  try {
-    isSyncing = true;
-    const response = await fetch(
-      `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Master-Key": JSONBIN_API_KEY,
-        },
-        body: JSON.stringify(trainingHistory),
-      },
-    );
-
-    if (response.ok) {
-      console.log("✅ Datos guardados en la nube");
-    }
-  } catch (error) {
-    console.warn("⚠️ Error guardando en la nube:", error);
-  } finally {
-    isSyncing = false;
-  }
+  if (seeded) await syncFromCloud();
+  return seeded;
 }
 
 // Load from cloud on startup
@@ -816,6 +822,148 @@ loadFromCloud().then(() => {
 
 // --- THEME STATE ---
 let currentTheme = localStorage.getItem("gymTheme") || "dark";
+
+async function ensureCloudUserId() {
+  return getCloudUserId();
+}
+
+async function refreshCloudStatus() {
+  const status = document.getElementById("cloud-sync-status");
+  if (!status) return null;
+  try {
+    const test = await fetch(cloudAdapter.stateEndpoint(), { method: "GET" });
+    if (test.ok) {
+      const data = await test.json();
+      status.textContent = data.error
+        ? `Error: ${data.error}`
+        : `OK - ${data.routines?.length || 0} rutinas, ${data.training_history?.length || 0} historial`;
+    } else {
+      const text = await test.text().catch(() => "");
+      status.textContent = `HTTP ${test.status}: ${text.slice(0, 80)}`;
+    }
+  } catch {
+    status.textContent = `No se puede conectar a ${cloudAdapter.stateEndpoint()}`;
+  }
+  return { ok: true };
+}
+
+async function upsertRow(table, row, conflict = "id") {
+  void table;
+  void row;
+  void conflict;
+  scheduleCloudSync();
+  return true;
+}
+
+async function fetchRows(table, filters = {}) {
+  void table;
+  void filters;
+  const state = await fetchCloudState();
+  if (!state) return null;
+  return state[table] || [];
+}
+
+async function deleteRows(table, filters = {}) {
+  void table;
+  void filters;
+  scheduleCloudSync();
+  return true;
+}
+
+function makeRowId(prefix) {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function buildRoutineTablesFromData(routineId, routineDataArray) {
+  const days = [];
+  const exercises = [];
+
+  routineDataArray.forEach((day, dayIndex) => {
+    const dayId = makeRowId(`${routineId}-day`);
+    days.push({
+      id: dayId,
+      routine_id: routineId,
+      day_index: dayIndex,
+      day_name: day.day,
+      title: day.title,
+    });
+
+    (day.exercises || []).forEach((ex, position) => {
+      exercises.push({
+        id: makeRowId(`${routineId}-ex`),
+        routine_day_id: dayId,
+        position,
+        name: ex.name,
+        sets: ex.sets,
+        reps: ex.reps,
+        rir: ex.rir,
+        notes: ex.notes,
+        primary_muscles: ex.muscles?.primary || [],
+        secondary_muscles: ex.muscles?.secondary || [],
+      });
+    });
+  });
+
+  return { days, exercises };
+}
+
+function buildRoutineDataFromTables(routineId, daysRows, exercisesRows) {
+  const routineDays = (daysRows || [])
+    .filter((d) => d.routine_id === routineId)
+    .sort((a, b) => a.day_index - b.day_index);
+
+  return routineDays.map((day) => ({
+    day: day.day_name,
+    title: day.title,
+    exercises: (exercisesRows || [])
+      .filter((ex) => ex.routine_day_id === day.id)
+      .sort((a, b) => a.position - b.position)
+      .map((ex) => ({
+        name: ex.name,
+        sets: ex.sets,
+        reps: ex.reps,
+        rir: ex.rir,
+        notes: ex.notes,
+        muscles: {
+          primary: ex.primary_muscles || [],
+          secondary: ex.secondary_muscles || [],
+        },
+      })),
+  }));
+}
+
+async function saveRoutineToCloud(routine) {
+  void routine;
+  scheduleCloudSync();
+  return true;
+}
+
+async function setActiveRoutineCloud(routineId) {
+  void routineId;
+  scheduleCloudSync();
+  return true;
+}
+
+async function migrateLocalStorageToCloud() {
+  const userId = await ensureCloudUserId();
+  const migratedFlag = `gymCloudMigrated_${userId}`;
+  if (localStorage.getItem(migratedFlag) === "true") return true;
+
+  await saveToCloud();
+
+  localStorage.setItem(migratedFlag, "true");
+  return true;
+}
+
+let _cloudSyncTimer = null;
+
+function scheduleCloudSync(delay = 1500) {
+  clearTimeout(_cloudSyncTimer);
+  _cloudSyncTimer = setTimeout(() => {
+    saveToCloud();
+  }, delay);
+}
 
 function toggleTheme() {
   currentTheme = currentTheme === "dark" ? "light" : "dark";
@@ -1618,6 +1766,7 @@ function renderWaterHistory() {
 
 function saveWaterState() {
   localStorage.setItem("water_tracker_state", JSON.stringify(waterState));
+  scheduleCloudSync();
 }
 
 function resetDay(user) {
@@ -1763,6 +1912,13 @@ function openProfileModal() {
     apiKeyInput.value = localStorage.getItem("gymGeminiApiKey") || "";
   }
 
+  const cloudApiBaseUrlInput = document.getElementById("cloud-api-base-url");
+  if (cloudApiBaseUrlInput) {
+    cloudApiBaseUrlInput.value = getCloudApiBaseUrl();
+  }
+
+  refreshCloudStatus();
+
   const modal = document.getElementById("profile-modal");
   modal.classList.remove("hidden");
   modal.classList.add("flex");
@@ -1806,6 +1962,14 @@ function saveProfile() {
   if (apiKeyInput) {
     localStorage.setItem("gymGeminiApiKey", apiKeyInput.value.trim());
   }
+
+  const cloudApiBaseUrlInput = document.getElementById("cloud-api-base-url");
+  if (cloudApiBaseUrlInput) {
+    const value = cloudApiBaseUrlInput.value.trim();
+    if (value) localStorage.setItem("gymCloudApiBaseUrl", value);
+  }
+
+  scheduleCloudSync();
 
   // Recalculate water goals based on new profile
   waterState.facuGoal = calculateSmartWaterGoal("facu");
@@ -6473,6 +6637,7 @@ function selectActiveRoutine(id) {
   
   // Show toast/log
   logToScreen(`Rutina activa: "${activeRoutine.name}"`, "success");
+  scheduleCloudSync();
 }
 
 function selectBaseRoutine() {
@@ -6523,6 +6688,8 @@ function deleteRoutine(id) {
       // Clean up localstorage sets & weights for that routine
       localStorage.removeItem("gymRoutineSets_" + id);
       localStorage.removeItem("gymRoutineWeights_" + id);
+
+      scheduleCloudSync();
       
       renderRoutinesList();
       logToScreen(`Rutina "${routine.name}" eliminada.`, "success");
@@ -6865,6 +7032,8 @@ function applyGeneratedRoutine(routineDataArray) {
       
       routinesList.push(newRoutine);
       localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+
+      scheduleCloudSync();
       
       // Select it immediately
       selectActiveRoutine(newRoutine.id);

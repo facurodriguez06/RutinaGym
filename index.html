@@ -27,7 +27,6 @@
     </script>
     <!-- Lucide Icons (pinned version for caching) -->
     <script src="https://unpkg.com/lucide@0.460.0" defer></script>
-
     <link rel="stylesheet" href="styles.css">
 
     <style>
@@ -1348,6 +1347,17 @@
                         Necesaria para el generador de rutinas con IA. Obtenla gratis en 
                         <a href="https://aistudio.google.com/" target="_blank" class="text-cyan-400 hover:underline">Google AI Studio</a>.
                     </p>
+                </div>
+
+                <!-- Cloud sync is automatic -->
+                <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                    <label class="flex items-center gap-2 text-emerald-300 font-bold mb-2 text-xs uppercase tracking-wider">
+                        <i data-lucide="database" class="w-4 h-4"></i> Sincronización en la nube
+                    </label>
+                    <p class="text-[10px] text-slate-500 leading-tight">
+                        La app sincroniza automáticamente con la API propia en el mismo origen.
+                    </p>
+                    <p id="cloud-sync-status" class="text-[10px] text-slate-500 mt-1.5 leading-tight">Sincronización automática activa</p>
                 </div>
             </div>
 

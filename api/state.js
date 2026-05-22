@@ -1,0 +1,206 @@
+const { hasSupabaseConfig, supabaseFetch } = require("./_supabase");
+
+function sendJson(res, status, body) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(body));
+}
+
+function jsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
+    req.on("end", () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : {});
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+module.exports = async function handler(req, res) {
+  if (!hasSupabaseConfig()) {
+    return sendJson(res, 500, { error: "Supabase server config missing" });
+  }
+
+  const method = (req.method || "GET").toUpperCase();
+  if (method === "GET") {
+    try {
+      const [profiles, routines, days, exercises, history, gamification, water] = await Promise.all([
+        supabaseFetch("profiles?select=*&order=created_at.desc&limit=1"),
+        supabaseFetch("routines?select=*&order=is_base.desc,created_at.asc"),
+        supabaseFetch("routine_days?select=*&order=day_index.asc"),
+        supabaseFetch("routine_exercises?select=*&order=position.asc"),
+        supabaseFetch("training_history?select=*&order=date_key.asc"),
+        supabaseFetch("gamification?select=*&limit=1"),
+        supabaseFetch("water_state?select=*&limit=1"),
+      ]);
+
+      return sendJson(res, 200, {
+        profiles: profiles || [],
+        routines: routines || [],
+        routine_days: days || [],
+        routine_exercises: exercises || [],
+        training_history: history || [],
+        gamification: gamification || [],
+        water_state: water || [],
+      });
+    } catch (error) {
+      return sendJson(res, 500, { error: error.message });
+    }
+  }
+
+  if (method === "POST") {
+    try {
+      const body = await jsonBody(req);
+      const action = body.action || "save";
+      const payload = body.payload || body;
+
+      if (action !== "save" && action !== "migrate") {
+        return sendJson(res, 400, { error: "Invalid action" });
+      }
+
+      const results = [];
+
+      if (payload.profile) {
+        results.push(
+          supabaseFetch("profiles", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(payload.profile),
+          }),
+        );
+      }
+
+      if (Array.isArray(payload.routines)) {
+        for (const routine of payload.routines) {
+          results.push(
+            supabaseFetch("routines", {
+              method: "POST",
+              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify(routine),
+            }),
+          );
+        }
+      }
+
+      if (Array.isArray(payload.routine_days)) {
+        for (const day of payload.routine_days) {
+          results.push(
+            supabaseFetch("routine_days", {
+              method: "POST",
+              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify(day),
+            }),
+          );
+        }
+      }
+
+      if (Array.isArray(payload.routine_exercises)) {
+        for (const ex of payload.routine_exercises) {
+          results.push(
+            supabaseFetch("routine_exercises", {
+              method: "POST",
+              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify(ex),
+            }),
+          );
+        }
+      }
+
+      if (Array.isArray(payload.training_history)) {
+        for (const row of payload.training_history) {
+          results.push(
+            supabaseFetch("training_history", {
+              method: "POST",
+              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify(row),
+            }),
+          );
+        }
+      }
+
+      if (payload.gamification) {
+        results.push(
+          supabaseFetch("gamification", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(payload.gamification),
+          }),
+        );
+      }
+
+      if (payload.water_state) {
+        results.push(
+          supabaseFetch("water_state", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(payload.water_state),
+          }),
+        );
+      }
+
+      const settled = await Promise.allSettled(results);
+      const rejected = settled.filter((item) => item.status === "rejected");
+      if (rejected.length) {
+        return sendJson(res, 500, {
+          ok: false,
+          error: rejected[0].reason?.message || "Cloud save failed",
+        });
+      }
+
+      return sendJson(res, 200, { ok: true, saved: settled.length });
+    } catch (error) {
+      return sendJson(res, 500, { error: error.message });
+    }
+  }
+
+  if (method === "PUT") {
+    try {
+      const body = await jsonBody(req);
+      const payload = body.payload || body;
+      console.log("[PUT] payload keys:", Object.keys(payload));
+      console.log("[PUT] routines count:", payload.routines?.length);
+      console.log("[PUT] routine_days count:", payload.routine_days?.length);
+      console.log("[PUT] routine_exercises count:", payload.routine_exercises?.length);
+      const results = [];
+
+      if (payload.profile) {
+        results.push(supabaseFetch("profiles", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.profile) }));
+      }
+      if (Array.isArray(payload.routines)) {
+        for (const row of payload.routines) results.push(supabaseFetch("routines", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) }));
+      }
+      if (Array.isArray(payload.routine_days)) {
+        for (const row of payload.routine_days) results.push(supabaseFetch("routine_days", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) }));
+      }
+      if (Array.isArray(payload.routine_exercises)) {
+        for (const row of payload.routine_exercises) results.push(supabaseFetch("routine_exercises", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) }));
+      }
+      if (Array.isArray(payload.training_history)) {
+        for (const row of payload.training_history) results.push(supabaseFetch("training_history", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) }));
+      }
+      if (payload.gamification) {
+        results.push(supabaseFetch("gamification", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.gamification) }));
+      }
+      if (payload.water_state) {
+        results.push(supabaseFetch("water_state", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.water_state) }));
+      }
+
+      const settled = await Promise.allSettled(results);
+      const rejected = settled.filter((item) => item.status === "rejected");
+      if (rejected.length) {
+        rejected.forEach((r) => console.error("[PUT] Rejected:", r.reason?.message));
+        return sendJson(res, 500, { ok: false, error: rejected[0].reason?.message || "Cloud seed failed" });
+      }
+      return sendJson(res, 200, { ok: true, seeded: settled.length });
+    } catch (error) {
+      return sendJson(res, 500, { error: error.message });
+    }
+  }
+
+  return sendJson(res, 405, { error: "Method not allowed" });
+};
