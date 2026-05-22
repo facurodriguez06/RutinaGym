@@ -4434,11 +4434,13 @@ const warmupTimers = {}; // Stores intervals and state: { id: { time: N, interva
 function renderTimerCard(ex) {
   // Init state if new
   if (!warmupTimers[ex.id]) {
+    const saved = localStorage.getItem("warmup_completed_" + ex.id);
     warmupTimers[ex.id] = {
       time: ex.duration,
       original: ex.duration,
       isRunning: false,
       interval: null,
+      isCompleted: saved === "true",
     };
   }
 
@@ -4460,6 +4462,10 @@ function renderTimerCard(ex) {
     borderClass = "border-slate-800";
     bgClass = "bg-slate-900/50";
     opacityClass = "opacity-50 grayscale";
+  } else if (state.isCompleted) {
+    borderClass = `border-${ex.color}-500/60`;
+    bgClass = "bg-slate-900";
+    opacityClass = "opacity-60";
   }
 
   card.className = `relative overflow-hidden ${bgClass} border ${borderClass} rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 group hover:border-${ex.color}-500/30 transition-all ${opacityClass}`;
@@ -4478,12 +4484,14 @@ function renderTimerCard(ex) {
 
       <!-- Icon & Info -->
       <div class="flex items-center gap-4 w-full md:w-auto">
-          <div class="w-12 h-12 rounded-xl bg-${ex.color}-500/10 flex items-center justify-center border border-${ex.color}-500/20 group-hover:scale-110 transition-transform">
+          <div class="w-12 h-12 rounded-xl bg-${ex.color}-500/10 flex items-center justify-center border border-${ex.color}-500/20 group-hover:scale-110 transition-transform relative">
               <i data-lucide="${ex.icon}" class="w-6 h-6 text-${ex.color}-400"></i>
+              ${state.isCompleted ? '<i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 absolute -top-1 -right-1 drop-shadow-lg"></i>' : ""}
           </div>
           <div>
               <h4 class="font-bold text-slate-200 text-lg leading-tight md:mb-1">
                   ${ex.title}
+                  ${state.isCompleted ? '<span class="text-xs text-emerald-400 ml-2 font-bold uppercase">(Completado)</span>' : ""}
                   ${state.isSkipped ? '<span class="text-xs text-red-400 ml-2 font-bold uppercase">(Saltado)</span>' : ""}
               </h4>
               <p class="text-xs text-slate-500 font-medium">${ex.desc}</p>
@@ -4533,6 +4541,8 @@ function toggleWarmupTimer(id) {
         clearInterval(state.interval);
         state.isRunning = false;
         state.time = 0;
+        state.isCompleted = true;
+        localStorage.setItem("warmup_completed_" + id, "true");
         // Play sound? or visual cue
         try {
           // Simple notification if possible
@@ -4564,7 +4574,9 @@ function resetWarmupTimer(id) {
   clearInterval(state.interval);
   state.isRunning = false;
   state.isSkipped = false;
+  state.isCompleted = false;
   state.time = state.original;
+  localStorage.setItem("warmup_completed_" + id, "false");
   renderContent();
 }
 
@@ -4572,15 +4584,11 @@ function skipWarmupTimer(id) {
   const state = warmupTimers[id];
   if (!state) return;
 
-  // Stop if running
   clearInterval(state.interval);
   state.isRunning = false;
-
-  // Mark as skipped (toggle or set?)
-  // If already skipped, maybe unskip? User just said "option to skip".
-  // Let's assume toggle is better UI UX or just Set Skip.
-  // Standard logic: if skipped, stay skipped. Reset clears it.
+  state.isCompleted = false;
   state.isSkipped = true;
+  localStorage.setItem("warmup_completed_" + id, "false");
 
   renderContent();
 }
