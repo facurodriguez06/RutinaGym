@@ -439,7 +439,13 @@ function getCloudUserId() {
 
 const cloudAdapter = {
   stateEndpoint() {
+    if (window.__CLOUD_API_URL__) {
+      return `${window.__CLOUD_API_URL__}/api/state`;
+    }
     if (window.location.protocol === "file:") {
+      return "http://localhost:3000/api/state";
+    }
+    if (window.location.protocol === "capacitor:") {
       return "http://localhost:3000/api/state";
     }
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {

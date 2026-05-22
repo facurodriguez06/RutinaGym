@@ -8,7 +8,8 @@ const filesToCopy = [
   'manifest.json',
   'favicon.svg',
   'sw.js',
-  'recovery_script.js'
+  'recovery_script.js',
+  'config.js'
 ];
 
 const destDir = path.join(__dirname, 'www');
@@ -31,5 +32,13 @@ filesToCopy.forEach(file => {
     console.warn(`[WARN] File not found: ${file}`);
   }
 });
+
+// Regenerate config.js with remote API URL if env var is set
+const cloudApiUrl = process.env.CLOUD_API_URL || process.env.VITE_CLOUD_API_URL || '';
+if (cloudApiUrl) {
+  const configContent = `window.__CLOUD_API_URL__ = ${JSON.stringify(cloudApiUrl.replace(/\/+$/, ''))};\n`;
+  fs.writeFileSync(path.join(destDir, 'config.js'), configContent);
+  console.log(`[OK] config.js → CLOUD_API_URL=${cloudApiUrl}`);
+}
 
 console.log('Build completed successfully!');
