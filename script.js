@@ -2192,6 +2192,20 @@ function parseRestTime(notes) {
   return 90; // Default 90 seconds
 }
 
+// --- HELPER: Parse reps from string (e.g., "8-10" -> 9, "12" -> 12) ---
+function parseReps(repsStr) {
+  if (!repsStr) return 10;
+  const match = repsStr.match(/(\d+)\s*-\s*(\d+)/);
+  if (match) {
+    return Math.round((parseInt(match[1]) + parseInt(match[2])) / 2);
+  }
+  const single = repsStr.match(/(\d+)/);
+  if (single) {
+    return parseInt(single[1]);
+  }
+  return 10;
+}
+
 // --- SILENT AUDIO FOR BACKGROUND & LOCK SCREEN ---
 // 1 second of silence mp3
 const SILENT_AUDIO_URI =
@@ -4308,6 +4322,11 @@ function getLastWeight(exerciseName, user, dayIndex) {
 }
 
 function init() {
+  // Initialize Session Stopwatch
+  if (typeof initSessionStopwatch === "function") {
+    initSessionStopwatch();
+  }
+
   // Set Date (Legacy removed)
 
   // Initialize Gamification / Streak Display Immediately
@@ -4354,6 +4373,9 @@ function init() {
         setWeights[key][user] = value;
         localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
         debouncedSaveToCloud(3000); // Batch cloud sync while typing
+        if (typeof updateLiveVolumeUI === "function") {
+          updateLiveVolumeUI();
+        }
       }
     }
   });
@@ -4656,6 +4678,15 @@ function renderContent() {
   const progressContainer = document.getElementById("progress-container");
   progressContainer.classList.remove("hidden");
 
+  // Show session control panel and refresh UI
+  const sessionPanel = document.getElementById("session-control-panel");
+  if (sessionPanel) {
+    sessionPanel.classList.remove("hidden");
+    if (typeof updateStopwatchUI === "function") updateStopwatchUI();
+    if (typeof updateStopwatchControls === "function") updateStopwatchControls();
+    if (typeof updateLiveVolumeUI === "function") updateLiveVolumeUI();
+  }
+
   // Progress Bar Animation
   const progressBar = document.getElementById("progress-bar");
   document.getElementById("progress-text").textContent = `${progress}%`;
@@ -4672,6 +4703,10 @@ function renderContent() {
   const completionMsg = document.getElementById("completion-message");
   if (progress === 100) {
     completionMsg.classList.remove("hidden");
+    // Auto-open summary modal with a slight delay
+    if (typeof openWorkoutSummaryModal === "function") {
+      setTimeout(openWorkoutSummaryModal, 600);
+    }
   } else {
     completionMsg.classList.add("hidden");
   }
@@ -5080,6 +5115,13 @@ function renderContent() {
         completedSets[setKey][user] = true;
         // Sólo mostrar timer si se activa
         showTimer(user, exerciseName, restTime);
+        
+        // Auto-start active session timer if not running
+        if (typeof isSessionTimerRunning !== "undefined" && !isSessionTimerRunning) {
+          if (typeof startWorkoutSession === "function") {
+            startWorkoutSession();
+          }
+        }
       } else {
         // TURN OFF
         completedSets[setKey][user] = false;
@@ -5103,6 +5145,9 @@ function renderContent() {
       setWeights[setKey][user] = val;
 
       localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
+      if (typeof updateLiveVolumeUI === "function") {
+        updateLiveVolumeUI();
+      }
     });
 
     // Auto-select on focus
@@ -5920,6 +5965,7 @@ function showExerciseHistory(exerciseName) {
     let targetTab = -1;
     let targetExIdx = -1;
     let setsCount = 0;
+    let exerciseObj = null;
 
     routineData.forEach((day, tIdx) => {
       day.exercises.forEach((ex, eIdx) => {
@@ -5927,6 +5973,7 @@ function showExerciseHistory(exerciseName) {
           targetTab = tIdx;
           targetExIdx = eIdx;
           setsCount = parseInt(ex.sets) || 3;
+          exerciseObj = ex;
         }
       });
     });
@@ -5937,10 +5984,55 @@ function showExerciseHistory(exerciseName) {
       return;
     }
 
+    const repsVal = parseReps(exerciseObj ? exerciseObj.reps : "10");
+    
+    // First pass: Find All-Time Personal Records (PR) for this exercise using Epley 1RM
+    let facuAllTimePR = 0;
+    let almaAllTimePR = 0;
+
+    // Scan today's/current session values
+    for (let s = 0; s < setsCount; s++) {
+      const key = `${targetTab}-${targetExIdx}-${s}`;
+      const w = setWeights[key];
+      if (w) {
+        if (w.facu) {
+          const oneRM = Math.round(parseFloat(w.facu) * (1 + repsVal / 30));
+          if (oneRM > facuAllTimePR) facuAllTimePR = oneRM;
+        }
+        if (w.alma) {
+          const oneRM = Math.round(parseFloat(w.alma) * (1 + repsVal / 30));
+          if (oneRM > almaAllTimePR) almaAllTimePR = oneRM;
+        }
+      }
+    }
+
+    // Scan history database
+    Object.keys(trainingHistory).forEach((date) => {
+      const dayRecord = trainingHistory[date];
+      if (!dayRecord || !dayRecord.weights) return;
+      for (let s = 0; s < setsCount; s++) {
+        const key = `${targetTab}-${targetExIdx}-${s}`;
+        const w = dayRecord.weights[key];
+        if (w) {
+          if (w.facu) {
+            const oneRM = Math.round(parseFloat(w.facu) * (1 + repsVal / 30));
+            if (oneRM > facuAllTimePR) facuAllTimePR = oneRM;
+          }
+          if (w.alma) {
+            const oneRM = Math.round(parseFloat(w.alma) * (1 + repsVal / 30));
+            if (oneRM > almaAllTimePR) almaAllTimePR = oneRM;
+          }
+        }
+      }
+    });
+
     // 1.5 CHECK CURRENT SESSION (TODAY/NOW)
     let todayHasData = false;
     let todayFacuWeights = [];
     let todayAlmaWeights = [];
+    let todayFacuMax1RM = 0;
+    let todayAlmaMax1RM = 0;
+    
     for (let s = 0; s < setsCount; s++) {
       const key = `${targetTab}-${targetExIdx}-${s}`;
       const w = setWeights[key];
@@ -5948,10 +6040,14 @@ function showExerciseHistory(exerciseName) {
         if (w.facu) {
           todayFacuWeights.push(w.facu);
           todayHasData = true;
+          const oneRM = Math.round(parseFloat(w.facu) * (1 + repsVal / 30));
+          if (oneRM > todayFacuMax1RM) todayFacuMax1RM = oneRM;
         }
         if (w.alma) {
           todayAlmaWeights.push(w.alma);
           todayHasData = true;
+          const oneRM = Math.round(parseFloat(w.alma) * (1 + repsVal / 30));
+          if (oneRM > todayAlmaMax1RM) todayAlmaMax1RM = oneRM;
         }
       }
     }
@@ -5961,6 +6057,8 @@ function showExerciseHistory(exerciseName) {
         date: "Hoy (Progreso)",
         facu: todayFacuWeights.join(" - "),
         alma: todayAlmaWeights.join(" - "),
+        facu1RM: todayFacuMax1RM,
+        alma1RM: todayAlmaMax1RM,
         isToday: true, // Optional flag for styling
       });
     }
@@ -5979,6 +6077,8 @@ function showExerciseHistory(exerciseName) {
       let hasData = false;
       let facuWeights = [];
       let almaWeights = [];
+      let facuMax1RM = 0;
+      let almaMax1RM = 0;
 
       for (let s = 0; s < setsCount; s++) {
         const key = `${targetTab}-${targetExIdx}-${s}`;
@@ -5987,10 +6087,14 @@ function showExerciseHistory(exerciseName) {
           if (w.facu) {
             facuWeights.push(w.facu);
             hasData = true;
+            const oneRM = Math.round(parseFloat(w.facu) * (1 + repsVal / 30));
+            if (oneRM > facuMax1RM) facuMax1RM = oneRM;
           }
           if (w.alma) {
             almaWeights.push(w.alma);
             hasData = true;
+            const oneRM = Math.round(parseFloat(w.alma) * (1 + repsVal / 30));
+            if (oneRM > almaMax1RM) almaMax1RM = oneRM;
           }
         }
       }
@@ -6010,6 +6114,8 @@ function showExerciseHistory(exerciseName) {
           date: dateStr,
           facu: facuWeights.join(" - "),
           alma: almaWeights.join(" - "),
+          facu1RM: facuMax1RM,
+          alma1RM: almaMax1RM,
         });
       }
     });
@@ -6027,17 +6133,41 @@ function showExerciseHistory(exerciseName) {
           : "border-slate-800 bg-slate-950/50";
         const dateColor = item.isToday ? "text-emerald-400" : "text-slate-400";
 
+        // Determine if this set is the all-time PR
+        const isFacuPR = item.facu1RM > 0 && item.facu1RM === facuAllTimePR;
+        const facuPRBadge = isFacuPR ? '<span class="pr-badge alltime ml-1.5"><i data-lucide="trophy" class="w-2.5 h-2.5"></i> PR</span>' : '';
+        const facuPRPercent = facuAllTimePR > 0 ? Math.min(100, Math.round((item.facu1RM / facuAllTimePR) * 100)) : 0;
+
+        const isAlmaPR = item.alma1RM > 0 && item.alma1RM === almaAllTimePR;
+        const almaPRBadge = isAlmaPR ? '<span class="pr-badge alltime ml-1.5"><i data-lucide="trophy" class="w-2.5 h-2.5"></i> PR</span>' : '';
+        const almaPRPercent = almaAllTimePR > 0 ? Math.min(100, Math.round((item.alma1RM / almaAllTimePR) * 100)) : 0;
+
         html += `
-                <div class="${borderClass} p-4 rounded-xl border flex items-center justify-between transition-all">
-                    <div class="${dateColor} font-bold text-sm w-20">${item.date}</div>
-                    <div class="flex-1 px-2 border-l border-slate-700 ml-2 grid grid-cols-2 gap-2">
+                <div class="${borderClass} p-4 rounded-xl border flex items-center justify-between transition-all shadow-[2px_2px_0_#000]">
+                    <div class="${dateColor} font-bold text-sm w-20 flex flex-col gap-0.5">
+                      <span>${item.date}</span>
+                      <span class="text-[9px] text-slate-500 font-mono">reps: ~${repsVal}</span>
+                    </div>
+                    <div class="flex-1 px-2 border-l border-slate-700 ml-2 grid grid-cols-2 gap-4">
                         <div class="flex flex-col">
-                            <span class="text-[10px] text-blue-500 font-bold uppercase">Facu</span>
+                            <span class="text-[10px] text-blue-500 font-bold uppercase flex items-center gap-1">Facu ${facuPRBadge}</span>
                             <span class="text-slate-200 font-mono text-sm">${item.facu || "-"}</span>
+                            ${item.facu1RM ? `
+                              <span class="text-[10px] text-slate-400 font-mono mt-0.5">Est. 1RM: <b>${item.facu1RM} kg</b></span>
+                              <div class="pr-progress-track" title="${facuPRPercent}% de tu PR (${facuAllTimePR} kg)">
+                                <div class="pr-progress-bar facu" style="width: ${facuPRPercent}%"></div>
+                              </div>
+                            ` : ''}
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-[10px] text-pink-500 font-bold uppercase">Alma</span>
+                            <span class="text-[10px] text-pink-500 font-bold uppercase flex items-center gap-1">Alma ${almaPRBadge}</span>
                             <span class="text-slate-200 font-mono text-sm">${item.alma || "-"}</span>
+                            ${item.alma1RM ? `
+                              <span class="text-[10px] text-slate-400 font-mono mt-0.5">Est. 1RM: <b>${item.alma1RM} kg</b></span>
+                              <div class="pr-progress-track" title="${almaPRPercent}% de tu PR (${almaAllTimePR} kg)">
+                                <div class="pr-progress-bar alma" style="width: ${almaPRPercent}%"></div>
+                              </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -6045,6 +6175,7 @@ function showExerciseHistory(exerciseName) {
       });
       html += `</div>`;
       content.innerHTML = html;
+      lucide.createIcons();
     }
   }, 100); // Small delay for rendering
 }
@@ -7106,5 +7237,334 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// ==========================================================================
+// ACTIVE SESSION STOPWATCH & VOLUME TRACKER LOGIC
+// ==========================================================================
+let sessionStartTime = null;
+let sessionElapsedSeconds = 0;
+let sessionTimerInterval = null;
+let isSessionTimerRunning = false;
+
+function initSessionStopwatch() {
+  const savedStartTime = localStorage.getItem("vigor_sessionStartTime");
+  const savedElapsed = localStorage.getItem("vigor_sessionElapsedSeconds");
+  const savedRunning = localStorage.getItem("vigor_sessionTimerRunning");
+
+  if (savedStartTime) {
+    sessionStartTime = parseInt(savedStartTime);
+    sessionElapsedSeconds = parseInt(savedElapsed || "0");
+    if (savedRunning === "true") {
+      isSessionTimerRunning = true;
+      const now = Date.now();
+      const additionalElapsed = Math.floor((now - sessionStartTime) / 1000);
+      sessionElapsedSeconds += additionalElapsed;
+      sessionStartTime = now;
+      localStorage.setItem("vigor_sessionStartTime", sessionStartTime.toString());
+      localStorage.setItem("vigor_sessionElapsedSeconds", sessionElapsedSeconds.toString());
+      startGlobalSessionInterval();
+    } else {
+      isSessionTimerRunning = false;
+      updateStopwatchUI();
+    }
+  }
+}
+
+function startWorkoutSession() {
+  if (isSessionTimerRunning) return;
+  
+  if (!sessionStartTime) {
+    sessionStartTime = Date.now();
+    sessionElapsedSeconds = 0;
+    localStorage.setItem("vigor_sessionStartTime", sessionStartTime.toString());
+  } else {
+    sessionStartTime = Date.now() - (sessionElapsedSeconds * 1000);
+    localStorage.setItem("vigor_sessionStartTime", sessionStartTime.toString());
+  }
+  
+  isSessionTimerRunning = true;
+  localStorage.setItem("vigor_sessionTimerRunning", "true");
+  
+  startGlobalSessionInterval();
+  updateStopwatchControls();
+  
+  // Show the panel in case it was hidden
+  const panel = document.getElementById("session-control-panel");
+  if (panel) panel.classList.remove("hidden");
+}
+
+function startGlobalSessionInterval() {
+  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+  
+  sessionTimerInterval = setInterval(() => {
+    if (!isSessionTimerRunning) {
+      clearInterval(sessionTimerInterval);
+      sessionTimerInterval = null;
+      return;
+    }
+    
+    const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+    sessionElapsedSeconds = elapsed;
+    localStorage.setItem("vigor_sessionElapsedSeconds", sessionElapsedSeconds.toString());
+    updateStopwatchUI();
+  }, 1000);
+}
+
+function pauseWorkoutSession() {
+  if (!isSessionTimerRunning) return;
+  
+  isSessionTimerRunning = false;
+  localStorage.setItem("vigor_sessionTimerRunning", "false");
+  
+  if (sessionTimerInterval) {
+    clearInterval(sessionTimerInterval);
+    sessionTimerInterval = null;
+  }
+  updateStopwatchControls();
+}
+
+function confirmResetWorkoutSession() {
+  if (confirm("¿Estás seguro de que quieres reiniciar el cronómetro de la sesión activa?")) {
+    resetWorkoutSession();
+  }
+}
+
+function resetWorkoutSession() {
+  isSessionTimerRunning = false;
+  sessionStartTime = null;
+  sessionElapsedSeconds = 0;
+  
+  localStorage.removeItem("vigor_sessionStartTime");
+  localStorage.removeItem("vigor_sessionElapsedSeconds");
+  localStorage.setItem("vigor_sessionTimerRunning", "false");
+  
+  if (sessionTimerInterval) {
+    clearInterval(sessionTimerInterval);
+    sessionTimerInterval = null;
+  }
+  
+  updateStopwatchUI();
+  updateStopwatchControls();
+  updateLiveVolumeUI();
+}
+
+function updateStopwatchUI() {
+  const hours = Math.floor(sessionElapsedSeconds / 3600);
+  const minutes = Math.floor((sessionElapsedSeconds % 3600) / 60);
+  const seconds = sessionElapsedSeconds % 60;
+  
+  const formatted = [
+    hours.toString().padStart(2, "0"),
+    minutes.toString().padStart(2, "0"),
+    seconds.toString().padStart(2, "0")
+  ].join(":");
+  
+  const el = document.getElementById("session-stopwatch");
+  if (el) el.textContent = formatted;
+}
+
+function updateStopwatchControls() {
+  const btnPlay = document.getElementById("btn-session-play");
+  const btnPause = document.getElementById("btn-session-pause");
+  
+  if (isSessionTimerRunning) {
+    if (btnPlay) btnPlay.classList.add("hidden");
+    if (btnPause) {
+      btnPause.classList.remove("hidden");
+      btnPause.classList.add("flex");
+    }
+  } else {
+    if (btnPlay) btnPlay.classList.remove("hidden");
+    if (btnPause) {
+      btnPause.classList.add("hidden");
+      btnPause.classList.remove("flex");
+    }
+  }
+}
+
+function updateLiveVolumeUI() {
+  const volFacu = calculateSessionVolume("facu");
+  const volAlma = calculateSessionVolume("alma");
+  
+  const elFacu = document.getElementById("session-vol-facu");
+  const elAlma = document.getElementById("session-vol-alma");
+  
+  if (elFacu) elFacu.textContent = volFacu.toLocaleString();
+  if (elAlma) elAlma.textContent = volAlma.toLocaleString();
+}
+
+function calculateSessionVolume(user) {
+  let totalVolume = 0;
+  const dayData = routineData[activeTab];
+  if (!dayData) return 0;
+  
+  dayData.exercises.forEach((exercise, idx) => {
+    const numSets = parseInt(exercise.sets) || 3;
+    const repsVal = parseReps(exercise.reps);
+    for (let s = 0; s < numSets; s++) {
+      const setKey = `${activeTab}-${idx}-${s}`;
+      const isCompleted = completedSets[setKey] && completedSets[setKey][user];
+      if (isCompleted) {
+        let weight = setWeights[setKey] && setWeights[setKey][user];
+        if (!weight) {
+          weight = getLastWeight(exercise.name, user, activeTab) || "0";
+        }
+        const weightVal = parseFloat(weight) || 0;
+        totalVolume += weightVal * repsVal;
+      }
+    }
+  });
+  
+  return totalVolume;
+}
+
+// ==========================================================================
+// WORKOUT SUMMARY MODAL & OVERLOAD ANALYSIS
+// ==========================================================================
+function openWorkoutSummaryModal() {
+  const modal = document.getElementById("workout-summary-modal");
+  if (!modal) return;
+
+  const durationText = document.getElementById("session-stopwatch")?.textContent || "00:00:00";
+  document.getElementById("summary-duration").textContent = durationText;
+
+  const volFacu = calculateSessionVolume("facu");
+  const volAlma = calculateSessionVolume("alma");
+
+  document.getElementById("summary-facu-vol").innerHTML = `${volFacu.toLocaleString()} <span class="text-xs font-normal text-[var(--text-dim)]">kg</span>`;
+  document.getElementById("summary-alma-vol").innerHTML = `${volAlma.toLocaleString()} <span class="text-xs font-normal text-[var(--text-dim)]">kg</span>`;
+
+  const prevFacuVol = getLastSessionVolume("facu");
+  const prevAlmaVol = getLastSessionVolume("alma");
+
+  updateOverloadStats("facu", volFacu, prevFacuVol);
+  updateOverloadStats("alma", volAlma, prevAlmaVol);
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  
+  lucide.createIcons();
+}
+
+function updateOverloadStats(user, currentVol, prevVol) {
+  const diffEl = document.getElementById(`summary-${user}-vs-prev`);
+  const badgeEl = document.getElementById(`summary-${user}-overload-badge`);
+
+  if (!diffEl || !badgeEl) return;
+
+  if (prevVol > 0) {
+    const percentDiff = ((currentVol - prevVol) / prevVol) * 100;
+    const formatted = percentDiff >= 0 
+      ? `+${percentDiff.toFixed(1)}%` 
+      : `${percentDiff.toFixed(1)}%`;
+      
+    diffEl.textContent = `${formatted} vs anterior`;
+    
+    if (percentDiff > 0) {
+      diffEl.className = "font-mono font-black text-emerald-400 text-sm";
+      badgeEl.textContent = "💪 Sobrecarga";
+      badgeEl.className = `text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-black uppercase font-mono`;
+    } else if (percentDiff < 0) {
+      diffEl.className = "font-mono font-black text-rose-500 text-sm";
+      badgeEl.textContent = "Descarga";
+      badgeEl.className = `text-[9px] bg-rose-500/10 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded font-black uppercase font-mono`;
+    } else {
+      diffEl.className = "font-mono font-black text-slate-400 text-sm";
+      badgeEl.textContent = "Igual";
+      badgeEl.className = `text-[9px] bg-slate-500/10 text-slate-400 border border-slate-500/30 px-2 py-0.5 rounded font-black uppercase font-mono`;
+    }
+  } else {
+    diffEl.textContent = "Primer registro";
+    diffEl.className = "font-mono font-black text-slate-400 text-sm";
+    badgeEl.textContent = "Nuevo";
+    badgeEl.className = `text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded font-black uppercase font-mono`;
+  }
+}
+
+function getLastSessionVolume(user) {
+  const dates = Object.keys(trainingHistory).sort((a, b) => new Date(b) - new Date(a));
+  const dayData = routineData[activeTab];
+  if (!dayData) return 0;
+  
+  for (let d = 0; d < dates.length; d++) {
+    const dateKey = dates[d];
+    
+    // Skip today's date so we don't compare today with today
+    const todayStr = getDateKey(new Date());
+    if (dateKey === todayStr) continue;
+
+    const dayRecord = trainingHistory[dateKey];
+    if (!dayRecord || !dayRecord.weights) continue;
+    
+    let userCompletedSets = 0;
+    let computedVolume = 0;
+    
+    dayData.exercises.forEach((exercise, idx) => {
+      const numSets = parseInt(exercise.sets) || 3;
+      const repsVal = parseReps(exercise.reps);
+      for (let s = 0; s < numSets; s++) {
+        const setKey = `${activeTab}-${idx}-${s}`;
+        const w = dayRecord.weights[setKey];
+        if (w && w[user]) {
+          const weightVal = parseFloat(w[user]) || 0;
+          computedVolume += weightVal * repsVal;
+          userCompletedSets++;
+        }
+      }
+    });
+    
+    if (userCompletedSets > 0) {
+      return computedVolume;
+    }
+  }
+  
+  return 0;
+}
+
+function closeWorkoutSummaryModal() {
+  const modal = document.getElementById("workout-summary-modal");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+}
+
+function saveSessionAndCloseSummary() {
+  let facuTrained = false;
+  let almaTrained = false;
+  
+  const dayData = routineData[activeTab];
+  if (dayData) {
+    dayData.exercises.forEach((exercise, idx) => {
+      const numSets = parseInt(exercise.sets) || 3;
+      for (let s = 0; s < numSets; s++) {
+        const setKey = `${activeTab}-${idx}-${s}`;
+        if (completedSets[setKey]) {
+          if (completedSets[setKey].facu) facuTrained = true;
+          if (completedSets[setKey].alma) almaTrained = true;
+        }
+      }
+    });
+  }
+  
+  let who = "both";
+  if (facuTrained && almaTrained) who = "both";
+  else if (facuTrained) who = "facu";
+  else if (almaTrained) who = "alma";
+  
+  markDayCompleted(who);
+  resetWorkoutSession();
+  closeWorkoutSummaryModal();
+}
+
+// Expose functions globally for HTML onclick event handlers
+window.startWorkoutSession = startWorkoutSession;
+window.pauseWorkoutSession = pauseWorkoutSession;
+window.confirmResetWorkoutSession = confirmResetWorkoutSession;
+window.openWorkoutSummaryModal = openWorkoutSummaryModal;
+window.closeWorkoutSummaryModal = closeWorkoutSummaryModal;
+window.saveSessionAndCloseSummary = saveSessionAndCloseSummary;
+window.updateLiveVolumeUI = updateLiveVolumeUI;
+window.initSessionStopwatch = initSessionStopwatch;
 
 

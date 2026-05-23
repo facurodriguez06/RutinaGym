@@ -312,9 +312,60 @@
             <!-- Main Content -->
             <div class="flex-1 w-full">
 
-                <!-- Start Routine Content -->
+                <!-- Start Routine Content -->                <!-- Active Session Control Panel -->
+                <div id="session-control-panel" class="mb-6 brutal-panel p-4 hidden animate-slide-up stagger-1 bg-slate-900/80 backdrop-blur-md border-2 border-slate-800 shadow-[4px_4px_0px_#000]">
+                    <div class="flex flex-wrap items-center justify-between gap-4 w-full">
+                        <!-- Left: Timer -->
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-slate-950 border-2 border-[var(--border-strong)] shadow-[2px_2px_0px_#000] text-[var(--accent-vigor)] flex items-center justify-center rounded-lg">
+                                <i data-lucide="timer" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <span class="text-[9px] text-[var(--text-dim)] font-black uppercase tracking-wider block font-mono">Sesión Activa</span>
+                                <div id="session-stopwatch" class="session-timer-text text-xl font-black text-white font-mono">00:00:00</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Middle: Control Buttons -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button id="btn-session-play" onclick="startWorkoutSession()" 
+                                class="h-9 px-3 bg-slate-800 hover:bg-slate-700 text-white border-2 border-[var(--border-strong)] rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
+                                <i data-lucide="play" class="w-3.5 h-3.5"></i> Iniciar
+                            </button>
+                            <button id="btn-session-pause" onclick="pauseWorkoutSession()" 
+                                class="h-9 px-3 bg-slate-850 hover:bg-slate-750 text-[var(--accent-vigor)] border-2 border-[var(--accent-vigor)] rounded-lg font-black text-xs uppercase tracking-wider transition-all hidden items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
+                                <i data-lucide="pause" class="w-3.5 h-3.5"></i> Pausar
+                            </button>
+                            <button id="btn-session-reset" onclick="confirmResetWorkoutSession()" 
+                                class="h-9 px-3 bg-red-950/30 hover:bg-red-950/60 text-red-400 border-2 border-red-900/50 rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none" title="Reiniciar Cronómetro">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reiniciar
+                            </button>
+                            <button onclick="openWorkoutSummaryModal()" 
+                                class="h-9 px-3 bg-[var(--accent-vigor)] hover:bg-[var(--accent-vigor)]/90 text-black border-2 border-black rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
+                                <i data-lucide="trophy" class="w-3.5 h-3.5"></i> Finalizar
+                            </button>
+                        </div>
 
-
+                        <!-- Right: Live Session Volumes -->
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span class="text-[9px] text-[var(--text-dim)] font-black uppercase tracking-wider font-mono">Volumen:</span>
+                            <div class="flex gap-2">
+                                <div class="user-volume-badge facu h-9" title="Tonelaje total levantado por Facu hoy">
+                                    <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                                    <span>Facu: </span>
+                                    <span id="session-vol-facu" class="font-mono font-black text-white ml-0.5">0</span>
+                                    <span class="text-[9px] font-bold text-[var(--text-dim)] uppercase">kg</span>
+                                </div>
+                                <div class="user-volume-badge alma h-9" title="Tonelaje total levantado por Alma hoy">
+                                    <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                                    <span>Alma: </span>
+                                    <span id="session-vol-alma" class="font-mono font-black text-white ml-0.5">0</span>
+                                    <span class="text-[9px] font-bold text-[var(--text-dim)] uppercase">kg</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Progress Section -->
                 <div id="progress-container"
@@ -354,19 +405,11 @@
                         <i data-lucide="trophy" class="w-8 h-8 text-emerald-400"></i>
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2">¡Entrenamiento Completado!</h3>
-                    <p class="text-slate-400 mb-4">Excelente trabajo hoy. ¿Quién entrenó?</p>
+                    <p class="text-slate-400 mb-4">Excelente trabajo hoy. Abre el resumen para registrar tu sobrecarga progresiva y tonelaje.</p>
                     <div class="flex gap-3 justify-center flex-wrap">
-                        <button onclick="markDayCompleted('alma')"
-                            class="px-5 py-2.5 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-medium transition-all flex items-center gap-2">
-                            <i data-lucide="user" class="w-5 h-5"></i> Solo Alma
-                        </button>
-                        <button onclick="markDayCompleted('facu')"
-                            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-all flex items-center gap-2">
-                            <i data-lucide="user" class="w-5 h-5"></i> Solo Facu
-                        </button>
-                        <button onclick="markDayCompleted('both')"
-                            class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-all flex items-center gap-2">
-                            <i data-lucide="users" class="w-5 h-5"></i> Ambos
+                        <button onclick="openWorkoutSummaryModal()"
+                            class="px-6 py-3 bg-[var(--accent-vigor)] hover:opacity-90 text-black border-2 border-black rounded-xl font-black transition-all flex items-center gap-2 shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none uppercase tracking-wide">
+                            <i data-lucide="trophy" class="w-5 h-5"></i> Ver Resumen y Guardar
                         </button>
                     </div>
                 </div>
@@ -1254,6 +1297,99 @@
             <div id="hist-modal-content" class="flex-1 overflow-y-auto space-y-3 pr-2">
                 <!-- Items injected here -->
                 <div class="text-center text-slate-500 py-8">No hay datos registrados aún.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout Summary Modal -->
+    <div id="workout-summary-modal"
+        class="fixed inset-0 bg-black/90 z-[95] hidden items-center justify-center p-4 backdrop-blur-md transition-opacity duration-300">
+        <div
+            class="bg-slate-900 border-3 border-[var(--accent-vigor)] rounded-3xl p-6 max-w-md w-full shadow-2xl relative flex flex-col max-h-[90vh] shadow-[0_0_30px_rgba(204,255,0,0.15)]">
+
+            <!-- Close Button -->
+            <button onclick="closeWorkoutSummaryModal()"
+                class="absolute top-4 right-4 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-full transition-all z-10">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+
+            <div class="text-center mb-5">
+                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-vigor)]/10 text-[var(--accent-vigor)] border-2 border-[var(--accent-vigor)] shadow-[3px_3px_0px_#000] rounded-2xl mb-3 animate-bounce">
+                    <i data-lucide="trophy" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-3xl font-black text-white uppercase tracking-tight leading-none mb-1">¡Sesión Finalizada!</h3>
+                <p class="text-[var(--accent-vigor)] font-bold text-xs uppercase tracking-widest font-mono">Análisis de Progreso</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="space-y-4 overflow-y-auto pr-1 mb-5 flex-1">
+                <!-- Elapsed Time -->
+                <div class="bg-slate-950 p-4 border-2 border-[var(--border-strong)] rounded-xl flex items-center justify-between shadow-[3px_3px_0px_#000]">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
+                        <span class="text-xs text-slate-300 font-bold uppercase">Duración Total</span>
+                    </div>
+                    <span id="summary-duration" class="font-mono font-black text-white text-lg">00:00:00</span>
+                </div>
+
+                <!-- Facu Stats Card -->
+                <div class="bg-slate-950 p-4 border-2 border-[var(--accent-facu)]/40 rounded-xl shadow-[3px_3px_0px_rgba(0,240,255,0.1)]">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+                        <div class="flex items-center gap-2 text-[var(--accent-facu)]">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            <span class="font-black text-xs uppercase tracking-wide">FACUNDO</span>
+                        </div>
+                        <span class="text-[9px] bg-slate-900 border border-slate-800 px-2 py-0.5 rounded font-black uppercase font-mono" id="summary-facu-overload-badge">--</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[8px] text-[var(--text-dim)] font-bold uppercase tracking-wider block">Volumen</span>
+                            <span class="font-mono font-black text-white text-lg" id="summary-facu-vol">0 <span class="text-xs font-normal text-[var(--text-dim)]">kg</span></span>
+                        </div>
+                        <div>
+                            <span class="text-[8px] text-[var(--text-dim)] font-bold uppercase tracking-wider block">vs. Anterior</span>
+                            <span class="font-mono font-black text-md" id="summary-facu-vs-prev">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alma Stats Card -->
+                <div class="bg-slate-950 p-4 border-2 border-[var(--accent-alma)]/40 rounded-xl shadow-[3px_3px_0px_rgba(255,0,85,0.1)]">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+                        <div class="flex items-center gap-2 text-[var(--accent-alma)]">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            <span class="font-black text-xs uppercase tracking-wide">ALMA</span>
+                        </div>
+                        <span class="text-[9px] bg-slate-900 border border-slate-800 px-2 py-0.5 rounded font-black uppercase font-mono" id="summary-alma-overload-badge">--</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[8px] text-[var(--text-dim)] font-bold uppercase tracking-wider block">Volumen</span>
+                            <span class="font-mono font-black text-white text-lg" id="summary-alma-vol">0 <span class="text-xs font-normal text-[var(--text-dim)]">kg</span></span>
+                        </div>
+                        <div>
+                            <span class="text-[8px] text-[var(--text-dim)] font-bold uppercase tracking-wider block">vs. Anterior</span>
+                            <span class="font-mono font-black text-md" id="summary-alma-vs-prev">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gems/Gemas earned -->
+                <div class="bg-slate-950 p-4 border-2 border-yellow-500/40 rounded-xl flex items-center justify-between shadow-[3px_3px_0px_rgba(234,179,8,0.1)]">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="gem" class="w-5 h-5 text-yellow-400"></i>
+                        <span class="text-xs text-slate-300 font-bold uppercase">Gemas Ganadas</span>
+                    </div>
+                    <span class="font-mono font-black text-yellow-400 text-lg">+10 Gemas</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3">
+                <button onclick="saveSessionAndCloseSummary()"
+                    class="flex-1 py-3 bg-[var(--accent-vigor)] text-black border-2 border-black rounded-xl font-bold uppercase tracking-wider transition-all shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none text-center text-sm font-black">
+                    Guardar y Registrar
+                </button>
             </div>
         </div>
     </div>
