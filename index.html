@@ -14,10 +14,14 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
-    <!-- DNS Prefetch for faster CDN resolution -->
+    <!-- DNS Prefetch & Font preconnects for faster resolution -->
     <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
     <link rel="dns-prefetch" href="https://unpkg.com">
     <link rel="dns-prefetch" href="https://api.open-meteo.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+    
     <!-- Tailwind CSS (pinned version for caching) -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script>
@@ -30,20 +34,110 @@
     <link rel="stylesheet" href="styles.css">
 
     <style>
-        /* Splash screen flash prevention */
-        body { background: #020617; }
-        #splash-screen { display: flex; }
-    </style>
-    <!-- Inline splash to prevent flash of unstyled content -->
-    <style>
-        #splash-screen{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#020617;transition:opacity .5s}
-        #splash-screen .logo{font-size:2.25rem;font-weight:900;color:#34d399;margin-bottom:.5rem;letter-spacing:-.025em;font-family:system-ui,sans-serif}
-        #splash-screen .logo span{display:inline-block;margin-right:.4rem}
-        #splash-screen .loader{width:20px;height:20px;border:2px solid rgba(52,211,153,.2);border-top-color:#34d399;border-radius:50%;animation:spinner .8s linear infinite;margin-bottom:.75rem}
-        #splash-screen .sub{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.1em;font-family:system-ui,sans-serif;animation:pulse 2s ease-in-out infinite}
-        @keyframes spinner{to{transform:rotate(360deg)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-        body{background:#020617}
+        /* Modern, premium Neo-Brutalist splash screen styles */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #050505;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+            transition: opacity 0.5s ease;
+        }
+        #splash-screen .splash-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 2.5rem;
+            background: #111111;
+            border: 3px solid #262626;
+            box-shadow: 8px 8px 0px #000000;
+            max-width: 320px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            will-change: transform, opacity;
+        }
+        /* Neon highlight effect on the brutalist panel */
+        #splash-screen .splash-content::before {
+            content: '';
+            position: absolute;
+            top: -3px; left: -3px; right: -3px; bottom: -3px;
+            border: 3px solid #ccff00;
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        #splash-screen .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+        }
+        #splash-screen .splash-logo-img {
+            width: 3.5rem;
+            height: 3.5rem;
+            object-fit: contain;
+            border: 2px solid #262626;
+            box-shadow: 4px 4px 0px #000000;
+        }
+        #splash-screen .logo {
+            font-family: "Bebas Neue", system-ui, sans-serif;
+            font-size: 3rem;
+            font-weight: normal;
+            color: #ccff00;
+            letter-spacing: 2px;
+            line-height: 1;
+            text-shadow: 3px 3px 0px #000;
+            margin: 0;
+        }
+        #splash-screen .brutal-loader-container {
+            width: 100%;
+            margin-bottom: 1.25rem;
+        }
+        #splash-screen .brutal-loader-track {
+            height: 12px;
+            border: 2px solid #262626;
+            background: #050505;
+            position: relative;
+            overflow: hidden;
+        }
+        #splash-screen .brutal-loader-bar {
+            height: 100%;
+            width: 40%;
+            background: #ccff00;
+            border-right: 2px solid #262626;
+            position: absolute;
+            left: -40%;
+            animation: brutal-loading 1.2s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
+            box-shadow: 0 0 8px rgba(204, 255, 0, 0.3);
+        }
+        #splash-screen .sub {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes brutal-loading {
+            0% { left: -40%; }
+            100% { left: 100%; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        body { background: #050505; }
     </style>
     <style>
         /* Hide Number Input Spinners */
@@ -64,9 +158,18 @@
 
     <!-- SPLASH SCREEN -->
     <div id="splash-screen">
-        <div class="loader"></div>
-        <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.5rem;height:1.5rem;display:inline-block;vertical-align:middle;margin-right:.4rem"><path d="m6.5 6.5 11 11"/><path d="m6.5 17.5 11-11"/><path d="M5 12h14"/><path d="M12 5v14"/><rect x="2" y="7" width="4" height="10" rx="1"/><rect x="18" y="7" width="4" height="10" rx="1"/></svg>VIGOR</div>
-        <div class="sub">Cargando...</div>
+        <div class="splash-content">
+            <div class="logo-container">
+                <img src="favicon.svg" class="splash-logo-img" alt="Vigor Logo">
+                <div class="logo">VIGOR</div>
+            </div>
+            <div class="brutal-loader-container">
+                <div class="brutal-loader-track">
+                    <div class="brutal-loader-bar"></div>
+                </div>
+            </div>
+            <div class="sub">Cargando...</div>
+        </div>
     </div>
     <!-- Sidebar / Drawer -->
     <div id="sidebar-overlay" onclick="toggleSidebar()"
@@ -76,8 +179,8 @@
         <div class="p-6 flex flex-col h-full overflow-y-auto">
             <div class="flex items-center gap-3 mb-4">
                 <div
-                    class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-                    <i data-lucide="dumbbell" class="w-6 h-6 text-emerald-400"></i>
+                    class="w-10 h-10 border border-slate-800 shadow-[2px_2px_0px_#000] overflow-hidden flex items-center justify-center bg-slate-950">
+                    <img src="favicon.svg" class="w-8 h-8 object-contain" alt="Vigor Logo">
                 </div>
                 <div>
                     <h2 class="text-lg font-bold text-white leading-none">VIGOR</h2>
