@@ -523,6 +523,7 @@ function buildCloudPayload() {
     deleted: !!entry?.deleted,
     water: entry?.water || null,
     weights: entry?.weights || null,
+    completed_sets: entry?.completed_sets || null,
   }));
 
   const facu = gamification.facu || {};
@@ -550,6 +551,228 @@ function buildCloudPayload() {
       last_updated_date: waterState.date || new Date().toDateString(),
     },
   };
+}
+
+function loadActiveRoutineStateFromHistory() {
+  const today = getDateKey(new Date());
+  const todayRecord = trainingHistory[today];
+  if (todayRecord) {
+    let changed = false;
+    
+    // 1. Merge completed sets
+    if (todayRecord.completed_sets) {
+      const cloudSets = todayRecord.completed_sets;
+      const mergedSets = { ...completedSets };
+      let setsChanged = false;
+      
+      Object.keys(cloudSets).forEach((key) => {
+        if (!mergedSets[key]) {
+          mergedSets[key] = { facu: false, alma: false };
+        }
+        if (typeof cloudSets[key] === "object" && cloudSets[key] !== null) {
+          if (mergedSets[key].facu !== cloudSets[key].facu) {
+            mergedSets[key].facu = cloudSets[key].facu;
+            setsChanged = true;
+          }
+          if (mergedSets[key].alma !== cloudSets[key].alma) {
+            mergedSets[key].alma = cloudSets[key].alma;
+            setsChanged = true;
+          }
+        }
+      });
+      
+      if (setsChanged) {
+        completedSets = mergedSets;
+        localStorage.setItem("gymRoutineSets_" + activeRoutineId, JSON.stringify(completedSets));
+        changed = true;
+      }
+    }
+    
+    // 2. Merge weights
+    if (todayRecord.weights) {
+      const cloudWeights = todayRecord.weights;
+      const mergedWeights = { ...setWeights };
+      let weightsChanged = false;
+      
+      Object.keys(cloudWeights).forEach((key) => {
+        if (!mergedWeights[key]) {
+          mergedWeights[key] = { facu: "", alma: "" };
+        }
+        if (typeof cloudWeights[key] === "object" && cloudWeights[key] !== null) {
+          if (mergedWeights[key].facu !== cloudWeights[key].facu) {
+            mergedWeights[key].facu = cloudWeights[key].facu;
+            weightsChanged = true;
+          }
+          if (mergedWeights[key].alma !== cloudWeights[key].alma) {
+            mergedWeights[key].alma = cloudWeights[key].alma;
+            weightsChanged = true;
+          }
+        }
+      });
+      
+      if (weightsChanged) {
+        setWeights = mergedWeights;
+        localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
+        changed = true;
+      }
+    }
+    
+    return changed;
+  }
+  return false;
+}
+
+function updateDOMInPlace() {
+  if (currentView !== "routine") return;
+  
+  // 1. Update set buttons
+  document.querySelectorAll(".set-btn").forEach((btn) => {
+    const setKey = btn.dataset.setKey;
+    const user = btn.dataset.user;
+    if (!setKey || !user) return;
+    
+    const isCompleted = !!(completedSets[setKey] && completedSets[setKey][user]);
+    const hasSvg = btn.querySelector("svg") !== null;
+    
+    if (isCompleted !== hasSvg) {
+      const baseClass = "set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none";
+      if (isCompleted) {
+        btn.className = `${baseClass} bg-[var(--accent-${user})] text-black border-black`;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      } else {
+        btn.className = `${baseClass} bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-${user})] hover:text-[var(--accent-${user})]`;
+        btn.textContent = user === "facu" ? "F" : "A";
+      }
+    }
+  });
+
+  // 2. Update weight inputs
+  document.querySelectorAll(".weight-input").forEach((input) => {
+    const setKey = input.dataset.setKey;
+    const user = input.dataset.user;
+    if (!setKey || !user) return;
+    
+    const val = (setWeights[setKey] && setWeights[setKey][user]) || "";
+    if (document.activeElement !== input && input.value !== String(val)) {
+      input.value = val;
+    }
+  });
+
+  // 3. Update exercise-level progress bars and cards
+  const dayData = routineData[activeTab];
+  if (!dayData) return;
+  const dayColors = ["emerald", "blue", "violet", "cyan", "rose"];
+  const activeColor = dayColors[activeTab] || "emerald";
+
+  const cards = Array.from(document.querySelectorAll("#exercises-list > div.group"));
+
+  let totalSets = 0;
+  let completedSetsCount = 0;
+
+  dayData.exercises.forEach((exercise, idx) => {
+    const numSets = parseInt(exercise.sets) || 3;
+    totalSets += numSets * 2;
+
+    let exerciseCompletedChecks = 0;
+    for (let s = 0; s < numSets; s++) {
+      const setKey = `${activeTab}-${idx}-${s}`;
+      const setData = completedSets[setKey] || { facu: false, alma: false };
+      if (setData.facu) { completedSetsCount++; exerciseCompletedChecks++; }
+      if (setData.alma) { completedSetsCount++; exerciseCompletedChecks++; }
+    }
+
+    const isExerciseCompleted = exerciseCompletedChecks === numSets * 2;
+    const card = cards[idx];
+    if (card) {
+      const innerBar = card.querySelector(".bg-emerald-500");
+      if (innerBar) {
+        innerBar.style.width = `${(exerciseCompletedChecks / (numSets * 2)) * 100}%`;
+      }
+
+      const wasCompleted = card.classList.contains("opacity-80");
+      if (isExerciseCompleted !== wasCompleted) {
+        if (isExerciseCompleted) {
+          card.className = card.className
+            .replace("bg-slate-900 border-slate-800 hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-900/10", "")
+            .trim();
+          card.classList.add(`bg-${activeColor}-900/10`, `border-${activeColor}-900/20`, "opacity-80", "scale-[0.99]");
+
+          const strip = card.querySelector("div.absolute.left-0");
+          if (strip) {
+            strip.classList.remove("bg-transparent");
+            strip.classList.add(`bg-${activeColor}-500`);
+          }
+
+          const iconContainer = card.querySelector("div.mt-1");
+          if (iconContainer) {
+            iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle-2 w-8 h-8 text-emerald-500 fill-emerald-500/20 animate-pop drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`;
+          }
+
+          const details = card.querySelector("div.grid.grid-cols-3");
+          if (details) {
+            details.classList.remove("opacity-100");
+            details.classList.add("opacity-50");
+          }
+          const notesDiv = card.querySelector("div.border-t");
+          if (notesDiv) {
+            notesDiv.classList.remove("opacity-100");
+            notesDiv.classList.add("opacity-40");
+          }
+        } else {
+          card.classList.remove(`bg-${activeColor}-900/10`, `border-${activeColor}-900/20`, "opacity-80", "scale-[0.99]");
+          card.className += " bg-slate-900 border-slate-800 hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-900/10";
+
+          const strip = card.querySelector("div.absolute.left-0");
+          if (strip) {
+            strip.classList.remove(`bg-${activeColor}-500`);
+            strip.classList.add("bg-transparent");
+          }
+
+          const iconContainer = card.querySelector("div.mt-1");
+          if (iconContainer) {
+            iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle w-8 h-8 text-slate-700 group-hover:text-emerald-500/50 transition-all duration-300 transform group-hover:scale-110"><circle cx="12" cy="12" r="10"/></svg>`;
+          }
+
+          const details = card.querySelector("div.grid.grid-cols-3");
+          if (details) {
+            details.classList.remove("opacity-50");
+            details.classList.add("opacity-100");
+          }
+          const notesDiv = card.querySelector("div.border-t");
+          if (notesDiv) {
+            notesDiv.classList.remove("opacity-40");
+            notesDiv.classList.add("opacity-100");
+          }
+        }
+      }
+    }
+  });
+
+  // 4. Update overall progress
+  const progress = totalSets === 0 ? 0 : Math.round((completedSetsCount / totalSets) * 100);
+  const progressText = document.getElementById("progress-text");
+  if (progressText) progressText.textContent = `${progress}%`;
+
+  const progressBar = document.getElementById("progress-bar");
+  if (progressBar) progressBar.style.width = `${progress}%`;
+
+  // 5. Completion message
+  const completionMsg = document.getElementById("completion-message");
+  if (completionMsg) {
+    const wasHidden = completionMsg.classList.contains("hidden");
+    if (progress === 100) {
+      completionMsg.classList.remove("hidden");
+      if (wasHidden && typeof openWorkoutSummaryModal === "function") {
+        setTimeout(openWorkoutSummaryModal, 600);
+      }
+    } else {
+      completionMsg.classList.add("hidden");
+    }
+  }
+
+  if (typeof updateLiveVolumeUI === "function") {
+    updateLiveVolumeUI();
+  }
 }
 
 function applyCloudState(state) {
@@ -585,10 +808,17 @@ function applyCloudState(state) {
         deleted: row.deleted,
         weights: row.weights || {},
         water: row.water || {},
+        completed_sets: row.completed_sets || {},
       };
     });
     trainingHistory = merged;
     localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+    
+    // Merge active daily routine checkboxes and weights from cloud
+    const activeStateChanged = loadActiveRoutineStateFromHistory();
+    if (activeStateChanged) {
+      updateDOMInPlace();
+    }
   }
 
   if (Array.isArray(state.gamification) && state.gamification.length) {
@@ -621,6 +851,42 @@ async function syncFromCloud() {
   if (!state || state.error) return false;
   return applyCloudState(state);
 }
+
+// --- BACKGROUND POLLING FOR REAL-TIME SYNC ---
+let syncIntervalId = null;
+
+function startCloudPolling() {
+  if (syncIntervalId) clearInterval(syncIntervalId);
+  syncIntervalId = setInterval(async () => {
+    if (isSyncing) return;
+    
+    try {
+      const response = await fetch(cloudAdapter.stateEndpoint(), { method: "GET" });
+      if (!response.ok) return;
+      const state = await response.json();
+      if (state && !state.error) {
+        applyCloudState(state);
+      }
+    } catch (e) {
+      console.warn("Background sync poll failed", e);
+    }
+  }, 4000);
+}
+
+// Start polling on boot
+startCloudPolling();
+
+// Pause polling when tab is inactive to save battery/data
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    if (syncIntervalId) {
+      clearInterval(syncIntervalId);
+      syncIntervalId = null;
+    }
+  } else {
+    startCloudPolling();
+  }
+});
 
 // Initialize routines early
 initializeRoutines();
@@ -5081,6 +5347,14 @@ function renderContent() {
           () => {
             completedSets = {};
             localStorage.removeItem("gymRoutineSets_" + activeRoutineId);
+            
+            const today = getDateKey(new Date());
+            if (!trainingHistory[today]) {
+              trainingHistory[today] = { alma: false, facu: false, weights: {}, completed_sets: {} };
+            }
+            trainingHistory[today].completed_sets = {};
+            
+            debouncedSaveToCloud(1000);
             renderContent();
           },
         );
@@ -5128,6 +5402,19 @@ function renderContent() {
       }
 
       localStorage.setItem("gymRoutineSets_" + activeRoutineId, JSON.stringify(completedSets));
+
+      // Real-time synchronization
+      const today = getDateKey(new Date());
+      if (!trainingHistory[today]) {
+        trainingHistory[today] = { alma: false, facu: false, weights: {}, completed_sets: {} };
+      }
+      trainingHistory[today].completed_sets = completedSets;
+      trainingHistory[today].weights = {
+        ...trainingHistory[today].weights,
+        ...setWeights,
+      };
+      
+      debouncedSaveToCloud(1000);
       renderContent();
     });
   });
@@ -5145,6 +5432,19 @@ function renderContent() {
       setWeights[setKey][user] = val;
 
       localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
+
+      // Real-time synchronization
+      const today = getDateKey(new Date());
+      if (!trainingHistory[today]) {
+        trainingHistory[today] = { alma: false, facu: false, weights: {}, completed_sets: {} };
+      }
+      trainingHistory[today].weights = {
+        ...trainingHistory[today].weights,
+        ...setWeights,
+      };
+      trainingHistory[today].completed_sets = completedSets;
+
+      debouncedSaveToCloud(1500);
       if (typeof updateLiveVolumeUI === "function") {
         updateLiveVolumeUI();
       }
