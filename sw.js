@@ -1,4 +1,4 @@
-const CACHE_NAME = "gym-rutina-v4"; // Incrementar versión para forzar actualización
+const CACHE_NAME = "gym-rutina-v5"; // Incrementar versión para forzar actualización
 const urlsToCache = [
   "./",
   "./index.html",
