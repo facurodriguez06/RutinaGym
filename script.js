@@ -779,6 +779,9 @@ function applyCloudState(state) {
   if (!state) return false;
 
   const profile = state.profiles?.[0];
+  if (profile?.id) {
+    localStorage.setItem("gymCloudUserId", profile.id);
+  }
   if (profile?.display_name) {
     localStorage.setItem("gymUserDisplayName", profile.display_name);
   }
@@ -801,16 +804,65 @@ function applyCloudState(state) {
 
   if (Array.isArray(state.training_history) && state.training_history.length) {
     const merged = {};
-    state.training_history.forEach((row) => {
-      merged[row.date_key] = {
-        alma: row.alma_trained,
-        facu: row.facu_trained,
-        deleted: row.deleted,
-        weights: row.weights || {},
-        water: row.water || {},
-        completed_sets: row.completed_sets || {},
-      };
+    const activeUserId = getCloudUserId();
+    
+    // Sort rows so that the active user's row is processed last (wins)
+    const sortedHistory = [...state.training_history].sort((a, b) => {
+      if (a.user_id === activeUserId && b.user_id !== activeUserId) return 1;
+      if (a.user_id !== activeUserId && b.user_id === activeUserId) return -1;
+      return 0;
     });
+
+    sortedHistory.forEach((row) => {
+      if (!merged[row.date_key]) {
+        // First row for this date: copy exactly
+        merged[row.date_key] = {
+          alma: !!row.alma_trained,
+          facu: !!row.facu_trained,
+          deleted: !!row.deleted,
+          weights: row.weights || {},
+          water: row.water || {},
+          completed_sets: row.completed_sets || {},
+        };
+      } else {
+        // Secondary row (legacy): merge
+        const existing = merged[row.date_key];
+        existing.alma = existing.alma || !!row.alma_trained;
+        existing.facu = existing.facu || !!row.facu_trained;
+        existing.deleted = existing.deleted || !!row.deleted;
+        
+        // Merge weights
+        if (row.weights && typeof row.weights === "object") {
+          Object.keys(row.weights).forEach((k) => {
+            if (!existing.weights[k]) {
+              existing.weights[k] = row.weights[k];
+            } else {
+              if (row.weights[k].facu) existing.weights[k].facu = row.weights[k].facu;
+              if (row.weights[k].alma) existing.weights[k].alma = row.weights[k].alma;
+            }
+          });
+        }
+        
+        // Merge water
+        if (row.water && typeof row.water === "object") {
+          if (row.water.facu) existing.water.facu = row.water.facu;
+          if (row.water.alma) existing.water.alma = row.water.alma;
+        }
+        
+        // Merge completed sets
+        if (row.completed_sets && typeof row.completed_sets === "object") {
+          Object.keys(row.completed_sets).forEach((k) => {
+            if (!existing.completed_sets[k]) {
+              existing.completed_sets[k] = row.completed_sets[k];
+            } else {
+              if (row.completed_sets[k].facu) existing.completed_sets[k].facu = true;
+              if (row.completed_sets[k].alma) existing.completed_sets[k].alma = true;
+            }
+          });
+        }
+      }
+    });
+
     trainingHistory = merged;
     localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
     
