@@ -371,6 +371,7 @@ let activeRoutineId = 'routine-1';
 let routineData = [];
 let completedSets = {};
 let setWeights = {};
+let lastLocalUpdates = {};
 
 // Data Migration for legacy users (preserves weights & progress under routine-1)
 function migrateLegacyData() {
@@ -559,6 +560,11 @@ function loadActiveRoutineStateFromHistory(triggerTimers = false) {
   if (todayRecord) {
     let changed = false;
     
+    // Guard against sync right after reset
+    if (Date.now() - (lastLocalUpdates["global-reset"] || 0) < 6000) {
+      return false;
+    }
+    
     // 1. Merge completed sets
     if (todayRecord.completed_sets) {
       const cloudSets = todayRecord.completed_sets;
@@ -571,6 +577,10 @@ function loadActiveRoutineStateFromHistory(triggerTimers = false) {
         }
         if (typeof cloudSets[key] === "object" && cloudSets[key] !== null) {
           ["facu", "alma"].forEach((u) => {
+            const localUpdateKey = `${key}-${u}`;
+            if (Date.now() - (lastLocalUpdates[localUpdateKey] || 0) < 6000) {
+              return; // Skip syncing this set from cloud
+            }
             if (mergedSets[key][u] !== cloudSets[key][u]) {
               // Trigger local timer if synced checkmark went from false to true
               if (triggerTimers && !mergedSets[key][u] && cloudSets[key][u]) {
@@ -617,14 +627,16 @@ function loadActiveRoutineStateFromHistory(triggerTimers = false) {
           mergedWeights[key] = { facu: "", alma: "" };
         }
         if (typeof cloudWeights[key] === "object" && cloudWeights[key] !== null) {
-          if (mergedWeights[key].facu !== cloudWeights[key].facu) {
-            mergedWeights[key].facu = cloudWeights[key].facu;
-            weightsChanged = true;
-          }
-          if (mergedWeights[key].alma !== cloudWeights[key].alma) {
-            mergedWeights[key].alma = cloudWeights[key].alma;
-            weightsChanged = true;
-          }
+          ["facu", "alma"].forEach((u) => {
+            const localUpdateKey = `${key}-${u}-weight`;
+            if (Date.now() - (lastLocalUpdates[localUpdateKey] || 0) < 6000) {
+              return; // Skip syncing this weight from cloud
+            }
+            if (mergedWeights[key][u] !== cloudWeights[key][u]) {
+              mergedWeights[key][u] = cloudWeights[key][u];
+              weightsChanged = true;
+            }
+          });
         }
       });
       
@@ -2580,6 +2592,19 @@ function enableBackgroundMode(exerciseName, duration) {
       }
     })
     .catch((e) => logToScreen("❌ Audio Silencioso FALLÓ: " + e, "error"));
+}
+
+function disableBackgroundMode() {
+  try {
+    bgAudio.pause();
+    bgAudio.currentTime = 0;
+    logToScreen("🔇 Audio Silencioso DESACTIVADO (Idle Mode)", "info");
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "paused";
+    }
+  } catch (e) {
+    console.warn("Failed to disable background mode", e);
+  }
 }
 
 // --- CHARTS LOGIC ---
@@ -4707,6 +4732,7 @@ function init() {
       if (key && user) {
         if (!setWeights[key]) setWeights[key] = {};
         setWeights[key][user] = value;
+        lastLocalUpdates[`${key}-${user}-weight`] = Date.now();
         localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
         debouncedSaveToCloud(3000); // Batch cloud sync while typing
         if (typeof updateLiveVolumeUI === "function") {
@@ -5424,6 +5450,7 @@ function renderContent() {
             }
             trainingHistory[today].completed_sets = {};
             
+            lastLocalUpdates["global-reset"] = Date.now();
             debouncedSaveToCloud(1000);
             renderContent();
           },
@@ -5445,6 +5472,9 @@ function renderContent() {
       if (!completedSets[setKey] || typeof completedSets[setKey] !== "object") {
         completedSets[setKey] = { facu: false, alma: false };
       }
+
+      // Record local update timestamp to prevent sync race condition
+      lastLocalUpdates[`${setKey}-${user}`] = Date.now();
 
       // Request Notification if needed
       if ("Notification" in window && Notification.permission !== "granted") {
@@ -5500,6 +5530,7 @@ function renderContent() {
         setWeights[setKey] = { facu: "", alma: "" };
       }
       setWeights[setKey][user] = val;
+      lastLocalUpdates[`${setKey}-${user}-weight`] = Date.now();
 
       localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
 
@@ -5571,7 +5602,7 @@ if ("serviceWorker" in navigator) {
     // Limpiar todos los cachés viejos automáticamente
     if ("caches" in window) {
       const cacheNames = await caches.keys();
-      const currentCacheVersion = "gym-rutina-v9";
+      const currentCacheVersion = "gym-rutina-v10";
       for (const cacheName of cacheNames) {
         if (cacheName !== currentCacheVersion) {
           console.log("Limpiando caché viejo:", cacheName);
