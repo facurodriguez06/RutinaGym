@@ -894,10 +894,23 @@ function applyCloudState(state, triggerTimers = false) {
     });
 
     trainingHistory = merged;
-    localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
     
     // Merge active daily routine checkboxes and weights from cloud
     const activeStateChanged = loadActiveRoutineStateFromHistory(triggerTimers);
+    
+    // Ensure today's record in trainingHistory has our current local state
+    const today = getDateKey(new Date());
+    if (!trainingHistory[today]) {
+      trainingHistory[today] = { alma: false, facu: false, weights: {}, completed_sets: {} };
+    }
+    trainingHistory[today].completed_sets = completedSets;
+    trainingHistory[today].weights = {
+      ...trainingHistory[today].weights,
+      ...setWeights,
+    };
+    
+    localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
+    
     if (activeStateChanged) {
       updateDOMInPlace();
     }
@@ -2940,9 +2953,6 @@ function startGlobalTimerIfNeeded() {
           }
         }
       }
-
-      // Notification Logic checks
-      handleNotifications();
     }
   }, 200);
 }
@@ -5602,7 +5612,7 @@ if ("serviceWorker" in navigator) {
     // Limpiar todos los cachés viejos automáticamente
     if ("caches" in window) {
       const cacheNames = await caches.keys();
-      const currentCacheVersion = "gym-rutina-v10";
+      const currentCacheVersion = "gym-rutina-v11";
       for (const cacheName of cacheNames) {
         if (cacheName !== currentCacheVersion) {
           console.log("Limpiando caché viejo:", cacheName);
