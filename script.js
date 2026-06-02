@@ -553,7 +553,7 @@ function buildCloudPayload() {
   };
 }
 
-function loadActiveRoutineStateFromHistory() {
+function loadActiveRoutineStateFromHistory(triggerTimers = false) {
   const today = getDateKey(new Date());
   const todayRecord = trainingHistory[today];
   if (todayRecord) {
@@ -570,14 +570,32 @@ function loadActiveRoutineStateFromHistory() {
           mergedSets[key] = { facu: false, alma: false };
         }
         if (typeof cloudSets[key] === "object" && cloudSets[key] !== null) {
-          if (mergedSets[key].facu !== cloudSets[key].facu) {
-            mergedSets[key].facu = cloudSets[key].facu;
-            setsChanged = true;
-          }
-          if (mergedSets[key].alma !== cloudSets[key].alma) {
-            mergedSets[key].alma = cloudSets[key].alma;
-            setsChanged = true;
-          }
+          ["facu", "alma"].forEach((u) => {
+            if (mergedSets[key][u] !== cloudSets[key][u]) {
+              // Trigger local timer if synced checkmark went from false to true
+              if (triggerTimers && !mergedSets[key][u] && cloudSets[key][u]) {
+                try {
+                  const parts = key.split("-");
+                  const dayIdx = parseInt(parts[0]);
+                  const exIdx = parseInt(parts[1]);
+                  const dayData = routineData[dayIdx];
+                  if (dayData) {
+                    const exercise = dayData.exercises[exIdx];
+                    if (exercise) {
+                      const exerciseName = exercise.name;
+                      const restTime = parseRestTime(exercise.notes || "");
+                      showTimer(u, exerciseName, restTime);
+                    }
+                  }
+                } catch (e) {
+                  console.warn("Failed to trigger synchronized timer", e);
+                }
+              }
+              
+              mergedSets[key][u] = cloudSets[key][u];
+              setsChanged = true;
+            }
+          });
         }
       });
       
@@ -775,7 +793,7 @@ function updateDOMInPlace() {
   }
 }
 
-function applyCloudState(state) {
+function applyCloudState(state, triggerTimers = false) {
   if (!state) return false;
 
   const profile = state.profiles?.[0];
@@ -867,7 +885,7 @@ function applyCloudState(state) {
     localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
     
     // Merge active daily routine checkboxes and weights from cloud
-    const activeStateChanged = loadActiveRoutineStateFromHistory();
+    const activeStateChanged = loadActiveRoutineStateFromHistory(triggerTimers);
     if (activeStateChanged) {
       updateDOMInPlace();
     }
@@ -917,7 +935,7 @@ function startCloudPolling() {
       if (!response.ok) return;
       const state = await response.json();
       if (state && !state.error) {
-        applyCloudState(state);
+        applyCloudState(state, true);
       }
     } catch (e) {
       console.warn("Background sync poll failed", e);
@@ -5553,7 +5571,7 @@ if ("serviceWorker" in navigator) {
     // Limpiar todos los cachés viejos automáticamente
     if ("caches" in window) {
       const cacheNames = await caches.keys();
-      const currentCacheVersion = "gym-rutina-v2";
+      const currentCacheVersion = "gym-rutina-v9";
       for (const cacheName of cacheNames) {
         if (cacheName !== currentCacheVersion) {
           console.log("Limpiando caché viejo:", cacheName);
