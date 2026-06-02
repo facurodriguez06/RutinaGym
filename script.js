@@ -572,18 +572,30 @@ function loadActiveRoutineStateFromHistory(triggerTimers = false) {
       let setsChanged = false;
       
       Object.keys(cloudSets).forEach((key) => {
+        if (key.endsWith("_ts")) return; // Skip timestamp keys
+        
         if (!mergedSets[key]) {
           mergedSets[key] = { facu: false, alma: false };
         }
+        if (!mergedSets[key + "_ts"]) {
+          mergedSets[key + "_ts"] = { facu: 0, alma: 0 };
+        }
+        
         if (typeof cloudSets[key] === "object" && cloudSets[key] !== null) {
           ["facu", "alma"].forEach((u) => {
             const localUpdateKey = `${key}-${u}`;
             if (Date.now() - (lastLocalUpdates[localUpdateKey] || 0) < 6000) {
               return; // Skip syncing this set from cloud
             }
-            if (mergedSets[key][u] !== cloudSets[key][u]) {
+            
+            const cloudVal = cloudSets[key][u];
+            const cloudTs = (cloudSets[key + "_ts"] && cloudSets[key + "_ts"][u]) || 0;
+            const localVal = mergedSets[key][u];
+            const localTs = (mergedSets[key + "_ts"] && mergedSets[key + "_ts"][u]) || 0;
+            
+            if (cloudTs > localTs || (cloudTs === localTs && localVal !== cloudVal)) {
               // Trigger local timer if synced checkmark went from false to true
-              if (triggerTimers && !mergedSets[key][u] && cloudSets[key][u]) {
+              if (triggerTimers && !localVal && cloudVal) {
                 try {
                   const parts = key.split("-");
                   const dayIdx = parseInt(parts[0]);
@@ -602,7 +614,8 @@ function loadActiveRoutineStateFromHistory(triggerTimers = false) {
                 }
               }
               
-              mergedSets[key][u] = cloudSets[key][u];
+              mergedSets[key][u] = cloudVal;
+              mergedSets[key + "_ts"][u] = cloudTs;
               setsChanged = true;
             }
           });
@@ -623,17 +636,30 @@ function loadActiveRoutineStateFromHistory(triggerTimers = false) {
       let weightsChanged = false;
       
       Object.keys(cloudWeights).forEach((key) => {
+        if (key.endsWith("_ts")) return; // Skip timestamp keys
+        
         if (!mergedWeights[key]) {
           mergedWeights[key] = { facu: "", alma: "" };
         }
+        if (!mergedWeights[key + "_ts"]) {
+          mergedWeights[key + "_ts"] = { facu: 0, alma: 0 };
+        }
+        
         if (typeof cloudWeights[key] === "object" && cloudWeights[key] !== null) {
           ["facu", "alma"].forEach((u) => {
             const localUpdateKey = `${key}-${u}-weight`;
             if (Date.now() - (lastLocalUpdates[localUpdateKey] || 0) < 6000) {
               return; // Skip syncing this weight from cloud
             }
-            if (mergedWeights[key][u] !== cloudWeights[key][u]) {
-              mergedWeights[key][u] = cloudWeights[key][u];
+            
+            const cloudVal = cloudWeights[key][u];
+            const cloudTs = (cloudWeights[key + "_ts"] && cloudWeights[key + "_ts"][u]) || 0;
+            const localVal = mergedWeights[key][u];
+            const localTs = (mergedWeights[key + "_ts"] && mergedWeights[key + "_ts"][u]) || 0;
+            
+            if (cloudTs > localTs || (cloudTs === localTs && localVal !== cloudVal)) {
+              mergedWeights[key][u] = cloudVal;
+              mergedWeights[key + "_ts"][u] = cloudTs;
               weightsChanged = true;
             }
           });
@@ -861,15 +887,34 @@ function applyCloudState(state, triggerTimers = false) {
         existing.facu = existing.facu || !!row.facu_trained;
         existing.deleted = existing.deleted || !!row.deleted;
         
-        // Merge weights
+        // Merge weights using timestamps
         if (row.weights && typeof row.weights === "object") {
           Object.keys(row.weights).forEach((k) => {
+            if (k.endsWith("_ts")) return; // Skip timestamp keys
+            
+            const cloudVal = row.weights[k];
+            const cloudTs = row.weights[k + "_ts"] || {};
+            
             if (!existing.weights[k]) {
-              existing.weights[k] = row.weights[k];
-            } else {
-              if (row.weights[k].facu) existing.weights[k].facu = row.weights[k].facu;
-              if (row.weights[k].alma) existing.weights[k].alma = row.weights[k].alma;
+              existing.weights[k] = { facu: "", alma: "" };
             }
+            if (!existing.weights[k + "_ts"]) {
+              existing.weights[k + "_ts"] = { facu: 0, alma: 0 };
+            }
+            
+            ["facu", "alma"].forEach((u) => {
+              const existingVal = existing.weights[k][u];
+              const existingTs = existing.weights[k + "_ts"][u] || 0;
+              const currentCloudVal = cloudVal[u];
+              const currentCloudTs = cloudTs[u] || 0;
+              
+              if (currentCloudTs > existingTs) {
+                existing.weights[k][u] = currentCloudVal;
+                existing.weights[k + "_ts"][u] = currentCloudTs;
+              } else if (currentCloudTs === existingTs) {
+                existing.weights[k][u] = currentCloudVal || existingVal;
+              }
+            });
           });
         }
         
@@ -879,15 +924,34 @@ function applyCloudState(state, triggerTimers = false) {
           if (row.water.alma) existing.water.alma = row.water.alma;
         }
         
-        // Merge completed sets
+        // Merge completed sets using timestamps
         if (row.completed_sets && typeof row.completed_sets === "object") {
           Object.keys(row.completed_sets).forEach((k) => {
+            if (k.endsWith("_ts")) return; // Skip timestamp keys
+            
+            const cloudVal = row.completed_sets[k];
+            const cloudTs = row.completed_sets[k + "_ts"] || {};
+            
             if (!existing.completed_sets[k]) {
-              existing.completed_sets[k] = row.completed_sets[k];
-            } else {
-              if (row.completed_sets[k].facu) existing.completed_sets[k].facu = true;
-              if (row.completed_sets[k].alma) existing.completed_sets[k].alma = true;
+              existing.completed_sets[k] = { facu: false, alma: false };
             }
+            if (!existing.completed_sets[k + "_ts"]) {
+              existing.completed_sets[k + "_ts"] = { facu: 0, alma: 0 };
+            }
+            
+            ["facu", "alma"].forEach((u) => {
+              const existingVal = existing.completed_sets[k][u];
+              const existingTs = existing.completed_sets[k + "_ts"][u] || 0;
+              const currentCloudVal = cloudVal[u];
+              const currentCloudTs = cloudTs[u] || 0;
+              
+              if (currentCloudTs > existingTs) {
+                existing.completed_sets[k][u] = currentCloudVal;
+                existing.completed_sets[k + "_ts"][u] = currentCloudTs;
+              } else if (currentCloudTs === existingTs) {
+                existing.completed_sets[k][u] = existingVal || currentCloudVal;
+              }
+            });
           });
         }
       }
@@ -5484,7 +5548,12 @@ function renderContent() {
       }
 
       // Record local update timestamp to prevent sync race condition
-      lastLocalUpdates[`${setKey}-${user}`] = Date.now();
+      const now = Date.now();
+      lastLocalUpdates[`${setKey}-${user}`] = now;
+      if (!completedSets[setKey + "_ts"]) {
+        completedSets[setKey + "_ts"] = {};
+      }
+      completedSets[setKey + "_ts"][user] = now;
 
       // Request Notification if needed
       if ("Notification" in window && Notification.permission !== "granted") {
@@ -5540,7 +5609,12 @@ function renderContent() {
         setWeights[setKey] = { facu: "", alma: "" };
       }
       setWeights[setKey][user] = val;
-      lastLocalUpdates[`${setKey}-${user}-weight`] = Date.now();
+      const now = Date.now();
+      lastLocalUpdates[`${setKey}-${user}-weight`] = now;
+      if (!setWeights[setKey + "_ts"]) {
+        setWeights[setKey + "_ts"] = {};
+      }
+      setWeights[setKey + "_ts"][user] = now;
 
       localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
 
@@ -5612,7 +5686,7 @@ if ("serviceWorker" in navigator) {
     // Limpiar todos los cachés viejos automáticamente
     if ("caches" in window) {
       const cacheNames = await caches.keys();
-      const currentCacheVersion = "gym-rutina-v11";
+      const currentCacheVersion = "gym-rutina-v12";
       for (const cacheName of cacheNames) {
         if (cacheName !== currentCacheVersion) {
           console.log("Limpiando caché viejo:", cacheName);
