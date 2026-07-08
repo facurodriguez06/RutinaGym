@@ -1421,6 +1421,13 @@ function applyTheme() {
     if (icon) icon.setAttribute("data-lucide", "moon");
     if (sidebarIcon) sidebarIcon.setAttribute("data-lucide", "moon");
   }
+
+  // Update theme-color meta tag for mobile status bar matching
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeColorMeta) {
+    themeColorMeta.setAttribute("content", currentTheme === "light" ? "#f9fafb" : "#000000");
+  }
+
   if (typeof lucide !== "undefined" && lucide.createIcons) {
     lucide.createIcons();
   }
