@@ -1013,17 +1013,20 @@ async function syncFromCloud() {
 
 // --- BACKGROUND POLLING FOR REAL-TIME SYNC ---
 let syncIntervalId = null;
+let lastLocalChangeTime = 0;
 
 function startCloudPolling() {
   if (syncIntervalId) clearInterval(syncIntervalId);
   syncIntervalId = setInterval(async () => {
     if (isSyncing) return;
+    if (Date.now() - lastLocalChangeTime < 10000) return; // Skip if user edited recently
     
     try {
       const response = await fetch(cloudAdapter.stateEndpoint(), { method: "GET" });
       if (!response.ok) return;
       const state = await response.json();
       if (state && !state.error) {
+        if (isSyncing || Date.now() - lastLocalChangeTime < 10000) return;
         applyCloudState(state, true);
       }
     } catch (e) {
@@ -1115,6 +1118,8 @@ let _saveToCloudTimer = null;
 
 // Debounced save: batches rapid saves into one call (e.g. typing weights)
 function debouncedSaveToCloud(delay) {
+  lastLocalChangeTime = Date.now();
+  isSyncing = true;
   clearTimeout(_saveToCloudTimer);
   // Always save locally immediately
   localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
@@ -1183,6 +1188,8 @@ if (typeof updateGamificationUI === "function") {
 }
 
 async function saveToCloud() {
+  lastLocalChangeTime = Date.now();
+  isSyncing = true;
   // Always save locally first
   localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
   localStorage.setItem("gymGamification", JSON.stringify(gamification));
@@ -1817,9 +1824,8 @@ function getVolumeHistory(user, days) {
 
     if (record && record.weights) {
       // Iterate all keys in weights
-      Object.values(record.weights).forEach((pair) => {
-        // pair = {facu: 50, alma: 30}
-        // Use 10 reps as volume proxy
+      Object.entries(record.weights).forEach(([wKey, pair]) => {
+        if (wKey.endsWith("_ts")) return; // Skip timestamp keys
         if (pair[user]) vol += (parseInt(pair[user]) || 0) * 10;
       });
     }
@@ -2497,16 +2503,8 @@ function renderAdvancedStats() {
     let dayVolAlma = 0;
     let dayVolFacu = 0;
 
-    Object.values(dayWeights).forEach((val) => {
-      // val might be string or number? currently stored as string from input
-      /* 
-           Structure check: setWeights[key] = {facu: '20', alma: '10'} 
-           Actually look at how it's stored: trainingHistory[today].weights = { '0-1-0': {facu: '20', alma: '15'} }
-           Wait, setWeights structure is flat: key -> {facu: val, alma: val} ? No.
-           Let's re-verify setWeights structure.
-           Code viewed earlier: setWeights[setKey][user] = val. 
-           So weights object is { "0-0-0": {facu: "10", alma: "5"}, "0-0-1": ... }
-        */
+    Object.entries(dayWeights).forEach(([wKey, val]) => {
+      if (wKey.endsWith("_ts")) return; // Skip timestamp keys
       if (val.facu) dayVolFacu += (parseFloat(val.facu) || 0) * AVG_REPS;
       if (val.alma) dayVolAlma += (parseFloat(val.alma) || 0) * AVG_REPS;
     });
@@ -2766,9 +2764,8 @@ function getVolumeHistory(user, days) {
 
     if (record && record.weights) {
       // Iterate all keys in weights
-      Object.values(record.weights).forEach((pair) => {
-        // pair = {facu: 50, alma: 30}
-        // Sum roughly: Weight * 10 reps (Approximation for Volume)
+      Object.entries(record.weights).forEach(([wKey, pair]) => {
+        if (wKey.endsWith("_ts")) return; // Skip timestamp keys
         if (pair[user]) vol += (parseInt(pair[user]) || 0) * 10;
       });
     }
@@ -4215,7 +4212,8 @@ function getTotalLiftedVolume(user) {
     if (day.weights) {
       // weights keys are "dayIndex-exIndex-setIndex"
       // values are like { facu: 50, alma: 30 }
-      Object.values(day.weights).forEach((weightObj) => {
+      Object.entries(day.weights).forEach(([wKey, weightObj]) => {
+        if (wKey.endsWith("_ts")) return; // Skip timestamp keys
         if (weightObj[user]) {
           // We need reps to calculate volume!
           // Currently history only stores WEIGHT used.
@@ -4275,7 +4273,8 @@ function getDailyVolume(user, date = new Date()) {
   if (!dayData || !dayData.weights) return 0;
 
   let total = 0;
-  Object.values(dayData.weights).forEach((weightObj) => {
+  Object.entries(dayData.weights).forEach(([wKey, weightObj]) => {
+    if (wKey.endsWith("_ts")) return; // Skip timestamp keys
     if (weightObj[user]) {
       total += (parseInt(weightObj[user]) || 0) * 10; // Assume 10 reps
     }
