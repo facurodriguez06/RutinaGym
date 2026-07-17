@@ -78,52 +78,44 @@ module.exports = async function handler(req, res) {
         );
       }
 
-      if (Array.isArray(payload.routines)) {
-        for (const routine of payload.routines) {
-          results.push(
-            supabaseFetch("routines", {
-              method: "POST",
-              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-              body: JSON.stringify(routine),
-            }),
-          );
-        }
+      if (Array.isArray(payload.routines) && payload.routines.length > 0) {
+        results.push(
+          supabaseFetch("routines", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(payload.routines),
+          }),
+        );
       }
 
-      if (Array.isArray(payload.routine_days)) {
-        for (const day of payload.routine_days) {
-          results.push(
-            supabaseFetch("routine_days", {
-              method: "POST",
-              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-              body: JSON.stringify(day),
-            }),
-          );
-        }
+      if (Array.isArray(payload.routine_days) && payload.routine_days.length > 0) {
+        results.push(
+          supabaseFetch("routine_days", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(payload.routine_days),
+          }),
+        );
       }
 
-      if (Array.isArray(payload.routine_exercises)) {
-        for (const ex of payload.routine_exercises) {
-          results.push(
-            supabaseFetch("routine_exercises", {
-              method: "POST",
-              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-              body: JSON.stringify(ex),
-            }),
-          );
-        }
+      if (Array.isArray(payload.routine_exercises) && payload.routine_exercises.length > 0) {
+        results.push(
+          supabaseFetch("routine_exercises", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(payload.routine_exercises),
+          }),
+        );
       }
 
-      if (Array.isArray(payload.training_history)) {
-        for (const row of payload.training_history) {
-          results.push(
-            supabaseFetch("training_history", {
-              method: "POST",
-              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-              body: JSON.stringify(row),
-            }),
-          );
-        }
+      if (Array.isArray(payload.training_history) && payload.training_history.length > 0) {
+        results.push(
+          supabaseFetch("training_history", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(payload.training_history),
+          }),
+        );
       }
 
       if (payload.gamification) {
@@ -174,17 +166,17 @@ module.exports = async function handler(req, res) {
       if (payload.profile) {
         results.push(supabaseFetch("profiles", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.profile) }));
       }
-      if (Array.isArray(payload.routines)) {
-        for (const row of payload.routines) results.push(supabaseFetch("routines", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) }));
+      if (Array.isArray(payload.routines) && payload.routines.length > 0) {
+        results.push(supabaseFetch("routines", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.routines) }));
       }
-      if (Array.isArray(payload.routine_days)) {
-        for (const row of payload.routine_days) results.push(supabaseFetch("routine_days", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) }));
+      if (Array.isArray(payload.routine_days) && payload.routine_days.length > 0) {
+        results.push(supabaseFetch("routine_days", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.routine_days) }));
       }
-      if (Array.isArray(payload.routine_exercises)) {
-        for (const row of payload.routine_exercises) results.push(supabaseFetch("routine_exercises", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) }));
+      if (Array.isArray(payload.routine_exercises) && payload.routine_exercises.length > 0) {
+        results.push(supabaseFetch("routine_exercises", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.routine_exercises) }));
       }
-      if (Array.isArray(payload.training_history)) {
-        for (const row of payload.training_history) results.push(supabaseFetch("training_history", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) }));
+      if (Array.isArray(payload.training_history) && payload.training_history.length > 0) {
+        results.push(supabaseFetch("training_history", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.training_history) }));
       }
       if (payload.gamification) {
         results.push(supabaseFetch("gamification", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(payload.gamification) }));

@@ -1109,7 +1109,7 @@ let savedScrollY = 0;
 let currentView = "routine"; // 'routine' or 'history'
 let calendarMonth = new Date().getMonth();
 let calendarYear = new Date().getFullYear();
-let trainingHistory = {};
+let trainingHistory = JSON.parse(localStorage.getItem("gymTrainingHistory")) || {};
 let isSyncing = false;
 let _saveToCloudTimer = null;
 
@@ -2559,16 +2559,44 @@ function setDayTraining(who) {
   if (!selectedDateKey) return;
 
   if (who === "clear") {
-    delete trainingHistory[selectedDateKey];
+    trainingHistory[selectedDateKey] = {
+      alma: false,
+      facu: false,
+      deleted: true,
+      weights: {},
+      completed_sets: {},
+      water: {}
+    };
     showToast("trash-2", "text-red-400", "¡Registro eliminado!");
   } else if (who === "alma") {
-    trainingHistory[selectedDateKey] = { alma: true, facu: false };
+    trainingHistory[selectedDateKey] = {
+      alma: true,
+      facu: false,
+      deleted: false,
+      weights: trainingHistory[selectedDateKey]?.weights || {},
+      completed_sets: trainingHistory[selectedDateKey]?.completed_sets || {},
+      water: trainingHistory[selectedDateKey]?.water || {}
+    };
     showToast("user", "text-pink-400", "¡Día registrado para Alma!");
   } else if (who === "facu") {
-    trainingHistory[selectedDateKey] = { alma: false, facu: true };
+    trainingHistory[selectedDateKey] = {
+      alma: false,
+      facu: true,
+      deleted: false,
+      weights: trainingHistory[selectedDateKey]?.weights || {},
+      completed_sets: trainingHistory[selectedDateKey]?.completed_sets || {},
+      water: trainingHistory[selectedDateKey]?.water || {}
+    };
     showToast("user", "text-blue-400", "¡Día registrado para Facu!");
   } else if (who === "both") {
-    trainingHistory[selectedDateKey] = { alma: true, facu: true };
+    trainingHistory[selectedDateKey] = {
+      alma: true,
+      facu: true,
+      deleted: false,
+      weights: trainingHistory[selectedDateKey]?.weights || {},
+      completed_sets: trainingHistory[selectedDateKey]?.completed_sets || {},
+      water: trainingHistory[selectedDateKey]?.water || {}
+    };
     showToast("users", "text-emerald-400", "¡Día registrado para ambos!");
   }
 
