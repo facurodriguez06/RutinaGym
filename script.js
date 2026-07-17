@@ -438,6 +438,13 @@ function getCloudUserId() {
   return userId;
 }
 
+function getAlmaUserId() {
+  const baseId = getCloudUserId();
+  const lastChar = baseId.charAt(baseId.length - 1);
+  const newLastChar = lastChar === 'a' ? 'b' : 'a';
+  return baseId.slice(0, -1) + newLastChar;
+}
+
 const cloudAdapter = {
   stateEndpoint() {
     if (window.__CLOUD_API_URL__) {
@@ -490,10 +497,16 @@ async function fetchCloudState() {
 }
 
 function buildCloudPayload() {
-  const profile = {
-    id: getCloudUserId(),
-    display_name: localStorage.getItem("gymUserDisplayName") || "VIGOR User",
-  };
+  const profile = [
+    {
+      id: getCloudUserId(),
+      display_name: "Facu",
+    },
+    {
+      id: getAlmaUserId(),
+      display_name: "Alma",
+    }
+  ];
 
   const routines = (routinesList || []).map((routine) => ({
     id: routine.id,
@@ -528,6 +541,7 @@ function buildCloudPayload() {
   }));
 
   const facu = gamification.facu || {};
+  const alma = gamification.alma || {};
 
   return {
     profile,
@@ -535,22 +549,42 @@ function buildCloudPayload() {
     routine_days,
     routine_exercises,
     training_history,
-    gamification: {
-      user_id: getCloudUserId(),
-      points: facu.points || 0,
-      streak: facu.streak || 0,
-      freezes: facu.freezes || 0,
-      frozen_days: facu.frozenDays || [],
-      achievements: facu.achievements || [],
-      last_reset: facu.lastReset || 0,
-      last_rescue_prompt_date: facu.lastRescuePromptDate || null,
-    },
-    water_state: {
-      user_id: getCloudUserId(),
-      current_water_ml: waterState.facu || 0,
-      goal_ml: waterState.facuGoal || 2500,
-      last_updated_date: waterState.date || new Date().toDateString(),
-    },
+    gamification: [
+      {
+        user_id: getCloudUserId(),
+        points: facu.points || 0,
+        streak: facu.streak || 0,
+        freezes: facu.freezes || 0,
+        frozen_days: facu.frozenDays || [],
+        achievements: facu.achievements || [],
+        last_reset: facu.lastReset || 0,
+        last_rescue_prompt_date: facu.lastRescuePromptDate || null,
+      },
+      {
+        user_id: getAlmaUserId(),
+        points: alma.points || 0,
+        streak: alma.streak || 0,
+        freezes: alma.freezes || 0,
+        frozen_days: alma.frozenDays || [],
+        achievements: alma.achievements || [],
+        last_reset: alma.lastReset || 0,
+        last_rescue_prompt_date: alma.lastRescuePromptDate || null,
+      }
+    ],
+    water_state: [
+      {
+        user_id: getCloudUserId(),
+        current_water_ml: waterState.facu || 0,
+        goal_ml: waterState.facuGoal || 2500,
+        last_updated_date: waterState.date || new Date().toDateString(),
+      },
+      {
+        user_id: getAlmaUserId(),
+        current_water_ml: waterState.alma || 0,
+        goal_ml: waterState.almaGoal || 2500,
+        last_updated_date: waterState.date || new Date().toDateString(),
+      }
+    ],
   };
 }
 
@@ -981,24 +1015,56 @@ function applyCloudState(state, triggerTimers = false) {
   }
 
   if (Array.isArray(state.gamification) && state.gamification.length) {
-    const g = state.gamification[0];
-    gamification.facu = {
-      ...gamification.facu,
-      points: g.points || 0,
-      streak: g.streak || 0,
-      freezes: g.freezes || 0,
-      frozenDays: g.frozen_days || [],
-      achievements: g.achievements || [],
-      lastReset: g.last_reset || 0,
-      lastRescuePromptDate: g.last_rescue_prompt_date || null,
-    };
+    const facuId = getCloudUserId();
+    const almaId = getAlmaUserId();
+    
+    const facuG = state.gamification.find((r) => r.user_id === facuId);
+    if (facuG) {
+      gamification.facu = {
+        ...gamification.facu,
+        points: facuG.points || 0,
+        streak: facuG.streak || 0,
+        freezes: facuG.freezes || 0,
+        frozenDays: facuG.frozen_days || [],
+        achievements: facuG.achievements || [],
+        lastReset: facuG.last_reset || 0,
+        lastRescuePromptDate: facuG.last_rescue_prompt_date || null,
+      };
+    }
+    
+    const almaG = state.gamification.find((r) => r.user_id === almaId);
+    if (almaG) {
+      gamification.alma = {
+        ...gamification.alma,
+        points: almaG.points || 0,
+        streak: almaG.streak || 0,
+        freezes: almaG.freezes || 0,
+        frozenDays: almaG.frozen_days || [],
+        achievements: almaG.achievements || [],
+        lastReset: almaG.last_reset || 0,
+        lastRescuePromptDate: almaG.last_rescue_prompt_date || null,
+      };
+    }
     localStorage.setItem("gymGamification", JSON.stringify(gamification));
   }
 
   if (Array.isArray(state.water_state) && state.water_state.length) {
-    const w = state.water_state[0];
-    waterState.facu = w.current_water_ml || 0;
-    waterState.facuGoal = w.goal_ml || 2500;
+    const facuId = getCloudUserId();
+    const almaId = getAlmaUserId();
+    
+    const facuW = state.water_state.find((r) => r.user_id === facuId);
+    if (facuW) {
+      waterState.facu = facuW.current_water_ml || 0;
+      waterState.facuGoal = facuW.goal_ml || 2500;
+      waterState.date = facuW.last_updated_date || waterState.date;
+    }
+    
+    const almaW = state.water_state.find((r) => r.user_id === almaId);
+    if (almaW) {
+      waterState.alma = almaW.current_water_ml || 0;
+      waterState.almaGoal = almaW.goal_ml || 2500;
+      waterState.date = almaW.last_updated_date || waterState.date;
+    }
     localStorage.setItem("water_tracker_state", JSON.stringify(waterState));
   }
 
@@ -1618,8 +1684,8 @@ function markDayCompleted(who) {
     checkAchievements();
   }
 
-  saveToCloud();
   updateGamificationUI();
+  saveToCloud();
 
   // Show toast notification
   const iconType = who === "both" ? "users" : "user";
@@ -2598,6 +2664,9 @@ function setDayTraining(who) {
     showToast("users", "text-emerald-400", "¡Día registrado para ambos!");
   }
 
+  if (typeof updateGamificationUI === "function") {
+    updateGamificationUI();
+  }
   saveToCloud();
   closeDayModal();
   renderCalendar();
