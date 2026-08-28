@@ -31,7 +31,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             // End any existing activities first
             Task {
                 for activity in Activity<RestTimerAttributes>.activities {
-                    await activity.end(dismissalPolicy: .immediate)
+                    await activity.end(nil, dismissalPolicy: .immediate)
                 }
                 
                 let attributes = RestTimerAttributes(exerciseName: exerciseName, userName: userName)
@@ -59,9 +59,8 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
         if #available(iOS 16.1, *) {
             Task {
                 for activity in Activity<RestTimerAttributes>.activities {
-                    await activity.end(dismissalPolicy: .immediate)
+                    await activity.end(nil, dismissalPolicy: .immediate)
                 }
-                self.currentActivity = nil
                 call.resolve(["success": true])
             }
         } else {

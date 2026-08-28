@@ -166,7 +166,6 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				A10000021FED79650016851F /* RestTimerAttributes.swift in Sources */,
-				A10000041FED79650016851F /* RestTimerLiveActivity.swift in Sources */,
 				A10000061FED79650016851F /* LiveActivityPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
