@@ -3365,6 +3365,15 @@ function showTimer(user, exerciseName, seconds) {
   // Audio & Lock
   requestWakeLock();
   enableBackgroundMode(exerciseName, seconds, user);
+
+  // Native Live Activity for Dynamic Island (Capacitor iOS)
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LiveActivity) {
+    window.Capacitor.Plugins.LiveActivity.startRestTimer({
+      exerciseName: exerciseName,
+      userName: user === "facu" ? "Facu" : "Alma",
+      seconds: seconds
+    }).catch(e => console.log("LiveActivity start:", e));
+  }
 }
 
 function startGlobalTimerIfNeeded() {
@@ -3438,6 +3447,11 @@ function handleTimerComplete(user) {
 
   // Sound
   playTimerEnd();
+
+  // End Native iOS Live Activity
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LiveActivity) {
+    window.Capacitor.Plugins.LiveActivity.endRestTimer().catch(() => {});
+  }
 
   // Exit PiP if running
   if (document.pictureInPictureElement) {
@@ -3763,6 +3777,10 @@ function updateTimerDisplay() {
 }
 
 function hideTimer(user) {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LiveActivity) {
+    window.Capacitor.Plugins.LiveActivity.endRestTimer().catch(() => {});
+  }
+
   if (user) {
     // Hide specific user
     timerState[user].active = false;
