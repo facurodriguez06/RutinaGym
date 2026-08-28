@@ -372,6 +372,94 @@ let routineData = [];
 let completedSets = {};
 let setWeights = {};
 let lastLocalUpdates = {};
+let whoTrainsToday = localStorage.getItem("gymWhoTrainsToday") || "both"; // 'both', 'facu', 'alma'
+
+function openWhoTrainsModal() {
+  const modal = document.getElementById("who-trains-modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    if (typeof lucide !== "undefined" && lucide.createIcons) {
+      lucide.createIcons();
+    }
+  }
+}
+
+function closeWhoTrainsModal() {
+  const modal = document.getElementById("who-trains-modal");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+}
+
+function selectWhoTrainsToday(who) {
+  if (who !== "facu" && who !== "alma" && who !== "both") {
+    who = "both";
+  }
+  whoTrainsToday = who;
+  localStorage.setItem("gymWhoTrainsToday", who);
+  localStorage.setItem("gymWhoTrainsPromptDate", new Date().toDateString());
+  closeWhoTrainsModal();
+  updateWhoTrainsUI();
+  renderContent();
+  if (typeof updateLiveVolumeUI === "function") {
+    updateLiveVolumeUI();
+  }
+}
+
+function updateWhoTrainsUI() {
+  const label = document.getElementById("who-trains-label");
+  if (label) {
+    if (whoTrainsToday === "facu") label.textContent = "Solo Facu";
+    else if (whoTrainsToday === "alma") label.textContent = "Solo Alma";
+    else label.textContent = "Ambos (Facu y Alma)";
+  }
+
+  const btnFacu = document.getElementById("btn-who-facu");
+  const btnAlma = document.getElementById("btn-who-alma");
+  const btnBoth = document.getElementById("btn-who-both");
+
+  if (btnFacu && btnAlma && btnBoth) {
+    const defaultInactive = "h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-slate-800 bg-slate-950 text-slate-400 hover:text-white transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none";
+
+    btnFacu.className = defaultInactive;
+    btnAlma.className = defaultInactive;
+    btnBoth.className = defaultInactive;
+
+    if (whoTrainsToday === "facu") {
+      btnFacu.className = "h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-black bg-[var(--accent-facu)] text-black transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none";
+    } else if (whoTrainsToday === "alma") {
+      btnAlma.className = "h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-black bg-[var(--accent-alma)] text-white transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none";
+    } else {
+      btnBoth.className = "h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-black bg-[var(--accent-vigor)] text-black transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none";
+    }
+  }
+
+  const volFacuBadge = document.querySelector(".user-volume-badge.facu");
+  const volAlmaBadge = document.querySelector(".user-volume-badge.alma");
+  if (volFacuBadge) {
+    volFacuBadge.style.display = whoTrainsToday === "alma" ? "none" : "inline-flex";
+  }
+  if (volAlmaBadge) {
+    volAlmaBadge.style.display = whoTrainsToday === "facu" ? "none" : "inline-flex";
+  }
+}
+
+function checkPromptWhoTrainsToday() {
+  const todayStr = new Date().toDateString();
+  const lastPromptDate = localStorage.getItem("gymWhoTrainsPromptDate");
+  if (lastPromptDate !== todayStr) {
+    openWhoTrainsModal();
+  }
+  updateWhoTrainsUI();
+}
+
+window.selectWhoTrainsToday = selectWhoTrainsToday;
+window.openWhoTrainsModal = openWhoTrainsModal;
+window.closeWhoTrainsModal = closeWhoTrainsModal;
+window.updateWhoTrainsUI = updateWhoTrainsUI;
+window.checkPromptWhoTrainsToday = checkPromptWhoTrainsToday;
 
 // Data Migration for legacy users (preserves weights & progress under routine-1)
 function migrateLegacyData() {
@@ -756,27 +844,32 @@ function updateDOMInPlace() {
 
   const cards = Array.from(document.querySelectorAll("#exercises-list > div.group"));
 
+  const multiplier = whoTrainsToday === "both" ? 2 : 1;
   let totalSets = 0;
   let completedSetsCount = 0;
 
   dayData.exercises.forEach((exercise, idx) => {
     const numSets = parseInt(exercise.sets) || 3;
-    totalSets += numSets * 2;
+    totalSets += numSets * multiplier;
 
     let exerciseCompletedChecks = 0;
     for (let s = 0; s < numSets; s++) {
       const setKey = `${activeTab}-${idx}-${s}`;
       const setData = completedSets[setKey] || { facu: false, alma: false };
-      if (setData.facu) { completedSetsCount++; exerciseCompletedChecks++; }
-      if (setData.alma) { completedSetsCount++; exerciseCompletedChecks++; }
+      if (whoTrainsToday === "both" || whoTrainsToday === "facu") {
+        if (setData.facu) { completedSetsCount++; exerciseCompletedChecks++; }
+      }
+      if (whoTrainsToday === "both" || whoTrainsToday === "alma") {
+        if (setData.alma) { completedSetsCount++; exerciseCompletedChecks++; }
+      }
     }
 
-    const isExerciseCompleted = exerciseCompletedChecks === numSets * 2;
+    const isExerciseCompleted = exerciseCompletedChecks === numSets * multiplier;
     const card = cards[idx];
     if (card) {
       const innerBar = card.querySelector(".bg-emerald-500");
       if (innerBar) {
-        innerBar.style.width = `${(exerciseCompletedChecks / (numSets * 2)) * 100}%`;
+        innerBar.style.width = `${(exerciseCompletedChecks / (numSets * multiplier)) * 100}%`;
       }
 
       const wasCompleted = card.classList.contains("opacity-80");
@@ -4877,6 +4970,11 @@ function init() {
     initAquaFlow();
   }
 
+  // Initialize Who Trains Today UI
+  if (typeof updateWhoTrainsUI === "function") {
+    updateWhoTrainsUI();
+  }
+
   renderTabs();
   renderContent();
   lucide.createIcons();
@@ -5198,16 +5296,21 @@ function renderContent() {
     `${dayData.exercises.length} Ejercicios`;
 
   // Calculate total sets and completed sets for progress
+  const multiplier = whoTrainsToday === "both" ? 2 : 1;
   let totalSets = 0;
   let completedSetsCount = 0;
   dayData.exercises.forEach((exercise, idx) => {
     const numSets = parseInt(exercise.sets) || 3;
-    totalSets += numSets * 2; // Multiplicado por 2 (Facu + Alma)
+    totalSets += numSets * multiplier;
     for (let s = 0; s < numSets; s++) {
       const setKey = `${activeTab}-${idx}-${s}`;
       const setData = completedSets[setKey] || { facu: false, alma: false };
-      if (setData.facu) completedSetsCount++;
-      if (setData.alma) completedSetsCount++;
+      if (whoTrainsToday === "both" || whoTrainsToday === "facu") {
+        if (setData.facu) completedSetsCount++;
+      }
+      if (whoTrainsToday === "both" || whoTrainsToday === "alma") {
+        if (setData.alma) completedSetsCount++;
+      }
     }
   });
 
@@ -5293,6 +5396,9 @@ function renderContent() {
 
   listContainer.appendChild(warmupContainer);
 
+  const showFacu = whoTrainsToday === "both" || whoTrainsToday === "facu";
+  const showAlma = whoTrainsToday === "both" || whoTrainsToday === "alma";
+
   dayData.exercises.forEach((exercise, idx) => {
     const numSets = parseInt(exercise.sets) || 3;
     const restTime = parseRestTime(exercise.notes || "");
@@ -5302,10 +5408,10 @@ function renderContent() {
     for (let s = 0; s < numSets; s++) {
       const setKey = `${activeTab}-${idx}-${s}`;
       const setData = completedSets[setKey] || { facu: false, alma: false };
-      if (setData.facu) exerciseCompletedChecks++;
-      if (setData.alma) exerciseCompletedChecks++;
+      if (showFacu && setData.facu) exerciseCompletedChecks++;
+      if (showAlma && setData.alma) exerciseCompletedChecks++;
     }
-    const isExerciseCompleted = exerciseCompletedChecks === numSets * 2;
+    const isExerciseCompleted = exerciseCompletedChecks === numSets * multiplier;
 
     const card = document.createElement("div");
     const staggerClass = idx < 6 ? `stagger-${idx + 1}` : "";
@@ -5316,8 +5422,6 @@ function renderContent() {
     if (isExerciseCompleted) {
       cardClasses += `bg-${activeColor}-900/10 border-${activeColor}-900/20 opacity-80 scale-[0.99]`;
     } else {
-      // Use standard slate for inactive to avoid rainbow vomit, OR use subtle tint of active color?
-      // "cuadrito de cada dia y su contenido tengan el mismo color" -> implies tint.
       cardClasses += `bg-slate-900 border-slate-800 hover:border-${activeColor}-500/50 hover:shadow-xl hover:shadow-${activeColor}-900/10`;
     }
     card.className = cardClasses;
@@ -5337,11 +5441,6 @@ function renderContent() {
       }
       const setData = completedSets[setKey];
 
-      // Dynamic button colors and Weight Inputs
-      // SMART AUTOFILL LOGIC
-      // 1. Check current set data (priority)
-      // 2. If empty, check last recorded weight for this exercise (Smart Fill)
-
       let weightFacu =
         setWeights[setKey] && setWeights[setKey].facu
           ? setWeights[setKey].facu
@@ -5352,19 +5451,75 @@ function renderContent() {
           ? setWeights[setKey].alma
           : "";
 
-      // Auto-fill placeholders (or values if desired, user said "autofill" so likely values)
-      // We will use PLACEHOLDER for now to be less invasive, or VALUE if user insists.
-      // User said: "inputs deb weight ya vengan precargados". So VALUE.
-
-      // Only autofill if strictly empty and we have history
       if (!weightFacu) {
-        const last = getLastWeight(exercise.name, "facu", activeTab); // activeTab helps context matching if same exercise name used differently?
-        // Actually exercise name is unique enough usually.
+        const last = getLastWeight(exercise.name, "facu", activeTab);
         if (last) weightFacu = last;
       }
       if (!weightAlma) {
         const last = getLastWeight(exercise.name, "alma", activeTab);
         if (last) weightAlma = last;
+      }
+
+      let facuColHTML = "";
+      if (showFacu) {
+        facuColHTML = `
+          <!-- Facu Column -->
+          <div class="flex flex-col items-center gap-1.5">
+            <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
+              exercise.name
+            }" data-rest-time="${restTime}"
+                  class="set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
+                  ${
+                    setData.facu
+                      ? `bg-[var(--accent-facu)] text-black border-black`
+                      : `bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-facu)] hover:text-[var(--accent-facu)]`
+                  }" title="Facu">
+                  ${
+                    setData.facu
+                      ? '<i data-lucide="check" class="w-5 h-5"></i>'
+                      : "F"
+                  }
+              </button>
+              <input type="number" 
+                     value="${weightFacu}" 
+                     placeholder="kg" 
+                     data-set-key="${setKey}" 
+                     data-user="facu"
+                     class="weight-input w-12 h-8 bg-[var(--bg-base)] text-center text-xs font-black text-white border-2 border-[var(--border-strong)] focus:border-[var(--accent-facu)] outline-none p-0 transition-all placeholder:text-[var(--text-dim)] shadow-[2px_2px_0_#000]"
+                     onclick="event.stopPropagation()">
+          </div>
+        `;
+      }
+
+      let almaColHTML = "";
+      if (showAlma) {
+        almaColHTML = `
+          <!-- Alma Column -->
+          <div class="flex flex-col items-center gap-1.5">
+            <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
+              exercise.name
+            }" data-rest-time="${restTime}"
+                  class="set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
+                  ${
+                    setData.alma
+                      ? `bg-[var(--accent-alma)] text-white border-black`
+                      : `bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-alma)] hover:text-[var(--accent-alma)]`
+                  }" title="Alma">
+                  ${
+                    setData.alma
+                      ? '<i data-lucide="check" class="w-5 h-5"></i>'
+                      : "A"
+                  }
+              </button>
+              <input type="number" 
+                     value="${weightAlma}" 
+                     placeholder="kg" 
+                     data-set-key="${setKey}" 
+                     data-user="alma"
+                     class="weight-input w-12 h-8 bg-[var(--bg-base)] text-center text-xs font-black text-white border-2 border-[var(--border-strong)] focus:border-[var(--accent-alma)] outline-none p-0 transition-all placeholder:text-[var(--text-dim)] shadow-[2px_2px_0_#000]"
+                     onclick="event.stopPropagation()">
+          </div>
+        `;
       }
 
       setButtonsHTML += `
@@ -5373,57 +5528,8 @@ function renderContent() {
                 s + 1
               }</span>
               <div class="flex gap-2">
-                  <!-- Facu Column -->
-                  <div class="flex flex-col items-center gap-1.5">
-                    <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
-                      exercise.name
-                    }" data-rest-time="${restTime}"
-                          class="set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
-                          ${
-                            setData.facu
-                              ? `bg-[var(--accent-facu)] text-black border-black`
-                              : `bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-facu)] hover:text-[var(--accent-facu)]`
-                          }" title="Facu">
-                          ${
-                            setData.facu
-                              ? '<i data-lucide="check" class="w-5 h-5"></i>'
-                              : "F"
-                          }
-                      </button>
-                      <input type="number" 
-                             value="${weightFacu}" 
-                             placeholder="kg" 
-                             data-set-key="${setKey}" 
-                             data-user="facu"
-                             class="weight-input w-12 h-8 bg-[var(--bg-base)] text-center text-xs font-black text-white border-2 border-[var(--border-strong)] focus:border-[var(--accent-facu)] outline-none p-0 transition-all placeholder:text-[var(--text-dim)] shadow-[2px_2px_0_#000]"
-                             onclick="event.stopPropagation()">
-                  </div>
-                  
-                  <!-- Alma Column -->
-                  <div class="flex flex-col items-center gap-1.5">
-                    <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
-                      exercise.name
-                    }" data-rest-time="${restTime}"
-                          class="set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
-                          ${
-                            setData.alma
-                              ? `bg-[var(--accent-alma)] text-white border-black`
-                              : `bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-alma)] hover:text-[var(--accent-alma)]`
-                          }" title="Alma">
-                          ${
-                            setData.alma
-                              ? '<i data-lucide="check" class="w-5 h-5"></i>'
-                              : "A"
-                          }
-                      </button>
-                      <input type="number" 
-                             value="${weightAlma}" 
-                             placeholder="kg" 
-                             data-set-key="${setKey}" 
-                             data-user="alma"
-                             class="weight-input w-12 h-8 bg-[var(--bg-base)] text-center text-xs font-black text-white border-2 border-[var(--border-strong)] focus:border-[var(--accent-alma)] outline-none p-0 transition-all placeholder:text-[var(--text-dim)] shadow-[2px_2px_0_#000]"
-                             onclick="event.stopPropagation()">
-                  </div>
+                  ${facuColHTML}
+                  ${almaColHTML}
               </div>
           </div>
       `;
@@ -5475,7 +5581,7 @@ function renderContent() {
                                         <div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden ml-2">
                                             <div class="h-full bg-emerald-500 transition-all duration-300" style="width: ${
                                               (exerciseCompletedChecks /
-                                                (numSets * 2)) *
+                                                (numSets * multiplier)) *
                                               100
                                             }%"></div>
                                         </div>
@@ -7176,7 +7282,14 @@ document.addEventListener("DOMContentLoaded", () => {
       splash.classList.add("opacity-0", "pointer-events-none");
       setTimeout(() => {
         splash.remove();
+        if (typeof checkPromptWhoTrainsToday === "function") {
+          checkPromptWhoTrainsToday();
+        }
       }, 400); // Wait for transition
+    } else {
+      if (typeof checkPromptWhoTrainsToday === "function") {
+        checkPromptWhoTrainsToday();
+      }
     }
   }, 800); // Reduced from 2s since native splash already shows
 });
@@ -8019,6 +8132,16 @@ function openWorkoutSummaryModal() {
   const volFacu = calculateSessionVolume("facu");
   const volAlma = calculateSessionVolume("alma");
 
+  const facuCard = document.getElementById("summary-facu-card");
+  const almaCard = document.getElementById("summary-alma-card");
+
+  if (facuCard) {
+    facuCard.style.display = whoTrainsToday === "alma" ? "none" : "block";
+  }
+  if (almaCard) {
+    almaCard.style.display = whoTrainsToday === "facu" ? "none" : "block";
+  }
+
   document.getElementById("summary-facu-vol").innerHTML = `${volFacu.toLocaleString()} <span class="text-xs font-normal text-[var(--text-dim)]">kg</span>`;
   document.getElementById("summary-alma-vol").innerHTML = `${volAlma.toLocaleString()} <span class="text-xs font-normal text-[var(--text-dim)]">kg</span>`;
 
@@ -8118,27 +8241,34 @@ function closeWorkoutSummaryModal() {
 }
 
 function saveSessionAndCloseSummary() {
-  let facuTrained = false;
-  let almaTrained = false;
-  
-  const dayData = routineData[activeTab];
-  if (dayData) {
-    dayData.exercises.forEach((exercise, idx) => {
-      const numSets = parseInt(exercise.sets) || 3;
-      for (let s = 0; s < numSets; s++) {
-        const setKey = `${activeTab}-${idx}-${s}`;
-        if (completedSets[setKey]) {
-          if (completedSets[setKey].facu) facuTrained = true;
-          if (completedSets[setKey].alma) almaTrained = true;
-        }
-      }
-    });
-  }
-  
   let who = "both";
-  if (facuTrained && almaTrained) who = "both";
-  else if (facuTrained) who = "facu";
-  else if (almaTrained) who = "alma";
+  if (whoTrainsToday === "facu") {
+    who = "facu";
+  } else if (whoTrainsToday === "alma") {
+    who = "alma";
+  } else {
+    let facuTrained = false;
+    let almaTrained = false;
+    
+    const dayData = routineData[activeTab];
+    if (dayData) {
+      dayData.exercises.forEach((exercise, idx) => {
+        const numSets = parseInt(exercise.sets) || 3;
+        for (let s = 0; s < numSets; s++) {
+          const setKey = `${activeTab}-${idx}-${s}`;
+          if (completedSets[setKey]) {
+            if (completedSets[setKey].facu) facuTrained = true;
+            if (completedSets[setKey].alma) almaTrained = true;
+          }
+        }
+      });
+    }
+    
+    if (facuTrained && almaTrained) who = "both";
+    else if (facuTrained) who = "facu";
+    else if (almaTrained) who = "alma";
+    else who = "both";
+  }
   
   markDayCompleted(who);
   resetWorkoutSession();
