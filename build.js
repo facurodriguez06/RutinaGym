@@ -9,7 +9,9 @@ const filesToCopy = [
   'favicon.svg',
   'sw.js',
   'recovery_script.js',
-  'config.js'
+  'config.js',
+  'tailwind.min.js',
+  'lucide.min.js'
 ];
 
 const destDir = path.join(__dirname, 'www');

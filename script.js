@@ -7,6 +7,16 @@ function onReady(fn) {
   }
 }
 
+function safeCreateIcons() {
+  if (typeof lucide !== "undefined" && lucide && typeof lucide.createIcons === "function") {
+    try {
+      lucide.createIcons();
+    } catch (e) {
+      console.warn("lucide.createIcons error:", e);
+    }
+  }
+}
+
 // --- DATA ---
 const DEFAULT_ROUTINE = [
   {
@@ -390,7 +400,7 @@ function openWhoTrainsModal() {
     modal.classList.remove("hidden", "opacity-0", "pointer-events-none");
     modal.classList.add("flex");
     if (typeof lucide !== "undefined" && lucide.createIcons) {
-      lucide.createIcons();
+      safeCreateIcons();
     }
   }
 }
@@ -1598,7 +1608,7 @@ function applyTheme() {
   }
 
   if (typeof lucide !== "undefined" && lucide.createIcons) {
-    lucide.createIcons();
+    safeCreateIcons();
   }
 }
 
@@ -1725,7 +1735,7 @@ function navigateTo(view) {
     toggleSidebar();
   }
 
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 // --- CALENDAR FUNCTIONS ---
@@ -1807,7 +1817,7 @@ function showToast(iconType, iconColor, message) {
   iconEl.className = `w-6 h-6 ${iconColor}`;
   document.getElementById("toast-message").textContent = message;
   toast.classList.remove("hidden");
-  lucide.createIcons();
+  safeCreateIcons();
   setTimeout(() => {
     toast.classList.add("hidden");
   }, 3000);
@@ -2050,7 +2060,7 @@ function toggleDayModal(dateKey) {
   const modal = document.getElementById("day-modal");
   modal.classList.remove("hidden");
   modal.classList.add("flex");
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 let selectedDateKey = null;
@@ -2533,7 +2543,7 @@ function openProfileModal() {
     modal.querySelector("div").classList.remove("scale-95");
   }, 10);
 
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function closeProfileModal() {
@@ -3440,7 +3450,7 @@ function renderTimerUI() {
     }
   });
 
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function createMiniTimerBubble(user, state) {
@@ -4639,7 +4649,7 @@ function showAchievementModal(achievement, user) {
     content.classList.add("scale-100");
   }, 50);
 
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function closeAchievementModal() {
@@ -4721,7 +4731,7 @@ function renderAchievements() {
     container.appendChild(card);
   });
 
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide) safeCreateIcons();
 
   // Update Counts header (Unique badges unlocked)
   const totalCount = document.getElementById("achievements-count");
@@ -5057,7 +5067,7 @@ function init() {
 
   renderTabs();
   renderContent();
-  lucide.createIcons();
+  safeCreateIcons();
 
   // Check Achievements on startup
   if (typeof checkAchievements === "function") checkAchievements();
@@ -5164,7 +5174,7 @@ function renderTabs() {
 
     container.appendChild(btn);
   });
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 // --- WARMUP TIMER LOGIC ---
@@ -5931,7 +5941,7 @@ function renderContent() {
   });
 
   // Re-init icons for newly added elements
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 // --- VISIBILITY HANDLER ---
@@ -6122,7 +6132,7 @@ function showPermissionModal() {
       modal.classList.remove("opacity-0", "scale-95");
       modal.classList.add("opacity-100", "scale-100");
     });
-    lucide.createIcons();
+    safeCreateIcons();
   }
 }
 
@@ -6407,7 +6417,7 @@ function updateGamificationUI() {
                 </div>
             </div>
         `;
-    lucide.createIcons();
+    safeCreateIcons();
   }
 }
 
@@ -6703,7 +6713,7 @@ function openShopModal(user) {
 
   modal.classList.remove("hidden");
   modal.classList.add("flex");
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function closeShopModal() {
@@ -6949,7 +6959,7 @@ function showExerciseHistory(exerciseName) {
       });
       html += `</div>`;
       content.innerHTML = html;
-      lucide.createIcons();
+      safeCreateIcons();
     }
   }, 100); // Small delay for rendering
 }
@@ -7250,7 +7260,7 @@ function renderAchievements() {
     container.innerHTML += html;
   });
 
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 window.filterAchievements = filterAchievements;
@@ -7537,7 +7547,7 @@ function renderRoutinesList() {
     container.appendChild(card);
   });
   
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function selectActiveRoutine(id) {
@@ -7740,7 +7750,7 @@ function addChatMessage(sender, text) {
   
   // Scroll to bottom
   container.scrollTop = container.scrollHeight;
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function escapeHTML(str) {
@@ -8237,7 +8247,7 @@ function openWorkoutSummaryModal() {
   modal.classList.remove("hidden");
   modal.classList.add("flex");
   
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function updateOverloadStats(user, currentVol, prevVol) {
