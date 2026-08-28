@@ -17,6 +17,14 @@ existing_refs.each do |ref|
   puts "Cleaned up old RestTimerAttributes.swift reference."
 end
 
+# Make sure LiveActivityPlugin.m is in the project
+unless project.files.any? { |f| f.path == 'LiveActivityPlugin.m' }
+  puts "Adding LiveActivityPlugin.m to App target..."
+  app_group = project.main_group.find_subpath('App', true)
+  m_ref = app_group.new_reference('LiveActivityPlugin.m')
+  app_target.source_build_phase.add_file_reference(m_ref)
+end
+
 if project.targets.any? { |t| t.name == 'VigorWidgets' }
   puts "Target VigorWidgets already exists."
   exit 0
