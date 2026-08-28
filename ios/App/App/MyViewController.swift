@@ -6,6 +6,6 @@ class MyViewController: CAPBridgeViewController {
         super.capacitorDidLoad()
         
         // Manually register local plugins in Capacitor 8
-        bridge?.registerPluginInstance(LiveActivityPlugin())
+        self.bridge?.registerPluginInstance(LiveActivityPlugin())
     }
 }

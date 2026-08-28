@@ -53,9 +53,10 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
                 let contentState = RestTimerAttributes.ContentState(endTime: endTime, totalSeconds: seconds)
 
                 do {
+                    let content = ActivityContent(state: contentState, staleDate: nil)
                     let activity = try Activity<RestTimerAttributes>.request(
                         attributes: attributes,
-                        contentState: contentState,
+                        content: content,
                         pushType: nil
                     )
                     self.currentActivity = activity
