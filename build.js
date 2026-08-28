@@ -23,6 +23,16 @@ if (!fs.existsSync(destDir)) {
   fs.mkdirSync(destDir, { recursive: true });
 }
 
+// Ensure capacitor.js is copied from node_modules for vanilla JS usage without a bundler
+const capSrc = path.join(__dirname, 'node_modules', '@capacitor', 'core', 'dist', 'capacitor.js');
+const capDest = path.join(destDir, 'capacitor.js');
+if (fs.existsSync(capSrc)) {
+  fs.copyFileSync(capSrc, capDest);
+  console.log(`[OK] Copied: capacitor core -> www/capacitor.js`);
+} else {
+  console.warn(`[WARN] capacitor.js not found in node_modules!`);
+}
+
 // Copy files
 filesToCopy.forEach(file => {
   const src = path.join(__dirname, file);
