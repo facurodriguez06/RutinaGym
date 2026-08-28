@@ -2917,190 +2917,20 @@ function createTimerArtworkBlob(user, timeStr, exerciseName) {
   }
 }
 
-// Picture-in-Picture (PiP) Floating Live Countdown Engine
-let pipStream = null;
-let pipActive = false;
-
-function initPipElements() {
-  const canvas = document.getElementById("pip-timer-canvas");
-  const video = document.getElementById("pip-timer-video");
-  if (canvas && video && !pipStream) {
-    try {
-      pipStream = canvas.captureStream(30);
-      video.srcObject = pipStream;
-      video.play().catch(() => {});
-    } catch (e) {
-      console.warn("PiP stream init error:", e);
-    }
+// Native iOS Live Activity Plugin Bridge (Capacitor)
+function getLiveActivityPlugin() {
+  if (window.Capacitor && window.Capacitor.registerPlugin) {
+    return window.Capacitor.registerPlugin("LiveActivity");
   }
-}
-
-function renderPipCanvas(user, displaySeconds, totalSeconds, exerciseName) {
-  const canvas = document.getElementById("pip-timer-canvas");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  const width = canvas.width;
-  const height = canvas.height;
-  const isFacu = user === "facu";
-  const accentColor = isFacu ? "#00f0ff" : "#ff0055";
-  const userName = isFacu ? "FACU" : "ALMA";
-
-  const mins = Math.floor(displaySeconds / 60);
-  const secs = displaySeconds % 60;
-  const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
-
-  // Dark slate background
-  ctx.fillStyle = "#020617";
-  ctx.fillRect(0, 0, width, height);
-
-  // Brutalist glowing frame
-  ctx.strokeStyle = displaySeconds <= 10 ? "#ef4444" : accentColor;
-  ctx.lineWidth = 8;
-  ctx.strokeRect(4, 4, width - 8, height - 8);
-
-  // Top header: User badge & App title
-  ctx.fillStyle = accentColor;
-  ctx.font = "bold 18px monospace";
-  ctx.textAlign = "left";
-  ctx.fillText(`⚡ ${userName}`, 24, 38);
-
-  ctx.fillStyle = "#64748b";
-  ctx.font = "bold 14px monospace";
-  ctx.textAlign = "right";
-  ctx.fillText("VIGOR GYM", width - 24, 38);
-
-  // Big Countdown Time
-  ctx.fillStyle = displaySeconds <= 10 ? "#ff0055" : "#ffffff";
-  ctx.font = "900 86px monospace";
-  ctx.textAlign = "center";
-  ctx.fillText(timeStr, width / 2, 132);
-
-  // Exercise Name
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "bold 20px sans-serif";
-  const shortEx = exerciseName && exerciseName.length > 24 ? exerciseName.substring(0, 22) + "..." : (exerciseName || "Descanso");
-  ctx.fillText(shortEx, width / 2, 180);
-
-  // Progress Track & Bar at bottom
-  const barWidth = width - 48;
-  const barHeight = 12;
-  const barX = 24;
-  const barY = height - 42;
-  const progress = totalSeconds > 0 ? Math.max(0, Math.min(1, displaySeconds / totalSeconds)) : 0;
-
-  // Track
-  ctx.fillStyle = "#1e293b";
-  ctx.fillRect(barX, barY, barWidth, barHeight);
-
-  // Fill
-  ctx.fillStyle = displaySeconds <= 10 ? "#ef4444" : accentColor;
-  ctx.fillRect(barX, barY, barWidth * progress, barHeight);
-}
-
-async function togglePipTimer() {
-  const video = document.getElementById("pip-timer-video");
-  const canvas = document.getElementById("pip-timer-canvas");
-  if (!video || !canvas) return;
-
-  try {
-    initPipElements();
-    const user = activeFullModalUser || (timerState.facu.active ? "facu" : "alma");
-    const state = timerState[user] || { currentSeconds: 60, totalSeconds: 60, exerciseName: "Descanso" };
-    renderPipCanvas(user, state.currentSeconds, state.totalSeconds, state.exerciseName);
-
-    // Standard Picture-in-Picture check
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture();
-      pipActive = false;
-      return;
-    }
-
-    // iOS Safari WebKit presentation mode
-    if (typeof video.webkitSetPresentationMode === "function") {
-      if (video.webkitPresentationMode === "picture-in-picture") {
-        video.webkitSetPresentationMode("inline");
-        pipActive = false;
-      } else {
-        await video.play();
-        video.webkitSetPresentationMode("picture-in-picture");
-        pipActive = true;
-      }
-      return;
-    }
-
-    // Standard HTML5 Picture-in-Picture
-    if (video.requestPictureInPicture) {
-      await video.play();
-      await video.requestPictureInPicture();
-      pipActive = true;
-    }
-  } catch (e) {
-    console.warn("PiP toggle error:", e);
-  }
+  return window.Capacitor?.Plugins?.LiveActivity || null;
 }
 
 function enableBackgroundMode(exerciseName, duration, user = "facu") {
-  // If running inside Capacitor Native iOS app, Live Activities handles Lock Screen & Dynamic Island natively.
-  // Do NOT play audio stream or register MediaSession, which generates the fake video/music player!
+  // Background audio keepalive for standard web browsers
   if (window.Capacitor && (window.Capacitor.isNativePlatform ? window.Capacitor.isNativePlatform() : window.Capacitor.platform === "ios")) {
     return;
   }
-
-  initPipElements();
-  const state = timerState[user] || { currentSeconds: duration, totalSeconds: duration };
-  const displaySeconds = Math.max(0, state.currentSeconds);
-  const mins = Math.floor(displaySeconds / 60);
-  const secs = displaySeconds % 60;
-  const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
-  const userName = user === "facu" ? "Facu" : "Alma";
-
-  renderPipCanvas(user, displaySeconds, duration, exerciseName);
-
-  // Play audio to keep audio session / web worker alive in lock screen
-  bgAudio
-    .play()
-    .then(() => {
-      if ("mediaSession" in navigator) {
-        const artworkUrl = createTimerArtworkBlob(user, timeStr, exerciseName);
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: `⏱️ ${timeStr} - ${exerciseName} (${userName})`,
-          artist: `Descanso: ${timeStr} // VIGOR`,
-          album: `VIGOR GYM`,
-          artwork: [
-            { src: artworkUrl, sizes: "512x512", type: "image/png" },
-            { src: "favicon.svg", sizes: "96x96", type: "image/svg+xml" },
-          ],
-        });
-        navigator.mediaSession.playbackState = "playing";
-
-        try {
-          navigator.mediaSession.setPositionState({
-            duration: duration,
-            playbackRate: 1,
-            position: Math.max(0, duration - displaySeconds),
-          });
-        } catch (e) {}
-
-        // Media Action handlers for Lock Screen
-        try {
-          navigator.mediaSession.setActionHandler("nexttrack", () => {
-            if (activeFullModalUser) skipTimer(activeFullModalUser);
-          });
-          navigator.mediaSession.setActionHandler("previoustrack", () => {
-            if (activeFullModalUser) addTimerSeconds(activeFullModalUser, 30);
-          });
-          navigator.mediaSession.setActionHandler("pause", () => {
-            if (activeFullModalUser) skipTimer(activeFullModalUser);
-          });
-          navigator.mediaSession.setActionHandler("play", () => {
-            // Keep playing
-          });
-        } catch (e) {}
-      }
-    })
-    .catch((e) => console.warn("Background audio play error:", e));
+  bgAudio.play().catch(() => {});
 }
 
 function disableBackgroundMode() {
@@ -3110,12 +2940,7 @@ function disableBackgroundMode() {
   try {
     bgAudio.pause();
     bgAudio.currentTime = 0;
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.playbackState = "paused";
-    }
-  } catch (e) {
-    console.warn("Failed to disable background mode", e);
-  }
+  } catch (e) {}
 }
 
 // --- CHARTS LOGIC ---
@@ -3376,8 +3201,9 @@ function showTimer(user, exerciseName, seconds) {
   enableBackgroundMode(exerciseName, seconds, user);
 
   // Native Live Activity for Dynamic Island (Capacitor iOS)
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LiveActivity) {
-    window.Capacitor.Plugins.LiveActivity.startRestTimer({
+  const LiveActivity = getLiveActivityPlugin();
+  if (LiveActivity) {
+    LiveActivity.startRestTimer({
       exerciseName: exerciseName,
       userName: user === "facu" ? "Facu" : "Alma",
       seconds: seconds
@@ -3458,15 +3284,11 @@ function handleTimerComplete(user) {
   playTimerEnd();
 
   // End Native iOS Live Activity
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LiveActivity) {
-    window.Capacitor.Plugins.LiveActivity.endRestTimer().catch(() => {});
+  const LiveActivity = getLiveActivityPlugin();
+  if (LiveActivity) {
+    LiveActivity.endRestTimer().catch(() => {});
   }
 
-  // Exit PiP if running
-  if (document.pictureInPictureElement) {
-    document.exitPictureInPicture().catch(() => {});
-  }
-  renderPipCanvas(user, 0, state.totalSeconds, state.exerciseName);
   document.title = `¡TIEMPO! - ${state.exerciseName} (${user === "facu" ? "Facu" : "Alma"})`;
 
   // Notifications
@@ -3786,8 +3608,9 @@ function updateTimerDisplay() {
 }
 
 function hideTimer(user) {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LiveActivity) {
-    window.Capacitor.Plugins.LiveActivity.endRestTimer().catch(() => {});
+  const LiveActivity = getLiveActivityPlugin();
+  if (LiveActivity) {
+    LiveActivity.endRestTimer().catch(() => {});
   }
 
   if (user) {
