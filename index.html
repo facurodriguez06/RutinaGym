@@ -58,7 +58,8 @@
     <!-- Sidebar / Drawer -->
     <div id="sidebar-overlay" onclick="toggleSidebar()"
         class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity opacity-0"></div>
-    <aside id="sidebar"
+    <div id="app-content" class="hidden w-full flex-1 flex flex-col">
+<aside id="sidebar"
         class="fixed top-0 left-0 w-64 h-[100dvh] bg-slate-900 border-r border-slate-800 z-50 transform -translate-x-full transition-transform duration-300 ease-out shadow-2xl">
         <div class="p-6 flex flex-col h-full overflow-y-auto">
             <div class="flex items-center gap-3 mb-4">
@@ -1024,6 +1025,7 @@
         </div>
 
     </main>
+</div>
 
     <!-- Timer Modal -->
     <div id="timer-modal"
@@ -1832,8 +1834,7 @@
                     class="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/20 transition-all text-sm flex items-center justify-center gap-2 active:scale-95">
                     <i data-lucide="sparkles" class="w-4 h-4"></i> Crear con IA
                 </button>
-                <button onclick="closeRoutinesManagerModal()"
-                    class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl transition-all text-sm border border-slate-700 active:scale-95">
+                            class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl transition-all text-sm border border-slate-700 active:scale-95">
                     Cerrar
                 </button>
             </div>
@@ -1842,8 +1843,8 @@
 
     <!-- MANDATORY SESSION GATEKEEPER: WHO IS TRAINING TODAY -->
     <div id="who-trains-gatekeeper"
-        class="fixed inset-0 bg-black/95 z-[100] hidden items-center justify-center p-3 sm:p-4 backdrop-blur-2xl transition-all duration-300 select-none">
-        <div class="gatekeeper-card relative w-full max-w-md bg-slate-900 border-[3px] border-slate-700 shadow-lg p-4 sm:p-6 rounded-2xl animate-pop text-center flex flex-col justify-between">
+        class="flex min-h-[100dvh] w-full flex-col bg-slate-950 hidden items-center justify-center p-4">
+        <div class="gatekeeper-card w-full max-w-md bg-slate-900 border border-slate-800 shadow-2xl p-6 rounded-3xl animate-slide-up text-center flex flex-col justify-between">
             
             <!-- Compact Header -->
             <div class="mb-3 sm:mb-4">
