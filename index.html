@@ -34,110 +34,6 @@
     <link rel="stylesheet" href="styles.css">
 
     <style>
-        /* Modern, premium Neo-Brutalist splash screen styles */
-        #splash-screen {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #000000;
-            background-image: none;
-            background-size: 20px 20px;
-            transition: opacity 0.5s ease;
-        }
-        #splash-screen .splash-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 2.5rem;
-            background: #111111;
-            border: 3px solid #262626;
-            box-shadow: 8px 8px 0px #000000;
-            max-width: 320px;
-            width: 90%;
-            text-align: center;
-            position: relative;
-            will-change: transform, opacity;
-        }
-        /* Neon highlight effect on the brutalist panel */
-        #splash-screen .splash-content::before {
-            content: '';
-            position: absolute;
-            top: -3px; left: -3px; right: -3px; bottom: -3px;
-            border: 3px solid #ccff00;
-            z-index: -1;
-            opacity: 0.15;
-            pointer-events: none;
-        }
-        #splash-screen .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.6rem;
-            margin-bottom: 1.5rem;
-        }
-        #splash-screen .splash-logo-img {
-            width: 3.5rem;
-            height: 3.5rem;
-            object-fit: contain;
-            border: 2px solid #262626;
-            box-shadow: 4px 4px 0px #000000;
-        }
-        #splash-screen .logo {
-            font-family: "Bebas Neue", system-ui, sans-serif;
-            font-size: 3rem;
-            font-weight: normal;
-            color: #ccff00;
-            letter-spacing: 2px;
-            line-height: 1;
-            text-shadow: 3px 3px 0px #000;
-            margin: 0;
-        }
-        #splash-screen .brutal-loader-container {
-            width: 100%;
-            margin-bottom: 1.25rem;
-        }
-        #splash-screen .brutal-loader-track {
-            height: 12px;
-            border: 2px solid #262626;
-            background: #000000;
-            position: relative;
-            overflow: hidden;
-        }
-        #splash-screen .brutal-loader-bar {
-            height: 100%;
-            width: 40%;
-            background: #ccff00;
-            border-right: 2px solid #262626;
-            position: absolute;
-            left: -40%;
-            animation: brutal-loading 1.2s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
-            box-shadow: 0 0 8px rgba(204, 255, 0, 0.3);
-        }
-        #splash-screen .sub {
-            font-family: "JetBrains Mono", monospace;
-            font-size: 0.75rem;
-            font-weight: 800;
-            color: #888888;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            animation: pulse 1.8s ease-in-out infinite;
-        }
-        @keyframes brutal-loading {
-            0% { left: -40%; }
-            100% { left: 100%; }
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-        body { background: #000000; }
-    </style>
-    <style>
         /* Hide Number Input Spinners */
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button {
@@ -148,27 +44,12 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
+        body { background: #020617; }
     </style>
 </head>
 
 <body
     class="bg-slate-950 text-slate-200 transition-colors duration-300 overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200 pb-20 md:pb-0 min-h-screen flex flex-col">
-
-    <!-- SPLASH SCREEN -->
-    <div id="splash-screen">
-        <div class="splash-content">
-            <div class="logo-container">
-                <img src="favicon.svg" class="splash-logo-img" alt="Vigor Logo">
-                <div class="logo">VIGOR</div>
-            </div>
-            <div class="brutal-loader-container">
-                <div class="brutal-loader-track">
-                    <div class="brutal-loader-bar"></div>
-                </div>
-            </div>
-            <div class="sub">Cargando...</div>
-        </div>
-    </div>
     <!-- Sidebar / Drawer -->
     <div id="sidebar-overlay" onclick="toggleSidebar()"
         class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity opacity-0"></div>
