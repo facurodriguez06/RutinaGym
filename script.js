@@ -3042,6 +3042,12 @@ async function togglePipTimer() {
 }
 
 function enableBackgroundMode(exerciseName, duration, user = "facu") {
+  // If running inside Capacitor Native iOS app, Live Activities handles Lock Screen & Dynamic Island natively.
+  // Do NOT play audio stream or register MediaSession, which generates the fake video/music player!
+  if (window.Capacitor && (window.Capacitor.isNativePlatform ? window.Capacitor.isNativePlatform() : window.Capacitor.platform === "ios")) {
+    return;
+  }
+
   initPipElements();
   const state = timerState[user] || { currentSeconds: duration, totalSeconds: duration };
   const displaySeconds = Math.max(0, state.currentSeconds);
@@ -3098,6 +3104,9 @@ function enableBackgroundMode(exerciseName, duration, user = "facu") {
 }
 
 function disableBackgroundMode() {
+  if (window.Capacitor && (window.Capacitor.isNativePlatform ? window.Capacitor.isNativePlatform() : window.Capacitor.platform === "ios")) {
+    return;
+  }
   try {
     bgAudio.pause();
     bgAudio.currentTime = 0;

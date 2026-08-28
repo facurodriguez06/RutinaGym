@@ -55,6 +55,25 @@ jobs:
 
       - name: Package App into .IPA
         run: |
+          # 1. Compile and Embed Widget Extension into App.app/PlugIns/
+          WIDGET_DIR="ios/App/build/Build/Products/Release-iphoneos/App.app/PlugIns/VigorWidgets.appex"
+          mkdir -p "$WIDGET_DIR"
+
+          xcrun -sdk iphoneos swiftc \
+            -target arm64-apple-ios16.2 \
+            -O \
+            -whole-module-optimization \
+            -parse-as-library \
+            -emit-executable \
+            -o "$WIDGET_DIR/VigorWidgets" \
+            ios/App/VigorWidgets/RestTimerAttributes.swift \
+            ios/App/VigorWidgets/RestTimerLiveActivity.swift \
+            ios/App/VigorWidgets/VigorWidgetsBundle.swift
+
+          cp ios/App/VigorWidgets/Info.plist "$WIDGET_DIR/Info.plist"
+          echo "VigorWidgets Extension embedded successfully!"
+
+          # 2. Package App into .IPA
           mkdir -p Payload
           cp -r ios/App/build/Build/Products/Release-iphoneos/App.app Payload/
           zip -r Vigor-Gym-iOS.ipa Payload
