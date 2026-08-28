@@ -4,7 +4,7 @@ project_path = 'ios/App/App.xcodeproj'
 project = Xcodeproj::Project.open(project_path)
 
 # ==========================================
-# 0. ADD LiveActivityPlugin.m to App Target
+# 0. ADD MyViewController.swift to App Target
 # ==========================================
 app_target = project.targets.find { |t| t.name == 'App' }
 if app_target.nil?
@@ -14,16 +14,16 @@ end
 
 app_group = project.main_group.find_subpath('App/App', false) || project.main_group.find_subpath('App', true)
 
-# Find or create file reference for LiveActivityPlugin.m
-m_file_ref = app_group.files.find { |f| f.path == 'LiveActivityPlugin.m' }
-if m_file_ref.nil?
-  m_file_ref = app_group.new_file('LiveActivityPlugin.m')
+# Find or create file reference for MyViewController.swift
+vc_file_ref = app_group.files.find { |f| f.path == 'MyViewController.swift' }
+if vc_file_ref.nil?
+  vc_file_ref = app_group.new_file('MyViewController.swift')
 end
 
 # Add it to the App target's compile sources if not there
-unless app_target.source_build_phase.files.any? { |f| f.file_ref == m_file_ref }
-  app_target.source_build_phase.add_file_reference(m_file_ref)
-  puts "Added LiveActivityPlugin.m to App target compile sources"
+unless app_target.source_build_phase.files.any? { |f| f.file_ref == vc_file_ref }
+  app_target.source_build_phase.add_file_reference(vc_file_ref)
+  puts "Added MyViewController.swift to App target compile sources"
 end
 
 # ==========================================
@@ -31,7 +31,7 @@ end
 # ==========================================
 
 # CLEANUP: Remove stale references that cause "filename used twice" errors
-%w[RestTimerAttributes.swift RestTimerLiveActivity.swift VigorWidgetsBundle.swift].each do |filename|
+%w[RestTimerAttributes.swift RestTimerLiveActivity.swift VigorWidgetsBundle.swift LiveActivityPlugin.m].each do |filename|
   project.files.select { |f| f.path == filename }.each do |ref|
     app_target.source_build_phase.remove_file_reference(ref) rescue nil
     ref.remove_from_project
