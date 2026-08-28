@@ -20,7 +20,7 @@
     <link rel="dns-prefetch" href="https://api.open-meteo.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
     
     <!-- Capacitor Core -->
     <script src="capacitor.js"></script>
@@ -63,7 +63,7 @@
         <div class="p-6 flex flex-col h-full overflow-y-auto">
             <div class="flex items-center gap-3 mb-4">
                 <div
-                    class="w-10 h-10 border border-slate-800 shadow-[2px_2px_0px_#000] overflow-hidden flex items-center justify-center bg-slate-950">
+                    class="w-10 h-10 border border-slate-800 shadow-lg overflow-hidden flex items-center justify-center bg-slate-950">
                     <img src="favicon.svg" class="w-8 h-8 object-contain" alt="Vigor Logo">
                 </div>
                 <div>
@@ -165,7 +165,7 @@
 
                     <!-- Static Trainee Indicator Badge -->
                     <div id="header-who-badge"
-                        class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-vigor)] shadow-[2px_2px_0px_#000]"
+                        class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-vigor)] shadow-lg"
                         title="Modo de entrenamiento activo">
                         <i data-lucide="users" class="w-3.5 h-3.5"></i>
                         <span id="header-who-label">Ambos</span>
@@ -205,11 +205,11 @@
             <div class="flex-1 w-full">
 
                 <!-- Start Routine Content -->                <!-- Active Session Control Panel -->
-                <div id="session-control-panel" class="mb-6 brutal-panel p-4 hidden animate-slide-up stagger-1 bg-slate-900/80 backdrop-blur-md border-2 border-slate-800 shadow-[4px_4px_0px_#000]">
+                <div id="session-control-panel" class="mb-6 brutal-panel p-4 hidden animate-slide-up stagger-1 bg-slate-900/80 backdrop-blur-md border-2 border-slate-800 shadow-lg">
                     <div class="flex flex-wrap items-center justify-between gap-4 w-full">
                         <!-- Left: Timer -->
                         <div class="flex items-center gap-3">
-                            <div class="p-2 bg-slate-950 border-2 border-[var(--border-strong)] shadow-[2px_2px_0px_#000] text-[var(--accent-vigor)] flex items-center justify-center rounded-lg">
+                            <div class="p-2 bg-slate-950 border-2 border-[var(--border-strong)] shadow-lg text-[var(--accent-vigor)] flex items-center justify-center rounded-lg">
                                 <i data-lucide="timer" class="w-5 h-5"></i>
                             </div>
                             <div>
@@ -221,19 +221,19 @@
                         <!-- Middle: Control Buttons -->
                         <div class="flex items-center gap-2 flex-wrap">
                             <button id="btn-session-play" onclick="startWorkoutSession()" 
-                                class="h-9 px-3 bg-slate-800 hover:bg-slate-700 text-white border-2 border-[var(--border-strong)] rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
+                                class="h-9 px-3 bg-slate-800 hover:bg-slate-700 text-white border-2 border-[var(--border-strong)] rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg active:translate-y-0.5 active:shadow-none">
                                 <i data-lucide="play" class="w-3.5 h-3.5"></i> Iniciar
                             </button>
                             <button id="btn-session-pause" onclick="pauseWorkoutSession()" 
-                                class="h-9 px-3 bg-slate-850 hover:bg-slate-750 text-[var(--accent-vigor)] border-2 border-[var(--accent-vigor)] rounded-lg font-black text-xs uppercase tracking-wider transition-all hidden items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
+                                class="h-9 px-3 bg-slate-850 hover:bg-slate-750 text-[var(--accent-vigor)] border-2 border-[var(--accent-vigor)] rounded-lg font-black text-xs uppercase tracking-wider transition-all hidden items-center gap-1.5 shadow-lg active:translate-y-0.5 active:shadow-none">
                                 <i data-lucide="pause" class="w-3.5 h-3.5"></i> Pausar
                             </button>
                             <button id="btn-session-reset" onclick="confirmResetWorkoutSession()" 
-                                class="h-9 px-3 bg-red-950/30 hover:bg-red-950/60 text-red-400 border-2 border-red-900/50 rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none" title="Reiniciar Cronómetro">
+                                class="h-9 px-3 bg-red-950/30 hover:bg-red-950/60 text-red-400 border-2 border-red-900/50 rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg active:translate-y-0.5 active:shadow-none" title="Reiniciar Cronómetro">
                                 <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reiniciar
                             </button>
                             <button onclick="openWorkoutSummaryModal()" 
-                                class="h-9 px-3 bg-[var(--accent-vigor)] hover:bg-[var(--accent-vigor)]/90 text-black border-2 border-black rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
+                                class="h-9 px-3 bg-[var(--accent-vigor)] hover:bg-[var(--accent-vigor)]/90 text-black border-2 border-black rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg active:translate-y-0.5 active:shadow-none">
                                 <i data-lucide="trophy" class="w-3.5 h-3.5"></i> Finalizar
                             </button>
                         </div>
@@ -279,7 +279,7 @@
                     </div>
                     <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
                         <div id="progress-bar"
-                            class="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                            class="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out shadow-lg"
                             style="width: 0%"></div>
                     </div>
                 </div>
@@ -291,7 +291,7 @@
 
                 <!-- Completion Message & Day Marking -->
                 <div id="completion-message"
-                    class="hidden mt-8 p-6 bg-gradient-to-r from-emerald-900/30 to-slate-900 rounded-2xl border border-emerald-900/50 text-center animate-slide-up shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                    class="hidden mt-8 p-6 bg-gradient-to-r from-emerald-900/30 to-slate-900 rounded-2xl border border-emerald-900/50 text-center animate-slide-up shadow-lg">
                     <div
                         class="inline-flex items-center justify-center p-3 bg-emerald-500/20 rounded-full mb-4 animate-bounce">
                         <i data-lucide="trophy" class="w-8 h-8 text-emerald-400"></i>
@@ -300,7 +300,7 @@
                     <p class="text-slate-400 mb-4">Excelente trabajo hoy. Abre el resumen para registrar tu sobrecarga progresiva y tonelaje.</p>
                     <div class="flex gap-3 justify-center flex-wrap">
                         <button onclick="openWorkoutSummaryModal()"
-                            class="px-6 py-3 bg-[var(--accent-vigor)] hover:opacity-90 text-black border-2 border-black rounded-xl font-black transition-all flex items-center gap-2 shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none uppercase tracking-wide">
+                            class="px-6 py-3 bg-[var(--accent-vigor)] hover:opacity-90 text-black border-2 border-black rounded-xl font-black transition-all flex items-center gap-2 shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none uppercase tracking-wide">
                             <i data-lucide="trophy" class="w-5 h-5"></i> Ver Resumen y Guardar
                         </button>
                     </div>
@@ -395,7 +395,7 @@
                         <div class="flex items-center gap-2">
                             <div
                                 class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                                <span class="text-sm">🙎🏽‍♂️</span>
+                                <span class="text-sm"><i data-lucide="user" class="w-4 h-4"></i></span>
                             </div>
                             <h2 class="text-xl font-black text-slate-800 dark:text-white">Facu</h2>
                         </div>
@@ -475,7 +475,7 @@
                         <div class="flex items-center gap-2">
                             <div
                                 class="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
-                                <span class="text-sm">🙎🏻‍♀️</span>
+                                <span class="text-sm"><i data-lucide="user" class="w-4 h-4"></i></span>
                             </div>
                             <h2 class="text-xl font-black text-slate-800 dark:text-white">Alma</h2>
                         </div>
@@ -572,7 +572,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
                     <div class="flex items-center gap-2 text-pink-400 mb-1">
-                        <span class="text-lg">🙎🏻‍♀️</span>
+                        <span class="text-lg"><i data-lucide="user" class="w-4 h-4"></i></span>
                         <span class="text-xs uppercase font-bold tracking-wider">Alma</span>
                     </div>
                     <p id="stat-alma" class="text-2xl font-bold text-white">0 <span
@@ -580,7 +580,7 @@
                 </div>
                 <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
                     <div class="flex items-center gap-2 text-blue-400 mb-1">
-                        <span class="text-lg">🙎🏽‍♂️</span>
+                        <span class="text-lg"><i data-lucide="user" class="w-4 h-4"></i></span>
                         <span class="text-xs uppercase font-bold tracking-wider">Facu</span>
                     </div>
                     <p id="stat-facu" class="text-2xl font-bold text-white">0 <span
@@ -588,7 +588,7 @@
                 </div>
                 <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
                     <div class="flex items-center gap-2 text-emerald-400 mb-1">
-                        <span class="text-lg">💪</span>
+                        <span class="text-lg"><i data-lucide="users" class="w-4 h-4"></i></span>
                         <span class="text-xs uppercase font-bold tracking-wider">Juntos</span>
                     </div>
                     <p id="stat-both" class="text-2xl font-bold text-white">0 <span
@@ -824,7 +824,7 @@
                     <div
                         class="w-full bg-slate-800 h-3 rounded-full overflow-hidden relative z-10 mb-6 border border-slate-700">
                         <div id="water-progress-alma"
-                            class="h-full bg-gradient-to-r from-pink-600 to-pink-400 transition-all duration-700 shadow-[0_0_10px_rgba(236,72,153,0.5)]"
+                            class="h-full bg-gradient-to-r from-pink-600 to-pink-400 transition-all duration-700 shadow-lg"
                             style="width: 0%"></div>
                     </div>
 
@@ -873,7 +873,7 @@
                     <div
                         class="w-full bg-slate-800 h-3 rounded-full overflow-hidden relative z-10 mb-6 border border-slate-700">
                         <div id="water-progress-facu"
-                            class="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                            class="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-700 shadow-lg"
                             style="width: 0%"></div>
                     </div>
 
@@ -1035,11 +1035,11 @@
 
         <!-- Full Timer Modal -->
         <div id="timer-full"
-            class="relative bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-8 max-w-md w-full text-center transition-all duration-300 shadow-[8px_8px_0_#000]">
+            class="relative bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-8 max-w-md w-full text-center transition-all duration-300 shadow-lg">
             <!-- Top Controls: Minimize -->
             <div class="absolute top-4 right-4 flex items-center gap-2">
                 <button id="timer-minimize-btn"
-                    class="p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:-translate-y-0.5 hover:shadow-[2px_2px_0_#000] active:translate-y-0 active:shadow-none transition-all rounded-lg"
+                    class="p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-none transition-all rounded-lg"
                     title="Minimizar">
                     <i data-lucide="minimize-2" class="w-5 h-5 text-white"></i>
                 </button>
@@ -1052,31 +1052,31 @@
             </div>
             
             <!-- Huge Brutalist Number Display -->
-            <div id="timer-display" class="text-[8rem] leading-none font-mono font-black text-[var(--accent-vigor)] mb-4 tabular-nums timer-text-anim animate-pop stagger-2 drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">
+            <div id="timer-display" class="text-[8rem] leading-none font-mono font-black text-[var(--accent-vigor)] mb-4 tabular-nums timer-text-anim animate-pop stagger-2 drop-shadow-lg">
                 0:00
             </div>
             
             <div id="timer-progress-ring" class="relative w-40 h-40 mx-auto mb-8 animate-slide-up stagger-2 hidden">
                 <!-- Using purely numerical display in Brutalism, ring is optional but let's keep it styled -->
-                <svg class="w-40 h-40 transform -rotate-90 drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                <svg class="w-40 h-40 transform -rotate-90 drop-shadow-lg">
                     <circle cx="80" cy="80" r="72" stroke="var(--border-strong)" stroke-width="12" fill="none" />
                     <circle id="timer-ring" cx="80" cy="80" r="72" stroke="var(--accent-vigor)" stroke-width="12" fill="none"
                         stroke-dasharray="452.39" stroke-dashoffset="0"
                         class="transition-all duration-1000 ease-linear" />
                 </svg>
                 <div class="absolute inset-0 flex items-center justify-center">
-                    <span id="timer-seconds-left" class="text-4xl font-black text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)]"></span>
+                    <span id="timer-seconds-left" class="text-4xl font-black text-white drop-shadow-lg"></span>
                 </div>
             </div>
             
             <div class="flex gap-4 justify-center animate-slide-up stagger-3">
                 <button id="timer-skip-btn"
-                    class="px-8 py-4 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] text-white text-xl font-bold uppercase hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none transition-all flex items-center gap-2">
+                    class="px-8 py-4 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] text-white text-xl font-bold uppercase hover:-translate-y-1 hover:shadow-lg active:translate-y-0 active:shadow-none transition-all flex items-center gap-2">
                     <i data-lucide="skip-forward" class="w-6 h-6"></i>
                     Saltar
                 </button>
                 <button id="timer-add-btn"
-                    class="px-8 py-4 bg-[var(--accent-vigor)] border-2 border-black text-black text-xl font-bold uppercase hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none transition-all flex items-center gap-2">
+                    class="px-8 py-4 bg-[var(--accent-vigor)] border-2 border-black text-black text-xl font-bold uppercase hover:-translate-y-1 hover:shadow-lg active:translate-y-0 active:shadow-none transition-all flex items-center gap-2">
                     <i data-lucide="plus" class="w-6 h-6"></i>
                     30s
                 </button>
@@ -1093,16 +1093,16 @@
     <div id="calculator-modal"
         class="fixed inset-0 bg-black/95 z-[80] hidden items-center justify-center p-4 transition-all duration-300">
         <div
-            class="bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-6 max-w-lg w-full shadow-[8px_8px_0_#000] relative overflow-hidden">
+            class="bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-6 max-w-lg w-full shadow-lg relative overflow-hidden">
 
             <!-- Close Button -->
             <button onclick="closeCalculatorModal()"
-                class="absolute top-4 right-4 p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none transition-all z-10">
+                class="absolute top-4 right-4 p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:-translate-y-1 hover:shadow-lg active:translate-y-0 active:shadow-none transition-all z-10">
                 <i data-lucide="x" class="w-6 h-6 text-white"></i>
             </button>
 
             <div class="text-center mb-6 mt-4">
-                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-facu)] border-2 border-black mb-4 shadow-[4px_4px_0_#000]">
+                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-facu)] border-2 border-black mb-4 shadow-lg">
                     <i data-lucide="calculator" class="w-8 h-8 text-black"></i>
                 </div>
                 <h3 class="text-3xl font-black text-white uppercase tracking-widest mb-1">Calculadora</h3>
@@ -1113,15 +1113,15 @@
             <div class="flex justify-center mb-8">
                 <div class="relative">
                     <input type="number" id="calc-weight-input" placeholder="0"
-                        class="text-6xl font-black bg-[var(--bg-base)] border-2 border-[var(--border-strong)] text-white text-center w-48 p-4 focus:border-[var(--accent-facu)] outline-none transition-colors placeholder:text-[var(--border-strong)] shadow-[4px_4px_0_#000]"
+                        class="text-6xl font-black bg-[var(--bg-base)] border-2 border-[var(--border-strong)] text-white text-center w-48 p-4 focus:border-[var(--accent-facu)] outline-none transition-colors placeholder:text-[var(--border-strong)] shadow-lg"
                         oninput="calculatePlates(this.value)">
-                    <span class="absolute -right-4 -bottom-4 bg-[var(--accent-facu)] text-black border-2 border-black px-2 py-1 font-black text-xl shadow-[2px_2px_0_#000]">KG</span>
+                    <span class="absolute -right-4 -bottom-4 bg-[var(--accent-facu)] text-black border-2 border-black px-2 py-1 font-black text-xl shadow-lg">KG</span>
                 </div>
             </div>
 
             <!-- Visual Barbell -->
             <div
-                class="bg-[var(--bg-base)] border-2 border-[var(--border-strong)] p-4 mb-6 flex flex-col items-center justify-center min-h-[140px] shadow-[inset_4px_4px_0_rgba(0,0,0,0.5)]">
+                class="bg-[var(--bg-base)] border-2 border-[var(--border-strong)] p-4 mb-6 flex flex-col items-center justify-center min-h-[140px] shadow-lg">
                 <div id="plate-display" class="flex items-center gap-1 h-32 w-full justify-center relative">
                     <!-- Barbell Center -->
                     <div class="h-6 w-full bg-[#404040] absolute z-0 border-y-2 border-black"></div>
@@ -1134,10 +1134,10 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="calculatePlates(40)"
-                    class="p-4 bg-[var(--bg-panel-alt)] border-2 border-[var(--border-strong)] text-white hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none font-black text-sm uppercase transition-all">40 kg
+                    class="p-4 bg-[var(--bg-panel-alt)] border-2 border-[var(--border-strong)] text-white hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-lg active:translate-y-0 active:shadow-none font-black text-sm uppercase transition-all">40 kg
                     (Calentar)</button>
                 <button onclick="calculatePlates(60)"
-                    class="p-4 bg-[var(--bg-panel-alt)] border-2 border-[var(--border-strong)] text-white hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none font-black text-sm uppercase transition-all">60 kg (1
+                    class="p-4 bg-[var(--bg-panel-alt)] border-2 border-[var(--border-strong)] text-white hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-lg active:translate-y-0 active:shadow-none font-black text-sm uppercase transition-all">60 kg (1
                     Disco)</button>
             </div>
 
@@ -1146,7 +1146,7 @@
                 <h4 class="text-[var(--accent-vigor)] text-lg font-black uppercase tracking-widest mb-4 flex items-center gap-2">
                     <i data-lucide="biceps-flexed" class="w-6 h-6"></i> Estimador 1RM
                 </h4>
-                <div class="bg-[var(--bg-base)] p-4 border-2 border-[var(--border-strong)] shadow-[4px_4px_0_#000] flex gap-4 items-center">
+                <div class="bg-[var(--bg-base)] p-4 border-2 border-[var(--border-strong)] shadow-lg flex gap-4 items-center">
                     <div>
                         <label class="text-[10px] text-[var(--text-dim)] block mb-1 uppercase font-black tracking-widest">Peso (kg)</label>
                         <input type="number" id="rm-weight" oninput="calculate1RM()"
@@ -1162,7 +1162,7 @@
                     </div>
                     <div class="flex-1 text-right">
                         <div class="text-[10px] text-[var(--text-dim)] uppercase font-black tracking-widest">Fuerza Máx</div>
-                        <div id="rm-result" class="text-3xl font-black text-[var(--accent-vigor)] drop-shadow-[2px_2px_0_#000]">0 <span
+                        <div id="rm-result" class="text-3xl font-black text-[var(--accent-vigor)] drop-shadow-lg">0 <span
                                 class="text-sm">kg</span></div>
                     </div>
                 </div>
@@ -1199,7 +1199,7 @@
     <div id="workout-summary-modal"
         class="fixed inset-0 bg-black/90 z-[95] hidden items-center justify-center p-4 backdrop-blur-md transition-opacity duration-300">
         <div
-            class="bg-slate-900 border-3 border-[var(--accent-vigor)] rounded-3xl p-6 max-w-md w-full shadow-2xl relative flex flex-col max-h-[90vh] shadow-[0_0_30px_rgba(204,255,0,0.15)]">
+            class="bg-slate-900 border-3 border-[var(--accent-vigor)] rounded-3xl p-6 max-w-md w-full shadow-2xl relative flex flex-col max-h-[90vh] shadow-lg">
 
             <!-- Close Button -->
             <button onclick="closeWorkoutSummaryModal()"
@@ -1208,7 +1208,7 @@
             </button>
 
             <div class="text-center mb-5">
-                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-vigor)]/10 text-[var(--accent-vigor)] border-2 border-[var(--accent-vigor)] shadow-[3px_3px_0px_#000] rounded-2xl mb-3 animate-bounce">
+                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-vigor)]/10 text-[var(--accent-vigor)] border-2 border-[var(--accent-vigor)] shadow-lg rounded-2xl mb-3 animate-bounce">
                     <i data-lucide="trophy" class="w-8 h-8"></i>
                 </div>
                 <h3 class="text-3xl font-black text-white uppercase tracking-tight leading-none mb-1">¡Sesión Finalizada!</h3>
@@ -1218,7 +1218,7 @@
             <!-- Stats Grid -->
             <div class="space-y-4 overflow-y-auto pr-1 mb-5 flex-1">
                 <!-- Elapsed Time -->
-                <div class="bg-slate-950 p-4 border-2 border-[var(--border-strong)] rounded-xl flex items-center justify-between shadow-[3px_3px_0px_#000]">
+                <div class="bg-slate-950 p-4 border-2 border-[var(--border-strong)] rounded-xl flex items-center justify-between shadow-lg">
                     <div class="flex items-center gap-3">
                         <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
                         <span class="text-xs text-slate-300 font-bold uppercase">Duración Total</span>
@@ -1227,7 +1227,7 @@
                 </div>
 
                 <!-- Facu Stats Card -->
-                <div id="summary-facu-card" class="bg-slate-950 p-4 border-2 border-[var(--accent-facu)]/40 rounded-xl shadow-[3px_3px_0px_rgba(0,240,255,0.1)]">
+                <div id="summary-facu-card" class="bg-slate-950 p-4 border-2 border-[var(--accent-facu)]/40 rounded-xl shadow-lg">
                     <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
                         <div class="flex items-center gap-2 text-[var(--accent-facu)]">
                             <i data-lucide="user" class="w-5 h-5"></i>
@@ -1248,7 +1248,7 @@
                 </div>
 
                 <!-- Alma Stats Card -->
-                <div id="summary-alma-card" class="bg-slate-950 p-4 border-2 border-[var(--accent-alma)]/40 rounded-xl shadow-[3px_3px_0px_rgba(255,0,85,0.1)]">
+                <div id="summary-alma-card" class="bg-slate-950 p-4 border-2 border-[var(--accent-alma)]/40 rounded-xl shadow-lg">
                     <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
                         <div class="flex items-center gap-2 text-[var(--accent-alma)]">
                             <i data-lucide="user" class="w-5 h-5"></i>
@@ -1269,7 +1269,7 @@
                 </div>
 
                 <!-- Gems/Gemas earned -->
-                <div class="bg-slate-950 p-4 border-2 border-yellow-500/40 rounded-xl flex items-center justify-between shadow-[3px_3px_0px_rgba(234,179,8,0.1)]">
+                <div class="bg-slate-950 p-4 border-2 border-yellow-500/40 rounded-xl flex items-center justify-between shadow-lg">
                     <div class="flex items-center gap-3">
                         <i data-lucide="gem" class="w-5 h-5 text-yellow-400"></i>
                         <span class="text-xs text-slate-300 font-bold uppercase">Gemas Ganadas</span>
@@ -1281,7 +1281,7 @@
             <!-- Actions -->
             <div class="flex gap-3">
                 <button onclick="saveSessionAndCloseSummary()"
-                    class="flex-1 py-3 bg-[var(--accent-vigor)] text-black border-2 border-black rounded-xl font-bold uppercase tracking-wider transition-all shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none text-center text-sm font-black">
+                    class="flex-1 py-3 bg-[var(--accent-vigor)] text-black border-2 border-black rounded-xl font-bold uppercase tracking-wider transition-all shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none text-center text-sm font-black">
                     Guardar y Registrar
                 </button>
             </div>
@@ -1372,11 +1372,11 @@
             <!-- Legend -->
             <div class="flex gap-6 justify-center mt-4 pt-3 border-t border-slate-800 flex-wrap">
                 <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                    <div class="w-4 h-4 rounded-full bg-red-500 shadow-lg"></div>
                     <span class="text-slate-300 font-medium text-sm">Músculo Primario</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]"></div>
+                    <div class="w-4 h-4 rounded-full bg-yellow-500 shadow-lg"></div>
                     <span class="text-slate-300 font-medium text-sm">Músculo Secundario</span>
                 </div>
             </div>
@@ -1514,9 +1514,9 @@
 
     <!-- Day Edit Modal -->
     <div id="day-modal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4 transition-all duration-300">
-        <div class="bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-6 max-w-sm w-full shadow-[8px_8px_0_#000] relative">
+        <div class="bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-6 max-w-sm w-full shadow-lg relative">
             <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-vigor)] border-2 border-black mb-3 shadow-[4px_4px_0_#000]">
+                <div class="inline-flex items-center justify-center p-3 bg-[var(--accent-vigor)] border-2 border-black mb-3 shadow-lg">
                     <i data-lucide="calendar" class="w-8 h-8 text-black"></i>
                 </div>
                 <h3 id="day-modal-title" class="text-3xl font-black text-white tracking-widest uppercase mt-2">15/01</h3>
@@ -1524,19 +1524,19 @@
             </div>
             <div class="space-y-4">
                 <button onclick="setDayTraining('alma')"
-                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-alma)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-alma)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all flex items-center justify-center gap-2">
+                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-alma)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-alma)] hover:-translate-y-1 hover:shadow-lg font-black uppercase transition-all flex items-center justify-center gap-2">
                     <i data-lucide="user" class="w-5 h-5"></i> Solo Alma
                 </button>
                 <button onclick="setDayTraining('facu')"
-                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-facu)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all flex items-center justify-center gap-2">
+                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-facu)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-facu)] hover:-translate-y-1 hover:shadow-lg font-black uppercase transition-all flex items-center justify-center gap-2">
                     <i data-lucide="user" class="w-5 h-5"></i> Solo Facu
                 </button>
                 <button onclick="setDayTraining('both')"
-                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-vigor)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-vigor)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all flex items-center justify-center gap-2">
+                    class="w-full px-4 py-4 bg-[var(--bg-panel-alt)] text-[var(--accent-vigor)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-vigor)] hover:-translate-y-1 hover:shadow-lg font-black uppercase transition-all flex items-center justify-center gap-2">
                     <i data-lucide="users" class="w-5 h-5"></i> Ambos
                 </button>
                 <button onclick="setDayTraining('clear')"
-                    class="w-full px-4 py-4 bg-[#ff0055] text-white border-2 border-black hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all flex items-center justify-center gap-2 mt-4">
+                    class="w-full px-4 py-4 bg-[#ff0055] text-white border-2 border-black hover:-translate-y-1 hover:shadow-lg font-black uppercase transition-all flex items-center justify-center gap-2 mt-4">
                     <i data-lucide="trash-2" class="w-4 h-4"></i> Borrar registro
                 </button>
             </div>
@@ -1563,9 +1563,9 @@
     <div id="confirm-modal"
         class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 transition-all duration-300 opacity-0 transform scale-95">
         <div
-            class="bg-[var(--bg-panel)] border-[4px] border-[#ff0055] w-full max-w-sm overflow-hidden shadow-[8px_8px_0_#ff0055] animate-pop relative">
+            class="bg-[var(--bg-panel)] border-[4px] border-[#ff0055] w-full max-w-sm overflow-hidden shadow-lg animate-pop relative">
             <div class="p-8 text-center">
-                <div class="inline-flex p-4 bg-[#ff0055] border-2 border-black mb-6 shadow-[4px_4px_0_#000] mx-auto">
+                <div class="inline-flex p-4 bg-[#ff0055] border-2 border-black mb-6 shadow-lg mx-auto">
                     <i data-lucide="triangle-alert" class="w-8 h-8 text-white"></i>
                 </div>
                 <h3 id="confirm-title" class="text-3xl font-black text-white mb-2 uppercase tracking-widest">¿Estás seguro?</h3>
@@ -1573,9 +1573,9 @@
 
                 <div class="flex gap-4">
                     <button id="confirm-cancel-btn"
-                        class="flex-1 py-3 px-4 border-2 border-[var(--border-strong)] text-[var(--text-dim)] hover:text-white hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all">Cancelar</button>
+                        class="flex-1 py-3 px-4 border-2 border-[var(--border-strong)] text-[var(--text-dim)] hover:text-white hover:-translate-y-1 hover:shadow-lg font-black uppercase transition-all">Cancelar</button>
                     <button id="confirm-ok-btn"
-                        class="flex-1 py-3 px-4 bg-[#ff0055] text-white border-2 border-black hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] font-black uppercase transition-all">Confirmar</button>
+                        class="flex-1 py-3 px-4 bg-[#ff0055] text-white border-2 border-black hover:-translate-y-1 hover:shadow-lg font-black uppercase transition-all">Confirmar</button>
                 </div>
             </div>
         </div>
@@ -1666,7 +1666,7 @@
                     <div class="flex gap-3 items-start">
                         <span
                             class="bg-slate-800 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-indigo-400 flex-shrink-0">2</span>
-                        <p>Ve a <strong>Ajustes del Celular ⚙️</strong> > <strong>Aplicaciones</strong>.</p>
+                        <p>Ve a <strong>Ajustes del Celular <i data-lucide="settings" class="w-4 h-4"></i></strong> > <strong>Aplicaciones</strong>.</p>
                     </div>
                     <div class="flex gap-3 items-start">
                         <span
@@ -1843,11 +1843,11 @@
     <!-- MANDATORY SESSION GATEKEEPER: WHO IS TRAINING TODAY -->
     <div id="who-trains-gatekeeper"
         class="fixed inset-0 bg-black/95 z-[100] hidden items-center justify-center p-3 sm:p-4 backdrop-blur-2xl transition-all duration-300 select-none">
-        <div class="gatekeeper-card relative w-full max-w-md bg-slate-900 border-[3px] border-slate-700 shadow-[8px_8px_0px_#000] p-4 sm:p-6 rounded-2xl animate-pop text-center flex flex-col justify-between">
+        <div class="gatekeeper-card relative w-full max-w-md bg-slate-900 border-[3px] border-slate-700 shadow-lg p-4 sm:p-6 rounded-2xl animate-pop text-center flex flex-col justify-between">
             
             <!-- Compact Header -->
             <div class="mb-3 sm:mb-4">
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-950 border border-slate-800 rounded-full mb-1.5 shadow-[2px_2px_0px_#000]">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-950 border border-slate-800 rounded-full mb-1.5 shadow-lg">
                     <span class="w-2 h-2 rounded-full bg-[var(--accent-vigor)] animate-pulse"></span>
                     <span class="text-[9px] font-mono font-black uppercase tracking-widest text-[var(--accent-vigor)]">INICIO DE SESIÓN</span>
                 </div>
@@ -1865,7 +1865,7 @@
                 
                 <!-- Option 1: Solo Facu -->
                 <button type="button" onclick="selectWhoTrainsToday('facu')"
-                    class="group relative w-full p-2.5 sm:p-3.5 bg-slate-950 border-2 border-[var(--accent-facu)]/50 hover:border-[var(--accent-facu)] rounded-xl shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_var(--accent-facu)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all flex items-center justify-between text-left">
+                    class="group relative w-full p-2.5 sm:p-3.5 bg-slate-950 border-2 border-[var(--accent-facu)]/50 hover:border-[var(--accent-facu)] rounded-xl shadow-lg hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all flex items-center justify-between text-left">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-[var(--accent-facu)]/10 border border-[var(--accent-facu)] text-[var(--accent-facu)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                             <i data-lucide="user" class="w-5 h-5"></i>
@@ -1884,14 +1884,14 @@
                             </span>
                         </div>
                     </div>
-                    <div class="w-8 h-8 rounded-lg bg-slate-900 group-hover:bg-[var(--accent-facu)] group-hover:text-black text-slate-400 border border-slate-800 group-hover:border-[var(--accent-facu)] flex items-center justify-center flex-shrink-0 transition-all shadow-[1px_1px_0px_#000]">
+                    <div class="w-8 h-8 rounded-lg bg-slate-900 group-hover:bg-[var(--accent-facu)] group-hover:text-black text-slate-400 border border-slate-800 group-hover:border-[var(--accent-facu)] flex items-center justify-center flex-shrink-0 transition-all shadow-lg">
                         <i data-lucide="chevron-right" class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"></i>
                     </div>
                 </button>
 
                 <!-- Option 2: Solo Alma -->
                 <button type="button" onclick="selectWhoTrainsToday('alma')"
-                    class="group relative w-full p-2.5 sm:p-3.5 bg-slate-950 border-2 border-[var(--accent-alma)]/50 hover:border-[var(--accent-alma)] rounded-xl shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_var(--accent-alma)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all flex items-center justify-between text-left">
+                    class="group relative w-full p-2.5 sm:p-3.5 bg-slate-950 border-2 border-[var(--accent-alma)]/50 hover:border-[var(--accent-alma)] rounded-xl shadow-lg hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all flex items-center justify-between text-left">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-[var(--accent-alma)]/10 border border-[var(--accent-alma)] text-[var(--accent-alma)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                             <i data-lucide="user" class="w-5 h-5"></i>
@@ -1910,14 +1910,14 @@
                             </span>
                         </div>
                     </div>
-                    <div class="w-8 h-8 rounded-lg bg-slate-900 group-hover:bg-[var(--accent-alma)] group-hover:text-white text-slate-400 border border-slate-800 group-hover:border-[var(--accent-alma)] flex items-center justify-center flex-shrink-0 transition-all shadow-[1px_1px_0px_#000]">
+                    <div class="w-8 h-8 rounded-lg bg-slate-900 group-hover:bg-[var(--accent-alma)] group-hover:text-white text-slate-400 border border-slate-800 group-hover:border-[var(--accent-alma)] flex items-center justify-center flex-shrink-0 transition-all shadow-lg">
                         <i data-lucide="chevron-right" class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"></i>
                     </div>
                 </button>
 
                 <!-- Option 3: Ambos (Dúo) -->
                 <button type="button" onclick="selectWhoTrainsToday('both')"
-                    class="group relative w-full p-2.5 sm:p-3.5 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-xl shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_var(--accent-vigor)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all flex items-center justify-between text-left ring-1 ring-[var(--accent-vigor)]/30">
+                    class="group relative w-full p-2.5 sm:p-3.5 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-xl shadow-lg hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all flex items-center justify-between text-left ring-1 ring-[var(--accent-vigor)]/30">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-[var(--accent-vigor)]/10 border border-[var(--accent-vigor)] text-[var(--accent-vigor)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                             <i data-lucide="users" class="w-5 h-5"></i>
@@ -1927,7 +1927,7 @@
                                 <span class="text-base sm:text-lg font-black text-white font-mono leading-none group-hover:text-[var(--accent-vigor)] transition-colors">
                                     AMBOS
                                 </span>
-                                <span class="text-[8px] font-black uppercase font-mono px-1.5 py-0.5 rounded bg-[var(--accent-vigor)] text-black border border-black shadow-[1px_1px_0px_#000]">
+                                <span class="text-[8px] font-black uppercase font-mono px-1.5 py-0.5 rounded bg-[var(--accent-vigor)] text-black border border-black shadow-lg">
                                     DÚO
                                 </span>
                             </div>
@@ -1936,7 +1936,7 @@
                             </span>
                         </div>
                     </div>
-                    <div class="w-8 h-8 rounded-lg bg-[var(--accent-vigor)] text-black border border-black flex items-center justify-center flex-shrink-0 transition-all shadow-[1px_1px_0px_#000] group-hover:bg-white">
+                    <div class="w-8 h-8 rounded-lg bg-[var(--accent-vigor)] text-black border border-black flex items-center justify-center flex-shrink-0 transition-all shadow-lg group-hover:bg-white">
                         <i data-lucide="chevron-right" class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"></i>
                     </div>
                 </button>

@@ -2035,7 +2035,7 @@ function toggleDayModal(dateKey) {
           ${
             facuWater > 0
               ? `<div class="flex items-center gap-1">
-            <span>🙎🏽‍♂️</span>
+            <span><i data-lucide="user" class="w-4 h-4 text-sky-400"></i></span>
             <span class="${facuWater >= 2500 ? "text-emerald-400" : "text-sky-300"}">${facuWater >= 2500 ? "✅ Meta" : facuWater + "ml"}</span>
           </div>`
               : ""
@@ -2043,7 +2043,7 @@ function toggleDayModal(dateKey) {
           ${
             almaWater > 0
               ? `<div class="flex items-center gap-1">
-            <span>🙎🏻‍♀️</span>
+            <span><i data-lucide="user" class="w-4 h-4 text-pink-400"></i></span>
             <span class="${almaWater >= 2000 ? "text-emerald-400" : "text-pink-300"}">${almaWater >= 2000 ? "✅ Meta" : almaWater + "ml"}</span>
           </div>`
               : ""
@@ -2367,7 +2367,7 @@ function renderWaterHistory() {
     item.className =
       "flex justify-between items-center bg-slate-800/50 p-2 rounded-lg text-xs";
     const color = entry.user === "facu" ? "text-blue-400" : "text-pink-400";
-    const icon = entry.user === "facu" ? "🙎🏽‍♂️" : "🙎🏻‍♀️";
+    const icon = entry.user === "facu" ? `<i data-lucide="user" class="w-4 h-4 inline-block text-sky-400"></i>` : `<i data-lucide="user" class="w-4 h-4 inline-block text-pink-400"></i>`;
     item.innerHTML = `
             <span class="flex items-center gap-2 ${color}">
                 <span>${icon}</span>
@@ -2912,7 +2912,7 @@ function createTimerArtworkBlob(user, timeStr, exerciseName) {
     // User Tag
     ctx.fillStyle = primaryColor;
     ctx.font = "900 34px monospace";
-    ctx.fillText(`⚡ ${userName}`, 256, 140);
+    ctx.fillText(`${userName}`, 256, 140);
 
     // Big Time Text
     ctx.fillStyle = "#ffffff";
@@ -2986,7 +2986,7 @@ function renderCharts() {
     card.className = "bg-slate-950 border-2 border-slate-800 p-6 shadow-[4px_4px_0px_#000] relative overflow-hidden transition-all duration-300 hover:shadow-[6px_6px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5";
     card.innerHTML = `
         <h3 class="text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2" style="color: ${user === "facu" ? "var(--accent-facu)" : "var(--accent-alma)"}">
-            ${user === "facu" ? "🙍🏽‍♂️ Volumen de Facu" : "🙍🏻‍♀️ Volumen de Alma"}
+            ${user === "facu" ? "Volumen de Facu" : "Volumen de Alma"}
             <span class="text-xs text-slate-500 font-normal normal-case tracking-normal">(Últimos 14 días)</span>
         </h3>
         ${chartHTML}
@@ -4653,7 +4653,7 @@ function showAchievementModal(achievement, user) {
   tier.textContent = achievement.tier || "Común";
   title.textContent = achievement.title;
   desc.textContent = achievement.desc;
-  userName.textContent = user === "facu" ? "🙎🏽‍♂️ Facu" : "🙎🏻‍♀️ Alma";
+  userName.innerHTML = user === "facu" ? `<i data-lucide="user" class="w-5 h-5 inline-block text-sky-400"></i> Facu` : `<i data-lucide="user" class="w-5 h-5 inline-block text-pink-400"></i> Alma`; setTimeout(() => lucide.createIcons(), 50);
   userName.className = `font-bold ${user === "facu" ? "text-blue-400" : "text-pink-400"}`;
 
   // Show modal with animation
@@ -4736,11 +4736,11 @@ function renderAchievements() {
             
             <div class="mt-auto w-full flex justify-center gap-3 border-t border-slate-700/50 pt-2">
                  <div class="flex items-center gap-1 ${facuHas ? "opacity-100" : "opacity-30"}" title="Facu">
-                    <span class="text-xs">🙍🏽‍♂️</span>
+                    <i data-lucide="user" class="w-4 h-4 text-sky-400"></i>
                     ${facuHas ? '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>' : '<i data-lucide="lock" class="w-3 h-3 text-slate-600"></i>'}
                  </div>
                  <div class="flex items-center gap-1 ${almaHas ? "opacity-100" : "opacity-30"}" title="Alma">
-                    <span class="text-xs">🙍🏻‍♀️</span>
+                    <i data-lucide="user" class="w-4 h-4 text-pink-400"></i>
                     ${almaHas ? '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>' : '<i data-lucide="lock" class="w-3 h-3 text-slate-600"></i>'}
                  </div>
             </div>
@@ -7252,9 +7252,9 @@ function renderAchievements() {
     if (isUnlocked) {
       whoHasHTML = '<div class="flex items-center gap-1 mt-3 justify-center">';
       if (facuHas)
-        whoHasHTML += '<span title="Facu lo tiene" class="text-xs">🙎🏽‍♂️</span>';
+        whoHasHTML += '<i data-lucide="user" class="w-4 h-4 text-sky-400 inline" title="Facu lo tiene"></i>';
       if (almaHas)
-        whoHasHTML += '<span title="Alma lo tiene" class="text-xs">🙎🏻‍♀️</span>';
+        whoHasHTML += '<i data-lucide="user" class="w-4 h-4 text-pink-400 inline" title="Alma lo tiene"></i>';
       whoHasHTML += "</div>";
     } else {
       whoHasHTML = '<div class="h-4 mt-3 opacity-0">.</div>'; // Spacer
@@ -7873,7 +7873,7 @@ async function sendAIChatMessage() {
   // Get API Key
   const apiKey = localStorage.getItem("gymGeminiApiKey");
   if (!apiKey) {
-    addChatMessage("assistant", "⚠️ **Clave API de Gemini no configurada.** Por favor, ve al menú lateral, abre tu Perfil (icono de engranaje arriba) e introduce una API Key válida de Gemini para poder hablar conmigo y armar la rutina.");
+    addChatMessage("assistant", "**Clave API de Gemini no configurada.** Por favor, ve al menú lateral, abre tu Perfil (icono de engranaje arriba) e introduce una API Key válida de Gemini para poder hablar conmigo y armar la rutina.");
     return;
   }
   
@@ -7957,8 +7957,8 @@ No inventes propiedades adicionales en el JSON. No uses bloques adicionales de f
     addChatMessage(
       "assistant",
       isBusy
-        ? "⚠️ **Coach Vigor está saturado ahora mismo.** Probá de nuevo en unos segundos; ya intenté con modelos alternativos automáticamente."
-        : `❌ **Error al consultar a Coach Vigor:** ${error.message}. No parece ser tu clave API; probá de nuevo en unos segundos.`,
+        ? "**Coach Vigor está saturado ahora mismo.** Probá de nuevo en unos segundos; ya intenté con modelos alternativos automáticamente."
+        : `**Error al consultar a Coach Vigor:** ${error.message}. No parece ser tu clave API; probá de nuevo en unos segundos.`,
     );
   }
 }
@@ -8283,7 +8283,7 @@ function updateOverloadStats(user, currentVol, prevVol) {
     
     if (percentDiff > 0) {
       diffEl.className = "font-mono font-black text-emerald-400 text-sm";
-      badgeEl.textContent = "💪 Sobrecarga";
+      badgeEl.innerHTML = `<i data-lucide="trending-up" class="w-3 h-3 inline-block"></i> Sobrecarga`;
       badgeEl.className = `text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-black uppercase font-mono`;
     } else if (percentDiff < 0) {
       diffEl.className = "font-mono font-black text-rose-500 text-sm";
