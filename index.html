@@ -1150,12 +1150,19 @@
         <!-- Full Timer Modal -->
         <div id="timer-full"
             class="relative bg-[var(--bg-panel)] border-[4px] border-[var(--border-strong)] p-8 max-w-md w-full text-center transition-all duration-300 shadow-[8px_8px_0_#000]">
-            <!-- Minimize Button -->
-            <button id="timer-minimize-btn"
-                class="absolute top-4 right-4 p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] active:translate-y-0 active:shadow-none transition-all"
-                title="Minimizar">
-                <i data-lucide="minimize-2" class="w-6 h-6 text-white"></i>
-            </button>
+            <!-- Top Controls: PiP & Minimize -->
+            <div class="absolute top-4 right-4 flex items-center gap-2">
+                <button id="timer-pip-btn" onclick="togglePipTimer()"
+                    class="p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:border-[var(--accent-vigor)] text-slate-300 hover:text-[var(--accent-vigor)] hover:-translate-y-0.5 hover:shadow-[2px_2px_0_#000] active:translate-y-0 active:shadow-none transition-all rounded-lg"
+                    title="Activar temporizador flotante (para ver en Instagram/otras apps)">
+                    <i data-lucide="picture-in-picture-2" class="w-5 h-5"></i>
+                </button>
+                <button id="timer-minimize-btn"
+                    class="p-2 bg-[var(--bg-base)] border-2 border-[var(--border-strong)] hover:-translate-y-0.5 hover:shadow-[2px_2px_0_#000] active:translate-y-0 active:shadow-none transition-all rounded-lg"
+                    title="Minimizar">
+                    <i data-lucide="minimize-2" class="w-5 h-5 text-white"></i>
+                </button>
+            </div>
             
             <div class="mb-6 timer-header-anim animate-slide-up stagger-1">
                 <i data-lucide="timer" class="w-16 h-16 text-[var(--text-main)] mx-auto mb-4 animate-float"></i>
@@ -2055,6 +2062,10 @@
             </div>
         </div>
     </div>
+
+    <!-- Hidden PiP Video and Canvas for Live Background/Floating Timer -->
+    <canvas id="pip-timer-canvas" width="480" height="270" class="hidden" style="display: none;"></canvas>
+    <video id="pip-timer-video" autoplay muted playsinline class="hidden" style="display: none;"></video>
 
     <script src="config.js"></script>
     <script src="script.js" defer></script>

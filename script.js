@@ -453,6 +453,7 @@ window.openWhoTrainsModal = openWhoTrainsModal;
 window.closeWhoTrainsModal = closeWhoTrainsModal;
 window.updateWhoTrainsUI = updateWhoTrainsUI;
 window.checkPromptWhoTrainsToday = checkPromptWhoTrainsToday;
+window.togglePipTimer = togglePipTimer;
 
 // Data Migration for legacy users (preserves weights & progress under routine-1)
 function migrateLegacyData() {
@@ -2819,51 +2820,233 @@ function parseReps(repsStr) {
   return 10;
 }
 
-// --- SILENT AUDIO FOR BACKGROUND & LOCK SCREEN ---
-// 1 second of silence mp3
+// --- SILENT AUDIO & LOCK SCREEN / DYNAMIC ISLAND MEDIA SESSION ---
 const SILENT_AUDIO_URI =
   "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAAAAAAAAAAAAACCAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA";
 let bgAudio = new Audio(SILENT_AUDIO_URI);
 bgAudio.loop = true;
 
-function enableBackgroundMode(exerciseName, duration) {
-  // Play silent audio to keep background active
+// Dynamic Lock Screen & Dynamic Island Artwork Generator
+function createTimerArtworkBlob(user, timeStr, exerciseName) {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "favicon.svg";
+
+    const isFacu = user === "facu";
+    const primaryColor = isFacu ? "#00f0ff" : "#ff0055";
+    const userName = isFacu ? "FACU" : "ALMA";
+
+    // Deep Dark Background
+    ctx.fillStyle = "#020617";
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Neon Frame
+    ctx.strokeStyle = primaryColor;
+    ctx.lineWidth = 14;
+    ctx.strokeRect(14, 14, 484, 484);
+
+    // Top Header
+    ctx.fillStyle = "#64748b";
+    ctx.font = "bold 24px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("VIGOR // DESCANSO", 256, 85);
+
+    // User Tag
+    ctx.fillStyle = primaryColor;
+    ctx.font = "900 34px monospace";
+    ctx.fillText(`⚡ ${userName}`, 256, 140);
+
+    // Big Time Text
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 110px monospace";
+    ctx.fillText(timeStr, 256, 275);
+
+    // Exercise Name
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 28px sans-serif";
+    const shortEx = exerciseName.length > 22 ? exerciseName.substring(0, 20) + "..." : exerciseName;
+    ctx.fillText(shortEx, 256, 365);
+
+    // Footer
+    ctx.fillStyle = primaryColor;
+    ctx.font = "bold 22px monospace";
+    ctx.fillText("⏱️ TEMPORIZADOR ACTIVO", 256, 430);
+
+    return canvas.toDataURL("image/png");
+  } catch (e) {
+    return "favicon.svg";
+  }
+}
+
+// Picture-in-Picture (PiP) Floating Live Countdown Engine
+let pipStream = null;
+let pipActive = false;
+
+function initPipElements() {
+  const canvas = document.getElementById("pip-timer-canvas");
+  const video = document.getElementById("pip-timer-video");
+  if (canvas && video && !pipStream) {
+    try {
+      pipStream = canvas.captureStream(30);
+      video.srcObject = pipStream;
+      video.play().catch(() => {});
+    } catch (e) {
+      console.warn("PiP stream init error:", e);
+    }
+  }
+}
+
+function renderPipCanvas(user, displaySeconds, totalSeconds, exerciseName) {
+  const canvas = document.getElementById("pip-timer-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const isFacu = user === "facu";
+  const accentColor = isFacu ? "#00f0ff" : "#ff0055";
+  const userName = isFacu ? "FACU" : "ALMA";
+
+  const mins = Math.floor(displaySeconds / 60);
+  const secs = displaySeconds % 60;
+  const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+  // Dark slate background
+  ctx.fillStyle = "#020617";
+  ctx.fillRect(0, 0, width, height);
+
+  // Brutalist glowing frame
+  ctx.strokeStyle = displaySeconds <= 10 ? "#ef4444" : accentColor;
+  ctx.lineWidth = 8;
+  ctx.strokeRect(4, 4, width - 8, height - 8);
+
+  // Top header: User badge & App title
+  ctx.fillStyle = accentColor;
+  ctx.font = "bold 18px monospace";
+  ctx.textAlign = "left";
+  ctx.fillText(`⚡ ${userName}`, 24, 38);
+
+  ctx.fillStyle = "#64748b";
+  ctx.font = "bold 14px monospace";
+  ctx.textAlign = "right";
+  ctx.fillText("VIGOR GYM", width - 24, 38);
+
+  // Big Countdown Time
+  ctx.fillStyle = displaySeconds <= 10 ? "#ff0055" : "#ffffff";
+  ctx.font = "900 86px monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(timeStr, width / 2, 132);
+
+  // Exercise Name
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "bold 20px sans-serif";
+  const shortEx = exerciseName && exerciseName.length > 24 ? exerciseName.substring(0, 22) + "..." : (exerciseName || "Descanso");
+  ctx.fillText(shortEx, width / 2, 180);
+
+  // Progress Track & Bar at bottom
+  const barWidth = width - 48;
+  const barHeight = 12;
+  const barX = 24;
+  const barY = height - 42;
+  const progress = totalSeconds > 0 ? Math.max(0, Math.min(1, displaySeconds / totalSeconds)) : 0;
+
+  // Track
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(barX, barY, barWidth, barHeight);
+
+  // Fill
+  ctx.fillStyle = displaySeconds <= 10 ? "#ef4444" : accentColor;
+  ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+}
+
+async function togglePipTimer() {
+  const video = document.getElementById("pip-timer-video");
+  if (!video) return;
+
+  try {
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture();
+      pipActive = false;
+    } else {
+      initPipElements();
+      const user = activeFullModalUser || (timerState.facu.active ? "facu" : "alma");
+      const state = timerState[user];
+      if (state) {
+        renderPipCanvas(user, state.currentSeconds, state.totalSeconds, state.exerciseName);
+      }
+      await video.play();
+      await video.requestPictureInPicture();
+      pipActive = true;
+    }
+  } catch (e) {
+    console.warn("PiP toggle error:", e);
+  }
+}
+
+function enableBackgroundMode(exerciseName, duration, user = "facu") {
+  initPipElements();
+  const state = timerState[user] || { currentSeconds: duration, totalSeconds: duration };
+  const displaySeconds = Math.max(0, state.currentSeconds);
+  const mins = Math.floor(displaySeconds / 60);
+  const secs = displaySeconds % 60;
+  const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+  const userName = user === "facu" ? "Facu" : "Alma";
+
+  renderPipCanvas(user, displaySeconds, duration, exerciseName);
+
+  // Play silent audio to keep audio session / web worker alive in lock screen
   bgAudio
     .play()
     .then(() => {
-      logToScreen("🔊 Audio Silencioso ACTIVO (Lock Screen Mode)", "success");
-      // Setup Lock Screen Media Controls
       if ("mediaSession" in navigator) {
+        const artworkUrl = createTimerArtworkBlob(user, timeStr, exerciseName);
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: `Descanso: ${exerciseName}`,
-          artist: "GymRutina",
+          title: `⏱️ ${timeStr} - ${exerciseName} (${userName})`,
+          artist: `Descanso: ${timeStr} // VIGOR`,
+          album: `VIGOR GYM`,
           artwork: [
+            { src: artworkUrl, sizes: "512x512", type: "image/png" },
             { src: "favicon.svg", sizes: "96x96", type: "image/svg+xml" },
-            { src: "favicon.svg", sizes: "128x128", type: "image/svg+xml" },
           ],
         });
         navigator.mediaSession.playbackState = "playing";
 
-        // Attempt to show progress bar
         try {
           navigator.mediaSession.setPositionState({
             duration: duration,
             playbackRate: 1,
-            position: 0,
+            position: Math.max(0, duration - displaySeconds),
           });
-        } catch (e) {
-          logToScreen("Media Session Position Error: " + e, "error");
-        }
+        } catch (e) {}
+
+        // Media Action handlers for Lock Screen
+        try {
+          navigator.mediaSession.setActionHandler("nexttrack", () => {
+            if (activeFullModalUser) skipTimer(activeFullModalUser);
+          });
+          navigator.mediaSession.setActionHandler("previoustrack", () => {
+            if (activeFullModalUser) addTimerSeconds(activeFullModalUser, 30);
+          });
+          navigator.mediaSession.setActionHandler("pause", () => {
+            if (activeFullModalUser) skipTimer(activeFullModalUser);
+          });
+          navigator.mediaSession.setActionHandler("play", () => {
+            // Keep playing
+          });
+        } catch (e) {}
       }
     })
-    .catch((e) => logToScreen("❌ Audio Silencioso FALLÓ: " + e, "error"));
+    .catch((e) => console.warn("Background audio play error:", e));
 }
 
 function disableBackgroundMode() {
   try {
     bgAudio.pause();
     bgAudio.currentTime = 0;
-    logToScreen("🔇 Audio Silencioso DESACTIVADO (Idle Mode)", "info");
     if ("mediaSession" in navigator) {
       navigator.mediaSession.playbackState = "paused";
     }
@@ -3127,7 +3310,7 @@ function showTimer(user, exerciseName, seconds) {
 
   // Audio & Lock
   requestWakeLock();
-  enableBackgroundMode(exerciseName, seconds);
+  enableBackgroundMode(exerciseName, seconds, user);
 }
 
 function startGlobalTimerIfNeeded() {
@@ -3155,53 +3338,40 @@ function startGlobalTimerIfNeeded() {
     if (!anyoneActive) {
       clearInterval(globalTimerInterval);
       globalTimerInterval = null;
+      document.title = "VIGOR // GYM";
       releaseWakeLock();
       disableBackgroundMode();
     } else {
-      // Only update UI if seconds changed to avoid flickering/thrashing
-      const state = timerState[activeFullModalUser || "facu"]; // Fallback check
-      // We need to check if ANY active timer changed seconds, or just the main one.
-      // Since we update the global UI based on the active full modal...
-
-      // Let's perform a smart check.
-      // We will blindly call methods but optimize INSIDE them or just check the main user here.
-
-      // Actually, simplest fix: Let's throttling `setPositionState` and `updateTimerDisplay`
-      // We can check if ANY active timer has a new second value?
-      // But `currentSeconds` is updated above.
-
-      // Let's skip the complicated tracking and just rely on the fact that we calculated `currentSeconds`.
-      // We will modify updateTimerDisplay to be smarter? No, easier to block call here.
-
       updateTimerDisplay();
 
-      // Update Lock Screen Media Player position (live countdown)
-      // Throttle this to only when seconds change (handled by native throttling usually, but let's be safe)
-      if (
-        "mediaSession" in navigator &&
-        activeFullModalUser &&
-        timerState[activeFullModalUser].active
-      ) {
-        const state = timerState[activeFullModalUser];
-        // Ensure strictly positive for setPositionState validation
-        if (
-          state.currentSeconds >= 0 &&
-          state.totalSeconds >= state.currentSeconds
-        ) {
+      const mainUser = activeFullModalUser || (timerState.facu.active ? "facu" : "alma");
+      const state = timerState[mainUser];
+
+      if (state && state.active) {
+        const displaySecs = Math.max(0, state.currentSeconds);
+        const mins = Math.floor(displaySecs / 60);
+        const secs = displaySecs % 60;
+        const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+        const userName = mainUser === "facu" ? "Facu" : "Alma";
+
+        // Update PiP canvas
+        renderPipCanvas(mainUser, displaySecs, state.totalSeconds, state.exerciseName);
+
+        // Update document tab title
+        document.title = `⏱️ ${timeStr} | ${state.exerciseName} - VIGOR`;
+
+        // Update Lock Screen & Dynamic Island Media Player
+        if ("mediaSession" in navigator && state.lastMediaUpdate !== displaySecs) {
+          state.lastMediaUpdate = displaySecs;
           try {
-            // Only update if it's a new second to avoid flickering system UI
-            // We can check against a stored 'lastUpdatedSecond' in state
-            if (state.lastMediaUpdate !== state.currentSeconds) {
-              navigator.mediaSession.setPositionState({
-                duration: state.totalSeconds,
-                playbackRate: 1,
-                position: state.totalSeconds - state.currentSeconds,
-              });
-              state.lastMediaUpdate = state.currentSeconds;
-            }
-          } catch (e) {
-            // Ignore position errors
-          }
+            navigator.mediaSession.metadata.title = `⏱️ ${timeStr} - ${state.exerciseName} (${userName})`;
+            navigator.mediaSession.metadata.artist = `Descanso: ${timeStr} restantes // VIGOR`;
+            navigator.mediaSession.setPositionState({
+              duration: state.totalSeconds,
+              playbackRate: 1,
+              position: Math.max(0, state.totalSeconds - displaySecs),
+            });
+          } catch (e) {}
         }
       }
     }
@@ -3214,6 +3384,13 @@ function handleTimerComplete(user) {
 
   // Sound
   playTimerEnd();
+
+  // Exit PiP if running
+  if (document.pictureInPictureElement) {
+    document.exitPictureInPicture().catch(() => {});
+  }
+  renderPipCanvas(user, 0, state.totalSeconds, state.exerciseName);
+  document.title = `¡TIEMPO! - ${state.exerciseName} (${user === "facu" ? "Facu" : "Alma"})`;
 
   // Notifications
   if (Notification.permission === "granted") {
@@ -3236,8 +3413,6 @@ function handleTimerComplete(user) {
   }
 
   // Auto-hide UI after delay
-  // If this user was Full Screen, hide modal.
-  // If this user was Minimized, remove bubble.
   setTimeout(() => {
     hideTimer(user);
   }, 1500);
