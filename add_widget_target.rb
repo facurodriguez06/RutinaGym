@@ -46,6 +46,7 @@ end
 widget_target.build_configurations.each do |config|
   config.build_settings['INFOPLIST_FILE'] = 'App/VigorWidgets/Info.plist'
   config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.vigor.app.VigorWidgets'
+  config.build_settings['PRODUCT_NAME'] = 'VigorWidgets'
   config.build_settings['SWIFT_VERSION'] = '5.0'
   config.build_settings['TARGETED_DEVICE_FAMILY'] = '1'
   config.build_settings['SKIP_INSTALL'] = 'YES'
