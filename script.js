@@ -3323,7 +3323,7 @@ function handleTimerComplete(user) {
   // End Native iOS Live Activity
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {
-    LiveActivity.endRestTimer().catch(() => {});
+    LiveActivity.endRestTimer({ userName: user === "facu" ? "Facu" : "Alma" }).catch(() => {});
   }
 
   document.title = `¡TIEMPO! - ${state.exerciseName} (${user === "facu" ? "Facu" : "Alma"})`;
@@ -3647,7 +3647,7 @@ function updateTimerDisplay() {
 function hideTimer(user) {
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {
-    LiveActivity.endRestTimer().catch(() => {});
+    LiveActivity.endRestTimer({ userName: user === "facu" ? "Facu" : "Alma" }).catch(() => {});
   }
 
   if (user) {
