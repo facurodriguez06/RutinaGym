@@ -2,7 +2,7 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-@available(iOSApplicationExtension 16.1, *)
+@available(iOS 16.1, *)
 public struct RestTimerLiveActivity: Widget {
     public init() {}
     

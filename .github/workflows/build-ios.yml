@@ -26,9 +26,6 @@ jobs:
           npm run build
           npx cap sync ios
 
-      - name: Select Xcode Version
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app || sudo xcode-select -s /Applications/Xcode.app
-
       - name: Build Xcode Project
         run: |
           cd ios/App
@@ -36,6 +33,7 @@ jobs:
             xcodebuild -workspace App.xcworkspace \
               -scheme App \
               -configuration Release \
+              -sdk iphoneos \
               -destination 'generic/platform=iOS' \
               -derivedDataPath build \
               CODE_SIGNING_ALLOWED=NO \
@@ -46,6 +44,7 @@ jobs:
             xcodebuild -project App.xcodeproj \
               -scheme App \
               -configuration Release \
+              -sdk iphoneos \
               -destination 'generic/platform=iOS' \
               -derivedDataPath build \
               CODE_SIGNING_ALLOWED=NO \
