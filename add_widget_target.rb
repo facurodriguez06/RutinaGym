@@ -9,6 +9,14 @@ if app_target.nil?
   exit 1
 end
 
+# CLEANUP: Remove any existing references to RestTimerAttributes.swift to avoid duplicates
+existing_refs = project.files.select { |f| f.path == 'RestTimerAttributes.swift' }
+existing_refs.each do |ref|
+  app_target.source_build_phase.remove_file_reference(ref)
+  ref.remove_from_project
+  puts "Cleaned up old RestTimerAttributes.swift reference."
+end
+
 if project.targets.any? { |t| t.name == 'VigorWidgets' }
   puts "Target VigorWidgets already exists."
   exit 0
