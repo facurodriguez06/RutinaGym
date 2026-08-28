@@ -214,6 +214,7 @@ button:active {
 }
 
 /* Modals */
+#who-trains-gatekeeper,
 #who-trains-modal,
 #timer-modal,
 #calculator-modal,
@@ -229,6 +230,7 @@ button:active {
   overflow-y: auto !important;
 }
 
+#who-trains-gatekeeper:not(.hidden),
 #who-trains-modal:not(.hidden),
 #timer-modal:not(.hidden),
 #calculator-modal:not(.hidden),
@@ -245,6 +247,7 @@ button:active {
   padding: 1.5rem 1rem !important;
 }
 
+#who-trains-gatekeeper > div,
 #who-trains-modal > div,
 #timer-modal > div,
 #calculator-modal > div,

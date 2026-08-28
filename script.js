@@ -373,11 +373,22 @@ let completedSets = {};
 let setWeights = {};
 let lastLocalUpdates = {};
 let whoTrainsToday = localStorage.getItem("gymWhoTrainsToday") || "both"; // 'both', 'facu', 'alma'
+let sessionTraineeSelected = false;
 
-function openWhoTrainsModal() {
-  const modal = document.getElementById("who-trains-modal");
+function openWhoTrainsModal(canCancel = false) {
+  const modal = document.getElementById("who-trains-gatekeeper");
+  const closeBtn = document.getElementById("who-trains-close-btn");
   if (modal) {
-    modal.classList.remove("hidden");
+    if (closeBtn) {
+      if (canCancel) {
+        closeBtn.classList.remove("hidden");
+        closeBtn.classList.add("inline-block");
+      } else {
+        closeBtn.classList.add("hidden");
+        closeBtn.classList.remove("inline-block");
+      }
+    }
+    modal.classList.remove("hidden", "opacity-0", "pointer-events-none");
     modal.classList.add("flex");
     if (typeof lucide !== "undefined" && lucide.createIcons) {
       lucide.createIcons();
@@ -386,10 +397,13 @@ function openWhoTrainsModal() {
 }
 
 function closeWhoTrainsModal() {
-  const modal = document.getElementById("who-trains-modal");
+  const modal = document.getElementById("who-trains-gatekeeper");
   if (modal) {
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
+    modal.classList.add("opacity-0", "pointer-events-none");
+    setTimeout(() => {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex", "opacity-0", "pointer-events-none");
+    }, 250);
   }
 }
 
@@ -398,8 +412,10 @@ function selectWhoTrainsToday(who) {
     who = "both";
   }
   whoTrainsToday = who;
+  sessionTraineeSelected = true;
   localStorage.setItem("gymWhoTrainsToday", who);
   localStorage.setItem("gymWhoTrainsPromptDate", new Date().toDateString());
+  
   closeWhoTrainsModal();
   updateWhoTrainsUI();
   renderContent();
@@ -414,6 +430,27 @@ function updateWhoTrainsUI() {
     if (whoTrainsToday === "facu") label.textContent = "Solo Facu";
     else if (whoTrainsToday === "alma") label.textContent = "Solo Alma";
     else label.textContent = "Ambos (Facu y Alma)";
+  }
+
+  const headerLabel = document.getElementById("header-who-label");
+  const headerBtn = document.getElementById("header-who-trains-btn");
+  if (headerLabel) {
+    if (whoTrainsToday === "facu") {
+      headerLabel.textContent = "Facu";
+      if (headerBtn) {
+        headerBtn.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-facu)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-facu)] hover:bg-[var(--accent-facu)] hover:text-black transition-all shadow-[2px_2px_0px_#000] active:translate-y-0.5";
+      }
+    } else if (whoTrainsToday === "alma") {
+      headerLabel.textContent = "Alma";
+      if (headerBtn) {
+        headerBtn.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-alma)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-alma)] hover:bg-[var(--accent-alma)] hover:text-white transition-all shadow-[2px_2px_0px_#000] active:translate-y-0.5";
+      }
+    } else {
+      headerLabel.textContent = "Ambos";
+      if (headerBtn) {
+        headerBtn.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-vigor)] hover:bg-[var(--accent-vigor)] hover:text-black transition-all shadow-[2px_2px_0px_#000] active:translate-y-0.5";
+      }
+    }
   }
 
   const btnFacu = document.getElementById("btn-who-facu");
@@ -447,10 +484,9 @@ function updateWhoTrainsUI() {
 }
 
 function checkPromptWhoTrainsToday() {
-  const todayStr = new Date().toDateString();
-  const lastPromptDate = localStorage.getItem("gymWhoTrainsPromptDate");
-  if (lastPromptDate !== todayStr) {
-    openWhoTrainsModal();
+  // Gatekeeper: Always require user to pick who trains upon launching the web app
+  if (!sessionTraineeSelected) {
+    openWhoTrainsModal(false);
   }
   updateWhoTrainsUI();
 }
