@@ -3232,22 +3232,22 @@ function showTimer(user, exerciseName, seconds) {
     " isNative=" + (window.Capacitor?.isNativePlatform ? window.Capacitor.isNativePlatform() : "N/A") +
     " Plugins=" + (window.Capacitor?.Plugins ? Object.keys(window.Capacitor.Plugins).join(",") : "none") +
     " registerPlugin=" + !!(window.Capacitor?.registerPlugin);
-  if (LiveActivity) {
-    LiveActivity.startRestTimer({
+  if (window.Capacitor?.Plugins?.LiveActivity) {
+    window.Capacitor.Plugins.LiveActivity.startRestTimer({
       exerciseName: exerciseName,
       userName: user === "facu" ? "Facu" : "Alma",
       seconds: seconds
     }).then(result => {
-      if (result && result.success === false) {
-        alert("[LA] Error: " + (result.message || "unknown"));
+      if (!result || !result.success) {
+        console.error("[LA] Error: ", result?.message || "unknown");
       } else {
-        alert("[LA] OK! id=" + (result?.id || "?") + " | " + capInfo);
+        console.log("[LA] OK! id=", result.id);
       }
     }).catch(e => {
-      alert("[LA] Exception: " + (e.message || e) + " | " + capInfo);
+      console.error("[LA] Exception: ", e);
     });
   } else {
-    alert("[LA] Plugin NOT found. " + capInfo);
+    console.warn("[LA] Plugin NOT found.", capInfo);
   }
 }
 
