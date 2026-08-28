@@ -2821,9 +2821,45 @@ function parseReps(repsStr) {
 }
 
 // --- SILENT AUDIO & LOCK SCREEN / DYNAMIC ISLAND MEDIA SESSION ---
-const SILENT_AUDIO_URI =
-  "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAAAAAAAAAAAAACCAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA//OEMAAAAAAABiAAAAAAAAAAAgAAAAAAAAAAAAAA";
-let bgAudio = new Audio(SILENT_AUDIO_URI);
+function createSilentAudioDataUri() {
+  const sampleRate = 8000;
+  const numChannels = 1;
+  const bitsPerSample = 8;
+  const durationSec = 10;
+  const numSamples = sampleRate * durationSec;
+  const dataSize = numSamples * numChannels * (bitsPerSample / 8);
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  // RIFF header
+  view.setUint32(0, 0x52494646, false); // "RIFF"
+  view.setUint32(4, 36 + dataSize, true);
+  view.setUint32(8, 0x57415645, false); // "WAVE"
+  // fmt chunk
+  view.setUint32(12, 0x666d7420, false); // "fmt "
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true);
+  view.setUint16(32, numChannels * (bitsPerSample / 8), true);
+  view.setUint16(34, bitsPerSample, true);
+  // data chunk
+  view.setUint32(36, 0x64617461, false); // "data"
+  view.setUint32(40, dataSize, true);
+  // 8-bit PCM silence is 128 (0x80)
+  for (let i = 0; i < dataSize; i++) {
+    view.setUint8(44 + i, 128);
+  }
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return "data:audio/wav;base64," + btoa(binary);
+}
+
+let bgAudio = new Audio(createSilentAudioDataUri());
 bgAudio.loop = true;
 
 // Dynamic Lock Screen & Dynamic Island Artwork Generator
@@ -2965,19 +3001,37 @@ function renderPipCanvas(user, displaySeconds, totalSeconds, exerciseName) {
 
 async function togglePipTimer() {
   const video = document.getElementById("pip-timer-video");
-  if (!video) return;
+  const canvas = document.getElementById("pip-timer-canvas");
+  if (!video || !canvas) return;
 
   try {
+    initPipElements();
+    const user = activeFullModalUser || (timerState.facu.active ? "facu" : "alma");
+    const state = timerState[user] || { currentSeconds: 60, totalSeconds: 60, exerciseName: "Descanso" };
+    renderPipCanvas(user, state.currentSeconds, state.totalSeconds, state.exerciseName);
+
+    // Standard Picture-in-Picture check
     if (document.pictureInPictureElement) {
       await document.exitPictureInPicture();
       pipActive = false;
-    } else {
-      initPipElements();
-      const user = activeFullModalUser || (timerState.facu.active ? "facu" : "alma");
-      const state = timerState[user];
-      if (state) {
-        renderPipCanvas(user, state.currentSeconds, state.totalSeconds, state.exerciseName);
+      return;
+    }
+
+    // iOS Safari WebKit presentation mode
+    if (typeof video.webkitSetPresentationMode === "function") {
+      if (video.webkitPresentationMode === "picture-in-picture") {
+        video.webkitSetPresentationMode("inline");
+        pipActive = false;
+      } else {
+        await video.play();
+        video.webkitSetPresentationMode("picture-in-picture");
+        pipActive = true;
       }
+      return;
+    }
+
+    // Standard HTML5 Picture-in-Picture
+    if (video.requestPictureInPicture) {
       await video.play();
       await video.requestPictureInPicture();
       pipActive = true;
@@ -2998,7 +3052,7 @@ function enableBackgroundMode(exerciseName, duration, user = "facu") {
 
   renderPipCanvas(user, displaySeconds, duration, exerciseName);
 
-  // Play silent audio to keep audio session / web worker alive in lock screen
+  // Play audio to keep audio session / web worker alive in lock screen
   bgAudio
     .play()
     .then(() => {
