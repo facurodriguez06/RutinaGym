@@ -236,11 +236,6 @@
                     <i data-lucide="folder-cog" class="w-5 h-5 group-hover:text-blue-400 transition-colors"></i>
                     <span class="font-medium">Mis Rutinas</span>
                 </button>
-                <button onclick="toggleSidebar(); openWhoTrainsModal(true);"
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all group">
-                    <i data-lucide="users-2" class="w-5 h-5 group-hover:text-[var(--accent-vigor)] transition-colors"></i>
-                    <span class="font-medium">¿Quién entrena hoy?</span>
-                </button>
                 <div class="my-4 border-t border-slate-800/50"></div>
                 <button onclick="openCalculatorModal()"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all group">
@@ -282,13 +277,13 @@
                         VIGOR
                     </h1>
 
-                    <!-- Active Trainee Switcher Badge -->
-                    <button onclick="openWhoTrainsModal(true)" id="header-who-trains-btn"
-                        class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-vigor)] hover:bg-[var(--accent-vigor)] hover:text-black transition-all shadow-[2px_2px_0px_#000] active:translate-y-0.5"
-                        title="Cambiar quién entrena hoy">
+                    <!-- Static Trainee Indicator Badge -->
+                    <div id="header-who-badge"
+                        class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-vigor)] shadow-[2px_2px_0px_#000]"
+                        title="Modo de entrenamiento activo">
                         <i data-lucide="users" class="w-3.5 h-3.5"></i>
                         <span id="header-who-label">Ambos</span>
-                    </button>
+                    </div>
                 </div>
 
                 <!-- Right: Date & Weather (hidden on mobile, shown in sidebar instead) -->
@@ -322,30 +317,6 @@
 
             <!-- Main Content -->
             <div class="flex-1 w-full">
-
-                <!-- Who is Training Selector Bar -->
-                <div id="who-trains-bar" class="mb-4 flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-900 border-2 border-slate-800 shadow-[4px_4px_0px_#000] animate-slide-up">
-                    <div class="flex items-center gap-2.5 cursor-pointer" onclick="openWhoTrainsModal()" title="Cambiar quién entrena hoy">
-                        <div class="p-1.5 bg-slate-950 border border-slate-800 text-[var(--accent-vigor)] flex items-center justify-center">
-                            <i data-lucide="users" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <span class="text-[9px] text-[var(--text-dim)] font-black uppercase tracking-wider block font-mono">Entrenamiento de hoy</span>
-                            <span id="who-trains-label" class="text-sm font-black uppercase tracking-wide text-white">Ambos (Facu y Alma)</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="selectWhoTrainsToday('facu')" id="btn-who-facu" class="h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-slate-800 bg-slate-950 text-slate-400 hover:text-[var(--accent-facu)] hover:border-[var(--accent-facu)] transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
-                            <i data-lucide="user" class="w-3.5 h-3.5"></i> Facu
-                        </button>
-                        <button onclick="selectWhoTrainsToday('alma')" id="btn-who-alma" class="h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-slate-800 bg-slate-950 text-slate-400 hover:text-[var(--accent-alma)] hover:border-[var(--accent-alma)] transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
-                            <i data-lucide="user" class="w-3.5 h-3.5"></i> Alma
-                        </button>
-                        <button onclick="selectWhoTrainsToday('both')" id="btn-who-both" class="h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-black bg-[var(--accent-vigor)] text-black transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none">
-                            <i data-lucide="users" class="w-3.5 h-3.5"></i> Ambos
-                        </button>
-                    </div>
-                </div>
 
                 <!-- Start Routine Content -->                <!-- Active Session Control Panel -->
                 <div id="session-control-panel" class="mb-6 brutal-panel p-4 hidden animate-slide-up stagger-1 bg-slate-900/80 backdrop-blur-md border-2 border-slate-800 shadow-[4px_4px_0px_#000]">
@@ -2082,12 +2053,6 @@
                     </div>
                 </button>
             </div>
-
-            <!-- Optional Close / Dismiss Button -->
-            <button id="who-trains-close-btn" onclick="closeWhoTrainsModal()"
-                class="hidden w-full mt-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border border-slate-700">
-                Mantener selección actual
-            </button>
         </div>
     </div>
 

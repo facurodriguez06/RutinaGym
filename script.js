@@ -375,19 +375,9 @@ let lastLocalUpdates = {};
 let whoTrainsToday = localStorage.getItem("gymWhoTrainsToday") || "both"; // 'both', 'facu', 'alma'
 let sessionTraineeSelected = false;
 
-function openWhoTrainsModal(canCancel = false) {
+function openWhoTrainsModal() {
   const modal = document.getElementById("who-trains-gatekeeper");
-  const closeBtn = document.getElementById("who-trains-close-btn");
   if (modal) {
-    if (closeBtn) {
-      if (canCancel) {
-        closeBtn.classList.remove("hidden");
-        closeBtn.classList.add("inline-block");
-      } else {
-        closeBtn.classList.add("hidden");
-        closeBtn.classList.remove("inline-block");
-      }
-    }
     modal.classList.remove("hidden", "opacity-0", "pointer-events-none");
     modal.classList.add("flex");
     if (typeof lucide !== "undefined" && lucide.createIcons) {
@@ -425,51 +415,18 @@ function selectWhoTrainsToday(who) {
 }
 
 function updateWhoTrainsUI() {
-  const label = document.getElementById("who-trains-label");
-  if (label) {
-    if (whoTrainsToday === "facu") label.textContent = "Solo Facu";
-    else if (whoTrainsToday === "alma") label.textContent = "Solo Alma";
-    else label.textContent = "Ambos (Facu y Alma)";
-  }
-
   const headerLabel = document.getElementById("header-who-label");
-  const headerBtn = document.getElementById("header-who-trains-btn");
-  if (headerLabel) {
+  const headerBadge = document.getElementById("header-who-badge");
+  if (headerLabel && headerBadge) {
     if (whoTrainsToday === "facu") {
       headerLabel.textContent = "Facu";
-      if (headerBtn) {
-        headerBtn.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-facu)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-facu)] hover:bg-[var(--accent-facu)] hover:text-black transition-all shadow-[2px_2px_0px_#000] active:translate-y-0.5";
-      }
+      headerBadge.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-facu)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-facu)] shadow-[2px_2px_0px_#000]";
     } else if (whoTrainsToday === "alma") {
       headerLabel.textContent = "Alma";
-      if (headerBtn) {
-        headerBtn.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-alma)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-alma)] hover:bg-[var(--accent-alma)] hover:text-white transition-all shadow-[2px_2px_0px_#000] active:translate-y-0.5";
-      }
+      headerBadge.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-alma)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-alma)] shadow-[2px_2px_0px_#000]";
     } else {
       headerLabel.textContent = "Ambos";
-      if (headerBtn) {
-        headerBtn.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-vigor)] hover:bg-[var(--accent-vigor)] hover:text-black transition-all shadow-[2px_2px_0px_#000] active:translate-y-0.5";
-      }
-    }
-  }
-
-  const btnFacu = document.getElementById("btn-who-facu");
-  const btnAlma = document.getElementById("btn-who-alma");
-  const btnBoth = document.getElementById("btn-who-both");
-
-  if (btnFacu && btnAlma && btnBoth) {
-    const defaultInactive = "h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-slate-800 bg-slate-950 text-slate-400 hover:text-white transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none";
-
-    btnFacu.className = defaultInactive;
-    btnAlma.className = defaultInactive;
-    btnBoth.className = defaultInactive;
-
-    if (whoTrainsToday === "facu") {
-      btnFacu.className = "h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-black bg-[var(--accent-facu)] text-black transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none";
-    } else if (whoTrainsToday === "alma") {
-      btnAlma.className = "h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-black bg-[var(--accent-alma)] text-white transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none";
-    } else {
-      btnBoth.className = "h-8 px-3 text-xs font-black uppercase tracking-wider rounded-lg border-2 border-black bg-[var(--accent-vigor)] text-black transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none";
+      headerBadge.className = "flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border-2 border-[var(--accent-vigor)] rounded-lg text-xs font-mono font-black uppercase text-[var(--accent-vigor)] shadow-[2px_2px_0px_#000]";
     }
   }
 
@@ -486,7 +443,7 @@ function updateWhoTrainsUI() {
 function checkPromptWhoTrainsToday() {
   // Gatekeeper: Always require user to pick who trains upon launching the web app
   if (!sessionTraineeSelected) {
-    openWhoTrainsModal(false);
+    openWhoTrainsModal();
   }
   updateWhoTrainsUI();
 }
