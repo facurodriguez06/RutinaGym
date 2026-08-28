@@ -1,8 +1,9 @@
-name: Build iOS App (.ipa) with Dynamic Island
+name: "Build iOS IPA"
 
-on:
+"on":
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
