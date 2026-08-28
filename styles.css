@@ -214,8 +214,6 @@ button:active {
 }
 
 /* Modals */
-#who-trains-gatekeeper,
-#who-trains-modal,
 #timer-modal,
 #calculator-modal,
 #history-details-modal,
@@ -230,8 +228,6 @@ button:active {
   overflow-y: auto !important;
 }
 
-#who-trains-gatekeeper:not(.hidden),
-#who-trains-modal:not(.hidden),
 #timer-modal:not(.hidden),
 #calculator-modal:not(.hidden),
 #history-details-modal:not(.hidden),
@@ -247,8 +243,6 @@ button:active {
   padding: 1.5rem 1rem !important;
 }
 
-#who-trains-gatekeeper > div,
-#who-trains-modal > div,
 #timer-modal > div,
 #calculator-modal > div,
 #history-details-modal > div,
@@ -262,6 +256,21 @@ button:active {
 #rescue-modal > div {
   margin: auto !important;
   max-height: none !important;
+}
+
+/* Gatekeeper Modal: No-scroll, viewport-locked, mobile-perfect */
+#who-trains-gatekeeper {
+  overflow: hidden !important;
+  padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px) 16px !important;
+}
+
+#who-trains-gatekeeper:not(.hidden) {
+  display: flex !important;
+}
+
+#who-trains-gatekeeper .gatekeeper-card {
+  max-height: calc(100dvh - 32px) !important;
+  margin: auto !important;
 }
 
 .fixed > .bg-slate-900 {
