@@ -1,3 +1,12 @@
+// Safe Lifecycle Ready Handler (Supports Web, WKWebView & Capacitor)
+function onReady(fn) {
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    setTimeout(fn, 1);
+  } else {
+    document.addEventListener("DOMContentLoaded", fn);
+  }
+}
+
 // --- DATA ---
 const DEFAULT_ROUTINE = [
   {
@@ -1594,8 +1603,7 @@ function applyTheme() {
 }
 
 // Apply saved theme on load
-// Apply saved theme on load
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
   applyTheme();
 
   // Format Date for Header and Sidebar
@@ -2701,7 +2709,7 @@ updateStats = function () {
 };
 
 // Initialize on Load
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
   fetchWeather(); // Get weather immediately
   setInterval(fetchWeather, 30 * 60 * 1000); // Refresh every 30 minutes
   calculateAndRenderWaterGoal(); // Render water based on stored/default
@@ -7248,12 +7256,8 @@ function renderAchievements() {
 window.filterAchievements = filterAchievements;
 window.renderAchievements = renderAchievements;
 
-// Init App (Modified)
-document.addEventListener("DOMContentLoaded", () => {
-  // Assuming init() is defined elsewhere or we just attach handlers here
-  // If init exists, it will run.
-
-  // We add the click handler for "Logros" tab to render achievements on demand
+// Init App
+onReady(() => {
   const achievementsBtn = Array.from(document.querySelectorAll("button")).find(
     (b) => b.textContent.includes("Logros"),
   );
@@ -7262,9 +7266,8 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(renderAchievements, 100); // Small delay to ensure view visible
     });
   }
+  init();
 });
-
-document.addEventListener("DOMContentLoaded", init);
 
 // --- FIX V6: CORRECT STREAK (SAFE MODE) ---
 setTimeout(() => {
@@ -7344,27 +7347,35 @@ function updateWeatherUI(tempText, elements) {
 }
 
 // Iniciar clima al cargar
-document.addEventListener("DOMContentLoaded", initWeather);
+onReady(initWeather);
 
-// --- SPLASH SCREEN ---
-document.addEventListener("DOMContentLoaded", () => {
-  setTimeout(() => {
-    const splash = document.getElementById("splash-screen");
-    if (splash) {
-      splash.classList.add("opacity-0", "pointer-events-none");
-      setTimeout(() => {
-        splash.remove();
-        if (typeof checkPromptWhoTrainsToday === "function") {
-          checkPromptWhoTrainsToday();
-        }
-      }, 400); // Wait for transition
-    } else {
+// --- SPLASH SCREEN DISMISSAL (GUARANTEED DISMISSAL) ---
+function dismissSplashScreen() {
+  const splash = document.getElementById("splash-screen");
+  if (splash) {
+    splash.style.transition = "opacity 0.4s ease";
+    splash.style.opacity = "0";
+    splash.style.pointerEvents = "none";
+    setTimeout(() => {
+      splash.style.display = "none";
+      try { splash.remove(); } catch (e) {}
       if (typeof checkPromptWhoTrainsToday === "function") {
         checkPromptWhoTrainsToday();
       }
+    }, 400);
+  } else {
+    if (typeof checkPromptWhoTrainsToday === "function") {
+      checkPromptWhoTrainsToday();
     }
-  }, 800); // Reduced from 2s since native splash already shows
+  }
+}
+
+onReady(() => {
+  setTimeout(dismissSplashScreen, 300);
 });
+
+// Failsafe timer (always removes splash after 1.2s even if DOM events were delayed)
+setTimeout(dismissSplashScreen, 1200);
 
 // --- MULTIPLE ROUTINES MANAGER FUNCTIONS ---
 
@@ -7990,7 +8001,7 @@ window.applyGeneratedRoutine = applyGeneratedRoutine;
 window.resetAIChat = resetAIChat;
 
 // Enter key submit on AI chat input (textarea)
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
   const inputEl = document.getElementById("ai-chat-input");
   if (inputEl) {
     // Auto-resize textarea as user types
