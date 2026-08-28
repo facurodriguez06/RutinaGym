@@ -41,7 +41,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
                     if #available(iOS 16.2, *) {
                         await activity.end(nil, dismissalPolicy: .immediate)
                     } else {
-                        await activity.end(nil, dismissalPolicy: .default)
+                        await activity.end(using: nil, dismissalPolicy: .default)
                     }
                 }
 
@@ -79,7 +79,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
                     if #available(iOS 16.2, *) {
                         await activity.end(nil, dismissalPolicy: .immediate)
                     } else {
-                        await activity.end(nil, dismissalPolicy: .default)
+                        await activity.end(using: nil, dismissalPolicy: .default)
                     }
                 }
                 self.currentActivity = nil
