@@ -3228,25 +3228,26 @@ function showTimer(user, exerciseName, seconds) {
 
   // Native Live Activity for Dynamic Island (Capacitor iOS)
   const LiveActivity = getLiveActivityPlugin();
-  console.log("[LiveActivity] Plugin found:", !!LiveActivity);
+  const capInfo = "Capacitor=" + !!window.Capacitor +
+    " isNative=" + (window.Capacitor?.isNativePlatform ? window.Capacitor.isNativePlatform() : "N/A") +
+    " Plugins=" + (window.Capacitor?.Plugins ? Object.keys(window.Capacitor.Plugins).join(",") : "none") +
+    " registerPlugin=" + !!(window.Capacitor?.registerPlugin);
   if (LiveActivity) {
     LiveActivity.startRestTimer({
       exerciseName: exerciseName,
       userName: user === "facu" ? "Facu" : "Alma",
       seconds: seconds
     }).then(result => {
-      console.log("[LiveActivity] Result:", JSON.stringify(result));
       if (result && result.success === false) {
-        alert("[LiveActivity ERROR] " + (result.message || "Unknown error"));
+        alert("[LA] Error: " + (result.message || "unknown"));
+      } else {
+        alert("[LA] OK! id=" + (result?.id || "?") + " | " + capInfo);
       }
     }).catch(e => {
-      console.log("[LiveActivity] Exception:", e);
-      alert("[LiveActivity EXCEPTION] " + (e.message || e));
+      alert("[LA] Exception: " + (e.message || e) + " | " + capInfo);
     });
   } else {
-    console.log("[LiveActivity] Plugin NOT available. Capacitor:", !!window.Capacitor,
-      "isNative:", window.Capacitor?.isNativePlatform?.(),
-      "Plugins:", window.Capacitor?.Plugins ? Object.keys(window.Capacitor.Plugins) : "none");
+    alert("[LA] Plugin NOT found. " + capInfo);
   }
 }
 
