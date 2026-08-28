@@ -60,11 +60,27 @@ jobs:
 
       - name: Package App into .IPA
         run: |
-          # 2. Package App into .IPA
+          PRODUCTS_DIR="ios/App/build/Build/Products/Release-iphoneos"
+
+          # Embed VigorWidgets.appex inside App.app/PlugIns/
+          APPEX_PATH="$PRODUCTS_DIR/VigorWidgets.appex"
+          APP_PATH="$PRODUCTS_DIR/App.app"
+
+          if [ -d "$APPEX_PATH" ]; then
+            echo "✅ Found VigorWidgets.appex — embedding into App.app/PlugIns/"
+            mkdir -p "$APP_PATH/PlugIns"
+            cp -r "$APPEX_PATH" "$APP_PATH/PlugIns/"
+          else
+            echo "⚠️ VigorWidgets.appex NOT found at $APPEX_PATH"
+            echo "Listing products directory:"
+            ls -la "$PRODUCTS_DIR"
+          fi
+
+          # Build the IPA
           mkdir -p Payload
-          cp -r ios/App/build/Build/Products/Release-iphoneos/App.app Payload/
+          cp -r "$APP_PATH" Payload/
           zip -r Vigor-Gym-iOS.ipa Payload
-          echo "IPA Package created successfully!"
+          echo "✅ IPA Package created successfully!"
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4

@@ -2937,11 +2937,18 @@ function createTimerArtworkBlob(user, timeStr, exerciseName) {
 }
 
 // Native iOS Live Activity Plugin Bridge (Capacitor)
+let _liveActivityPluginCache = null;
 function getLiveActivityPlugin() {
-  if (window.Capacitor && window.Capacitor.registerPlugin) {
-    return window.Capacitor.registerPlugin("LiveActivity");
+  if (_liveActivityPluginCache) return _liveActivityPluginCache;
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LiveActivity) {
+    _liveActivityPluginCache = window.Capacitor.Plugins.LiveActivity;
+    return _liveActivityPluginCache;
   }
-  return window.Capacitor?.Plugins?.LiveActivity || null;
+  if (window.Capacitor && window.Capacitor.registerPlugin) {
+    _liveActivityPluginCache = window.Capacitor.registerPlugin("LiveActivity");
+    return _liveActivityPluginCache;
+  }
+  return null;
 }
 
 function enableBackgroundMode(exerciseName, duration, user = "facu") {

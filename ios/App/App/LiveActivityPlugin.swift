@@ -14,29 +14,31 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
     private var currentActivity: Any? = nil
 
     @objc public func startRestTimer(_ call: CAPPluginCall) {
-        let exerciseName = call.getString("exerciseName", "")
-        let seconds = call.getDouble("seconds", 0)
-
-        guard !exerciseName.isEmpty, seconds > 0 else {
-            call.resolve([
-                "success": false,
-                "message": "Missing required parameters: exerciseName and seconds"
-            ])
+        guard let exerciseName = call.getString("exerciseName"),
+              !exerciseName.isEmpty else {
+            call.reject("Missing required parameter: exerciseName")
             return
         }
 
-        let userName = call.getString("userName", "Facu")
+        guard let seconds = call.getDouble("seconds"),
+              seconds > 0 else {
+            call.reject("Missing required parameter: seconds (must be > 0)")
+            return
+        }
+
+        let userName = call.getString("userName") ?? "Facu"
 
         if #available(iOS 16.2, *) {
             guard ActivityAuthorizationInfo().areActivitiesEnabled else {
                 call.resolve([
                     "success": false,
-                    "message": "Live Activities are not enabled on this device"
+                    "message": "Live Activities are not enabled on this device. Go to Settings > Vigor > Live Activities."
                 ])
                 return
             }
 
-            Task {
+            Task { @MainActor in
+                // End any existing activities first
                 for activity in Activity<RestTimerAttributes>.activities {
                     await activity.end(nil, dismissalPolicy: .immediate)
                 }
@@ -46,9 +48,10 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
                 let contentState = RestTimerAttributes.ContentState(endTime: endTime, totalSeconds: seconds)
 
                 do {
+                    let content = ActivityContent(state: contentState, staleDate: endTime)
                     let activity = try Activity<RestTimerAttributes>.request(
                         attributes: attributes,
-                        contentState: contentState,
+                        content: content,
                         pushType: nil
                     )
                     self.currentActivity = activity
@@ -70,7 +73,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc public func endRestTimer(_ call: CAPPluginCall) {
         if #available(iOS 16.2, *) {
-            Task {
+            Task { @MainActor in
                 for activity in Activity<RestTimerAttributes>.activities {
                     await activity.end(nil, dismissalPolicy: .immediate)
                 }
