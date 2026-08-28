@@ -146,13 +146,14 @@ struct UserTimerRow: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .center, spacing: 4) {
                 Text(timerInterval: Date()...state.endTime, countsDown: true)
                     .monospacedDigit()
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundColor(color)
                 
                 ProgressView(timerInterval: Date()...state.endTime, countsDown: true)
+                    .labelsHidden()
                     .tint(color)
                     .frame(width: 80)
             }
