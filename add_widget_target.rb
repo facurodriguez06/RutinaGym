@@ -19,8 +19,7 @@ widget_target = project.new_target(:app_extension, 'VigorWidgets', :ios, '16.2')
 widget_target.product_name = 'VigorWidgets'
 
 # VigorWidgets group
-app_group = project.main_group.find_subpath('App', false)
-widget_group = app_group.find_subpath('VigorWidgets', true)
+widget_group = project.main_group.find_subpath('VigorWidgets', true)
 widget_group.set_source_tree('<group>')
 widget_group.set_path('VigorWidgets')
 
@@ -44,7 +43,7 @@ end
 
 # Build Settings for Widget
 widget_target.build_configurations.each do |config|
-  config.build_settings['INFOPLIST_FILE'] = 'App/VigorWidgets/Info.plist'
+  config.build_settings['INFOPLIST_FILE'] = 'VigorWidgets/Info.plist'
   config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.vigor.app.VigorWidgets'
   config.build_settings['PRODUCT_NAME'] = 'VigorWidgets'
   config.build_settings['SWIFT_VERSION'] = '5.0'
