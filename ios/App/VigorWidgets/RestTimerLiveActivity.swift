@@ -68,33 +68,42 @@ public struct RestTimerLiveActivity: Widget {
                 }
             } compactLeading: {
                 // MARK: - COMPACT LEADING
-                HStack(spacing: 3) {
+                HStack(spacing: 4) {
                     Image(systemName: "timer").foregroundColor(.orange)
-                    if context.state.facu != nil && context.state.alma != nil {
-                        Text("F+A")
-                            .font(.system(size: 10, weight: .black, design: .monospaced))
-                            .foregroundColor(.white)
-                    } else if context.state.facu != nil {
-                        Text("F")
-                            .font(.system(size: 10, weight: .black, design: .monospaced))
-                            .foregroundColor(.cyan)
-                    } else if context.state.alma != nil {
-                        Text("A")
-                            .font(.system(size: 10, weight: .black, design: .monospaced))
-                            .foregroundColor(.pink)
+                        .font(.system(size: 12, weight: .bold))
+                    
+                    VStack(alignment: .leading, spacing: -1) {
+                        if context.state.facu != nil {
+                            Text("F")
+                                .font(.system(size: context.state.alma != nil ? 9 : 12, weight: .black, design: .monospaced))
+                                .foregroundColor(.cyan)
+                        }
+                        if context.state.alma != nil {
+                            Text("A")
+                                .font(.system(size: context.state.facu != nil ? 9 : 12, weight: .black, design: .monospaced))
+                                .foregroundColor(.pink)
+                        }
                     }
                 }
                 .padding(.leading, 4)
             } compactTrailing: {
                 // MARK: - COMPACT TRAILING
-                if let state = context.state.facu ?? context.state.alma {
-                    Text(timerInterval: Date()...state.endTime, countsDown: true)
-                        .monospacedDigit()
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundColor(.orange)
-                        .frame(width: 44, alignment: .trailing)
-                        .padding(.trailing, 4)
+                VStack(alignment: .trailing, spacing: -1) {
+                    if let facu = context.state.facu {
+                        Text(timerInterval: Date()...facu.endTime, countsDown: true)
+                            .monospacedDigit()
+                            .font(.system(size: context.state.alma != nil ? 9 : 13, weight: .bold, design: .rounded))
+                            .foregroundColor(.cyan)
+                    }
+                    if let alma = context.state.alma {
+                        Text(timerInterval: Date()...alma.endTime, countsDown: true)
+                            .monospacedDigit()
+                            .font(.system(size: context.state.facu != nil ? 9 : 13, weight: .bold, design: .rounded))
+                            .foregroundColor(.pink)
+                    }
                 }
+                .frame(width: 44, alignment: .trailing)
+                .padding(.trailing, 4)
             } minimal: {
                 // MARK: - MINIMAL
                 Image(systemName: "timer")
