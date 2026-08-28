@@ -27,7 +27,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
         let userName = call.getString("userName", "Facu")
 
-        if #available(iOS 16.1, *) {
+        if #available(iOS 16.2, *) {
             guard ActivityAuthorizationInfo().areActivitiesEnabled else {
                 call.resolve([
                     "success": false,
@@ -38,11 +38,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
             Task {
                 for activity in Activity<RestTimerAttributes>.activities {
-                    if #available(iOS 16.2, *) {
-                        await activity.end(nil, dismissalPolicy: .immediate)
-                    } else {
-                        await activity.end(nil, dismissalPolicy: .default)
-                    }
+                    await activity.end(nil, dismissalPolicy: .immediate)
                 }
 
                 let attributes = RestTimerAttributes(exerciseName: exerciseName, userName: userName)
@@ -67,20 +63,16 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
         } else {
             call.resolve([
                 "success": false,
-                "message": "Live Activities require iOS 16.1 or later"
+                "message": "Live Activities require iOS 16.2 or later"
             ])
         }
     }
 
     @objc public func endRestTimer(_ call: CAPPluginCall) {
-        if #available(iOS 16.1, *) {
+        if #available(iOS 16.2, *) {
             Task {
                 for activity in Activity<RestTimerAttributes>.activities {
-                    if #available(iOS 16.2, *) {
-                        await activity.end(nil, dismissalPolicy: .immediate)
-                    } else {
-                        await activity.end(nil, dismissalPolicy: .default)
-                    }
+                    await activity.end(nil, dismissalPolicy: .immediate)
                 }
                 self.currentActivity = nil
                 call.resolve(["success": true])
