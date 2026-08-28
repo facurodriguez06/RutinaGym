@@ -79,11 +79,11 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc public func endRestTimer(_ call: CAPPluginCall) {
-        let userName = call.getString("userName")
+        let userName = call.getString("userName", "")
         if #available(iOS 16.2, *) {
             Task {
                 for activity in Activity<RestTimerAttributes>.activities {
-                    if userName == nil || activity.attributes.userName == userName {
+                    if userName.isEmpty || activity.attributes.userName == userName {
                         await activity.end(nil, dismissalPolicy: .immediate)
                     }
                 }
