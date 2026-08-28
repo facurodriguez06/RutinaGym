@@ -1,3 +1,5 @@
+const appStartTime = Date.now();
+
 // Safe Lifecycle Ready Handler (Supports Web, WKWebView & Capacitor)
 function onReady(fn) {
   if (document.readyState === "complete" || document.readyState === "interactive") {
@@ -472,7 +474,6 @@ window.openWhoTrainsModal = openWhoTrainsModal;
 window.closeWhoTrainsModal = closeWhoTrainsModal;
 window.updateWhoTrainsUI = updateWhoTrainsUI;
 window.checkPromptWhoTrainsToday = checkPromptWhoTrainsToday;
-window.togglePipTimer = togglePipTimer;
 
 // Data Migration for legacy users (preserves weights & progress under routine-1)
 function migrateLegacyData() {
@@ -3270,9 +3271,6 @@ function startGlobalTimerIfNeeded() {
         const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
         const userName = mainUser === "facu" ? "Facu" : "Alma";
 
-        // Update PiP canvas
-        renderPipCanvas(mainUser, displaySecs, state.totalSeconds, state.exerciseName);
-
         // Update document tab title
         document.title = `⏱️ ${timeStr} | ${state.exerciseName} - VIGOR`;
 
@@ -4533,8 +4531,6 @@ function getDailyVolume(user, date = new Date()) {
   });
   return total;
 }
-
-const appStartTime = Date.now();
 
 function checkAchievements() {
   // Guard: Don't check on initial load (requested by user)
