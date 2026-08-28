@@ -3228,12 +3228,25 @@ function showTimer(user, exerciseName, seconds) {
 
   // Native Live Activity for Dynamic Island (Capacitor iOS)
   const LiveActivity = getLiveActivityPlugin();
+  console.log("[LiveActivity] Plugin found:", !!LiveActivity);
   if (LiveActivity) {
     LiveActivity.startRestTimer({
       exerciseName: exerciseName,
       userName: user === "facu" ? "Facu" : "Alma",
       seconds: seconds
-    }).catch(e => console.log("LiveActivity start:", e));
+    }).then(result => {
+      console.log("[LiveActivity] Result:", JSON.stringify(result));
+      if (result && result.success === false) {
+        alert("[LiveActivity ERROR] " + (result.message || "Unknown error"));
+      }
+    }).catch(e => {
+      console.log("[LiveActivity] Exception:", e);
+      alert("[LiveActivity EXCEPTION] " + (e.message || e));
+    });
+  } else {
+    console.log("[LiveActivity] Plugin NOT available. Capacitor:", !!window.Capacitor,
+      "isNative:", window.Capacitor?.isNativePlatform?.(),
+      "Plugins:", window.Capacitor?.Plugins ? Object.keys(window.Capacitor.Plugins) : "none");
   }
 }
 
