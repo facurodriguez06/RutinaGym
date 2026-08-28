@@ -44,30 +44,49 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             Task {
-                for activity in Activity<RestTimerAttributes>.activities {
-                    if activity.attributes.userName == userName {
-                        await activity.end(nil, dismissalPolicy: .immediate)
+                let newTimer = RestTimerAttributes.TimerState(
+                    endTime: Date().addingTimeInterval(seconds),
+                    totalSeconds: seconds,
+                    exerciseName: exerciseName
+                )
+                
+                if let activity = Activity<RestTimerAttributes>.activities.first {
+                    // Update existing activity
+                    var contentState = activity.content.state
+                    if userName.lowercased() == "facu" {
+                        contentState.facu = newTimer
+                    } else {
+                        contentState.alma = newTimer
                     }
-                }
-
-                let attributes = RestTimerAttributes(exerciseName: exerciseName, userName: userName)
-                let endTime = Date().addingTimeInterval(seconds)
-                let contentState = RestTimerAttributes.ContentState(endTime: endTime, totalSeconds: seconds)
-
-                do {
+                    
                     let content = ActivityContent(state: contentState, staleDate: nil)
-                    let activity = try Activity<RestTimerAttributes>.request(
-                        attributes: attributes,
-                        content: content,
-                        pushType: nil
-                    )
-                    self.currentActivity = activity
+                    await activity.update(content)
                     call.resolve(["id": activity.id, "success": true])
-                } catch {
-                    call.resolve([
-                        "success": false,
-                        "message": "Failed to start Live Activity: \(error.localizedDescription)"
-                    ])
+                } else {
+                    // Create new activity
+                    var contentState = RestTimerAttributes.ContentState(facu: nil, alma: nil)
+                    if userName.lowercased() == "facu" {
+                        contentState.facu = newTimer
+                    } else {
+                        contentState.alma = newTimer
+                    }
+                    
+                    let attributes = RestTimerAttributes()
+                    do {
+                        let content = ActivityContent(state: contentState, staleDate: nil)
+                        let activity = try Activity<RestTimerAttributes>.request(
+                            attributes: attributes,
+                            content: content,
+                            pushType: nil
+                        )
+                        self.currentActivity = activity
+                        call.resolve(["id": activity.id, "success": true])
+                    } catch {
+                        call.resolve([
+                            "success": false,
+                            "message": "Failed to start Live Activity: \(error.localizedDescription)"
+                        ])
+                    }
                 }
             }
         } else {
@@ -82,12 +101,27 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
         let userName = call.getString("userName", "")
         if #available(iOS 16.2, *) {
             Task {
-                for activity in Activity<RestTimerAttributes>.activities {
-                    if userName.isEmpty || activity.attributes.userName == userName {
+                if let activity = Activity<RestTimerAttributes>.activities.first {
+                    var contentState = activity.content.state
+                    
+                    if userName.lowercased() == "facu" {
+                        contentState.facu = nil
+                    } else if userName.lowercased() == "alma" {
+                        contentState.alma = nil
+                    } else {
+                        // Kill both if no specific user provided or unknown user
+                        contentState.facu = nil
+                        contentState.alma = nil
+                    }
+                    
+                    if contentState.facu == nil && contentState.alma == nil {
                         await activity.end(nil, dismissalPolicy: .immediate)
+                        self.currentActivity = nil
+                    } else {
+                        let content = ActivityContent(state: contentState, staleDate: nil)
+                        await activity.update(content)
                     }
                 }
-                self.currentActivity = nil
                 call.resolve(["success": true])
             }
         } else {

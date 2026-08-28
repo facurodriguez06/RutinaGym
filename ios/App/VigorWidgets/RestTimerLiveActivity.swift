@@ -8,51 +8,20 @@ public struct RestTimerLiveActivity: Widget {
 
     public var body: some WidgetConfiguration {
         ActivityConfiguration(for: RestTimerAttributes.self) { context in
-            // MARK: - LOCK SCREEN & NOTIFICATION BANNER (Exact Apple Clock Timer Style)
-            HStack(spacing: 16) {
-                // Left Icon / Progress Indicator
-                ZStack {
-                    Circle()
-                        .fill(Color.orange.opacity(0.2))
-                        .frame(width: 48, height: 48)
-                    Image(systemName: "timer")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.orange)
+            // MARK: - LOCK SCREEN & NOTIFICATION BANNER
+            VStack(spacing: 0) {
+                if let facu = context.state.facu {
+                    UserTimerRow(state: facu, userName: "Facu", color: .cyan)
                 }
-
-                // Center Info: Exercise & User
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(context.attributes.exerciseName)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-
-                    HStack(spacing: 6) {
-                        Text(context.attributes.userName.uppercased())
-                            .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                            .foregroundColor(context.attributes.userName.lowercased().contains("facu") ? .cyan : .pink)
-                        Text("•  DESCANSO")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.gray)
-                    }
+                
+                if context.state.facu != nil && context.state.alma != nil {
+                    Divider().background(Color.white.opacity(0.2))
                 }
-
-                Spacer()
-
-                // Right: Big Apple Timer Countdown Clock
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(timerInterval: Date()...context.state.endTime, countsDown: true)
-                        .monospacedDigit()
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(Color.orange)
-                    
-                    ProgressView(timerInterval: Date()...context.state.endTime, countsDown: true)
-                        .tint(Color.orange)
-                        .frame(width: 80)
+                
+                if let alma = context.state.alma {
+                    UserTimerRow(state: alma, userName: "Alma", color: .pink)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
             .activityBackgroundTint(Color.black.opacity(0.92))
             .activitySystemActionForegroundColor(Color.orange)
 
@@ -60,63 +29,160 @@ public struct RestTimerLiveActivity: Widget {
             DynamicIsland {
                 // MARK: - EXPANDED DYNAMIC ISLAND
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "timer")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.orange)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(context.attributes.exerciseName)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                            Text(context.attributes.userName.uppercased())
-                                .font(.system(size: 10, weight: .black, design: .monospaced))
-                                .foregroundColor(context.attributes.userName.lowercased().contains("facu") ? .cyan : .pink)
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let facu = context.state.facu {
+                            UserExpandedInfo(state: facu, userName: "Facu", color: .cyan)
+                        }
+                        if let alma = context.state.alma {
+                            UserExpandedInfo(state: alma, userName: "Alma", color: .pink)
                         }
                     }
                     .padding(.leading, 6)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(timerInterval: Date()...context.state.endTime, countsDown: true)
-                        .monospacedDigit()
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(Color.orange)
-                        .padding(.trailing, 6)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        if let facu = context.state.facu {
+                            UserExpandedTimer(state: facu)
+                        }
+                        if let alma = context.state.alma {
+                            UserExpandedTimer(state: alma)
+                        }
+                    }
+                    .padding(.trailing, 6)
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    ProgressView(timerInterval: Date()...context.state.endTime, countsDown: true)
-                        .tint(Color.orange)
-                        .padding(.horizontal, 8)
-                        .padding(.top, 6)
+                    VStack(spacing: 4) {
+                        if let facu = context.state.facu {
+                            ProgressView(timerInterval: Date()...facu.endTime, countsDown: true)
+                                .tint(.cyan)
+                        }
+                        if let alma = context.state.alma {
+                            ProgressView(timerInterval: Date()...alma.endTime, countsDown: true)
+                                .tint(.pink)
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.top, 4)
                 }
             } compactLeading: {
-                // MARK: - COMPACT LEADING (Orange Timer Icon & Trainee)
+                // MARK: - COMPACT LEADING
                 HStack(spacing: 3) {
-                    Image(systemName: "timer")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.orange)
-                    Text(context.attributes.userName.prefix(1).uppercased())
-                        .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundColor(.white)
+                    Image(systemName: "timer").foregroundColor(.orange)
+                    if context.state.facu != nil && context.state.alma != nil {
+                        Text("F+A")
+                            .font(.system(size: 10, weight: .black, design: .monospaced))
+                            .foregroundColor(.white)
+                    } else if context.state.facu != nil {
+                        Text("F")
+                            .font(.system(size: 10, weight: .black, design: .monospaced))
+                            .foregroundColor(.cyan)
+                    } else if context.state.alma != nil {
+                        Text("A")
+                            .font(.system(size: 10, weight: .black, design: .monospaced))
+                            .foregroundColor(.pink)
+                    }
                 }
                 .padding(.leading, 4)
             } compactTrailing: {
-                // MARK: - COMPACT TRAILING (Live Ticking Countdown digits)
-                Text(timerInterval: Date()...context.state.endTime, countsDown: true)
-                    .monospacedDigit()
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(Color.orange)
-                    .frame(width: 44, alignment: .trailing)
-                    .padding(.trailing, 4)
+                // MARK: - COMPACT TRAILING
+                if let state = context.state.facu ?? context.state.alma {
+                    Text(timerInterval: Date()...state.endTime, countsDown: true)
+                        .monospacedDigit()
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundColor(.orange)
+                        .frame(width: 44, alignment: .trailing)
+                        .padding(.trailing, 4)
+                }
             } minimal: {
-                // MARK: - MINIMAL (Circular Orange Timer Icon)
+                // MARK: - MINIMAL
                 Image(systemName: "timer")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundColor(.orange)
             }
         }
+    }
+}
+
+@available(iOS 16.2, *)
+struct UserTimerRow: View {
+    let state: RestTimerAttributes.TimerState
+    let userName: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle().fill(color.opacity(0.2)).frame(width: 48, height: 48)
+                Text(userName.prefix(1).uppercased())
+                    .font(.system(size: 24, weight: .heavy, design: .monospaced))
+                    .foregroundColor(color)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(state.exerciseName)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(userName.uppercased())
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .foregroundColor(color)
+                    Text("• DESCANSO")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(timerInterval: Date()...state.endTime, countsDown: true)
+                    .monospacedDigit()
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(color)
+                
+                ProgressView(timerInterval: Date()...state.endTime, countsDown: true)
+                    .tint(color)
+                    .frame(width: 80)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+    }
+}
+
+@available(iOS 16.2, *)
+struct UserExpandedInfo: View {
+    let state: RestTimerAttributes.TimerState
+    let userName: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(userName.prefix(1).uppercased())
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .foregroundColor(color)
+            
+            VStack(alignment: .leading, spacing: 0) {
+                Text(state.exerciseName)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+            }
+        }
+    }
+}
+
+@available(iOS 16.2, *)
+struct UserExpandedTimer: View {
+    let state: RestTimerAttributes.TimerState
+    
+    var body: some View {
+        Text(timerInterval: Date()...state.endTime, countsDown: true)
+            .monospacedDigit()
+            .font(.system(size: 20, weight: .bold, design: .rounded))
+            .foregroundColor(.white)
     }
 }
