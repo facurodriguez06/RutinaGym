@@ -514,3 +514,20 @@ input[type="number"].reps-input:focus, input[type="number"].weight-input:focus {
   box-shadow: none !important;
   outline: none !important;
 }
+
+/* COMPREHENSIVE TAILWIND THEME OVERRIDES FOR HARDCODED CLASSES */
+[class*="bg-slate-9"], [class*="bg-slate-8"], [class*="bg-slate-7"] {
+  background-color: var(--bg-panel) !important;
+}
+[class*="bg-slate-800"], [class*="bg-slate-700"] {
+  background-color: var(--bg-panel-alt) !important;
+}
+[class*="border-slate-9"], [class*="border-slate-8"], [class*="border-slate-7"] {
+  border-color: var(--border-strong) !important;
+}
+[class*="text-slate-1"], [class*="text-slate-2"], [class*="text-slate-3"] {
+  color: var(--text-main) !important;
+}
+[class*="text-slate-4"], [class*="text-slate-5"] {
+  color: var(--text-dim) !important;
+}
