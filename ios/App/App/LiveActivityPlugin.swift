@@ -119,23 +119,27 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
                     var contentState = activity.content.state
                     
                     if userName.lowercased() == "facu" {
-                        contentState.facu = nil
+                        contentState.facu?.isFinished = true
                     } else if userName.lowercased() == "alma" {
-                        contentState.alma = nil
+                        contentState.alma?.isFinished = true
                     } else if userName.lowercased() == "session" {
-                        contentState.session = nil
+                        contentState.session?.isFinished = true
                     } else {
                         // Kill all if no specific user provided or unknown user
-                        contentState.facu = nil
-                        contentState.alma = nil
-                        contentState.session = nil
+                        contentState.facu?.isFinished = true
+                        contentState.alma?.isFinished = true
+                        contentState.session?.isFinished = true
                     }
                     
-                    if contentState.facu == nil && contentState.alma == nil && contentState.session == nil {
-                        await activity.end(nil, dismissalPolicy: .immediate)
+                    let allFinished = (contentState.facu == nil || contentState.facu?.isFinished == true) &&
+                                      (contentState.alma == nil || contentState.alma?.isFinished == true) &&
+                                      (contentState.session == nil || contentState.session?.isFinished == true)
+                    
+                    let content = ActivityContent(state: contentState, staleDate: nil)
+                    if allFinished {
+                        await activity.end(content, dismissalPolicy: .default)
                         self.currentActivity = nil
                     } else {
-                        let content = ActivityContent(state: contentState, staleDate: nil)
                         await activity.update(content)
                     }
                 }

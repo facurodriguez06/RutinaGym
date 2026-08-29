@@ -5629,6 +5629,13 @@ function toggleWarmupTimer(id) {
     // Pause
     clearInterval(state.interval);
     state.isRunning = false;
+    // Calculate remaining time precisely on pause
+    if (state.endTime) {
+      state.time = Math.max(0, Math.ceil((state.endTime - Date.now()) / 1000));
+    }
+    
+    releaseWakeLock();
+    disableBackgroundMode();
     
     const LiveActivity = getLiveActivityPlugin();
     if (LiveActivity) {
@@ -5639,8 +5646,15 @@ function toggleWarmupTimer(id) {
     // Start
     if (state.time <= 0) return; // Finished
     state.isRunning = true;
+    state.endTime = Date.now() + (state.time * 1000);
+    
+    requestWakeLock();
+    enableBackgroundMode("Calentamiento", state.time, whoTrainsToday === "alma" ? "alma" : "facu");
+    
     state.interval = setInterval(() => {
-      state.time--;
+      const now = Date.now();
+      state.time = Math.max(0, Math.ceil((state.endTime - now) / 1000));
+      
       if (state.time <= 0) {
         // Finished
         clearInterval(state.interval);
@@ -5649,6 +5663,9 @@ function toggleWarmupTimer(id) {
         state.isCompleted = true;
         localStorage.setItem("warmup_completed_" + id, "true");
         
+        releaseWakeLock();
+        disableBackgroundMode();
+        
         const LiveActivity = getLiveActivityPlugin();
         if (LiveActivity) {
           LiveActivity.endRestTimer({ userName: "Facu" }).catch(e => alert("Error finishing (Facu): " + JSON.stringify(e)));
@@ -5656,8 +5673,8 @@ function toggleWarmupTimer(id) {
         }
         
         // Play sound? or visual cue
+        playTimerEnd(); // Play the same sound as main timers
         try {
-          // Simple notification if possible
           showToast("check-circle", "text-emerald-400", "¡Tiempo completado!");
         } catch (e) {}
       }
@@ -5700,7 +5717,11 @@ function resetWarmupTimer(id) {
   state.isSkipped = false;
   state.isCompleted = false;
   state.time = state.original;
+  state.endTime = null;
   localStorage.setItem("warmup_completed_" + id, "false");
+  
+  releaseWakeLock();
+  disableBackgroundMode();
   
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {
@@ -5719,7 +5740,12 @@ function skipWarmupTimer(id) {
   state.isRunning = false;
   state.isCompleted = false;
   state.isSkipped = true;
+  state.time = 0;
+  state.endTime = null;
   localStorage.setItem("warmup_completed_" + id, "false");
+
+  releaseWakeLock();
+  disableBackgroundMode();
 
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {

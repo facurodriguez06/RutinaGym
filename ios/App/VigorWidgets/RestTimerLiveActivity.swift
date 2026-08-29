@@ -110,16 +110,28 @@ public struct RestTimerLiveActivity: Widget {
                 // MARK: - COMPACT TRAILING
                 VStack(alignment: .trailing, spacing: -1) {
                     if let facu = context.state.facu {
-                        Text(timerInterval: Date()...facu.endTime, countsDown: true)
-                            .monospacedDigit()
-                            .font(.system(size: context.state.alma != nil || context.state.session != nil ? 9 : 13, weight: .bold, design: .rounded))
-                            .foregroundColor(.cyan)
+                        if facu.isFinished {
+                            Text("FIN")
+                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .foregroundColor(.green)
+                        } else {
+                            Text(timerInterval: Date()...facu.endTime, countsDown: true)
+                                .monospacedDigit()
+                                .font(.system(size: context.state.alma != nil || context.state.session != nil ? 9 : 13, weight: .bold, design: .rounded))
+                                .foregroundColor(.cyan)
+                        }
                     }
                     if let alma = context.state.alma {
-                        Text(timerInterval: Date()...alma.endTime, countsDown: true)
-                            .monospacedDigit()
-                            .font(.system(size: context.state.facu != nil || context.state.session != nil ? 9 : 13, weight: .bold, design: .rounded))
-                            .foregroundColor(.pink)
+                        if alma.isFinished {
+                            Text("FIN")
+                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .foregroundColor(.green)
+                        } else {
+                            Text(timerInterval: Date()...alma.endTime, countsDown: true)
+                                .monospacedDigit()
+                                .font(.system(size: context.state.facu != nil || context.state.session != nil ? 9 : 13, weight: .bold, design: .rounded))
+                                .foregroundColor(.pink)
+                        }
                     }
                     if let session = context.state.session, let start = session.startTime {
                         Text(start, style: .timer)
@@ -179,7 +191,14 @@ struct UserTimerRow: View {
             Spacer()
 
             VStack(alignment: .center, spacing: 4) {
-                if state.isStopwatch, let start = state.startTime {
+                if state.isFinished {
+                    Text("¡TIEMPO!")
+                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .foregroundColor(.green)
+                    Text("Toca para continuar")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.green.opacity(0.8))
+                } else if state.isStopwatch, let start = state.startTime {
                     Text(start, style: .timer)
                         .monospacedDigit()
                         .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -229,7 +248,11 @@ struct UserExpandedTimer: View {
     let state: RestTimerAttributes.TimerState
     
     var body: some View {
-        if state.isStopwatch, let start = state.startTime {
+        if state.isFinished {
+            Text("¡TIEMPO!")
+                .font(.system(size: 20, weight: .black, design: .rounded))
+                .foregroundColor(.green)
+        } else if state.isStopwatch, let start = state.startTime {
             Text(start, style: .timer)
                 .monospacedDigit()
                 .font(.system(size: 20, weight: .bold, design: .rounded))
