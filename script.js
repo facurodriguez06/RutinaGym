@@ -5627,6 +5627,12 @@ function toggleWarmupTimer(id) {
     // Pause
     clearInterval(state.interval);
     state.isRunning = false;
+    
+    const LiveActivity = getLiveActivityPlugin();
+    if (LiveActivity) {
+      LiveActivity.endRestTimer({ userName: "Facu" }).catch(() => {});
+      LiveActivity.endRestTimer({ userName: "Alma" }).catch(() => {});
+    }
   } else {
     // Start
     if (state.time <= 0) return; // Finished
@@ -5640,6 +5646,13 @@ function toggleWarmupTimer(id) {
         state.time = 0;
         state.isCompleted = true;
         localStorage.setItem("warmup_completed_" + id, "true");
+        
+        const LiveActivity = getLiveActivityPlugin();
+        if (LiveActivity) {
+          LiveActivity.endRestTimer({ userName: "Facu" }).catch(() => {});
+          LiveActivity.endRestTimer({ userName: "Alma" }).catch(() => {});
+        }
+        
         // Play sound? or visual cue
         try {
           // Simple notification if possible
@@ -5659,6 +5672,18 @@ function toggleWarmupTimer(id) {
       // Let's do a targeted update.
       updateTimerDOM(id);
     }, 1000);
+    
+    const LiveActivity = getLiveActivityPlugin();
+    if (LiveActivity) {
+      // We don't have warmupExercises in scope, just hardcode for bike or fallback to Activación
+      const exName = id === "bike" ? "Bicicleta Estática" : "Activación";
+      
+      LiveActivity.startRestTimer({
+        exerciseName: exName,
+        userName: whoTrainsToday === "alma" ? "Alma" : "Facu",
+        seconds: state.time
+      }).catch(e => console.error(e));
+    }
   }
 
   // Initial UI update for button state
@@ -5674,6 +5699,13 @@ function resetWarmupTimer(id) {
   state.isCompleted = false;
   state.time = state.original;
   localStorage.setItem("warmup_completed_" + id, "false");
+  
+  const LiveActivity = getLiveActivityPlugin();
+  if (LiveActivity) {
+    LiveActivity.endRestTimer({ userName: "Facu" }).catch(() => {});
+    LiveActivity.endRestTimer({ userName: "Alma" }).catch(() => {});
+  }
+  
   renderContent();
 }
 
@@ -5686,6 +5718,12 @@ function skipWarmupTimer(id) {
   state.isCompleted = false;
   state.isSkipped = true;
   localStorage.setItem("warmup_completed_" + id, "false");
+
+  const LiveActivity = getLiveActivityPlugin();
+  if (LiveActivity) {
+    LiveActivity.endRestTimer({ userName: "Facu" }).catch(() => {});
+    LiveActivity.endRestTimer({ userName: "Alma" }).catch(() => {});
+  }
 
   renderContent();
 }
@@ -5845,15 +5883,7 @@ function renderContent(skipAnimations = false) {
       duration: 600, // 10 minutes
       desc: "Ritmo medio constante",
       color: "amber",
-    },
-    {
-      id: "mobility",
-      title: "Movilidad Articular",
-      icon: "rotate-3d",
-      duration: 180, // 3 minutes
-      desc: "Hombros, caderas y muñecas",
-      color: "orange",
-    },
+    }
   ];
 
   warmupExercises.forEach((ex) => {
