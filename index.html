@@ -1029,9 +1029,8 @@
 
     <!-- Timer Modal -->
     <div id="timer-modal"
-        class="fixed inset-0 bg-black/95 z-50 hidden items-center justify-center p-4 transition-all duration-300"
+        class="fixed inset-0 z-50 hidden items-center justify-center p-4 transition-all duration-300 pointer-events-none"
         data-minimized="false">
-        
         <!-- Background Flash Effect -->
         <div id="timer-bg-flash" class="absolute inset-0 opacity-0 pointer-events-none transition-opacity duration-300"></div>
 
@@ -1086,8 +1085,8 @@
         </div>
 
         <!-- Minimized Timers Container -->
-        <div id="mini-timers-container" class="fixed bottom-24 right-4 flex flex-col gap-3 items-end z-[60]">
-            <!-- Dynamic Bubbles Injected Here -->
+        <!-- Minimized Timers Container -->
+        <div id="mini-timers-container" class="fixed bottom-24 right-4 flex flex-col gap-3 items-end z-[60] pointer-events-auto">
         </div>
     </div>
 
