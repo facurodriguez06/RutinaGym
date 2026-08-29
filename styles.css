@@ -190,8 +190,6 @@ h1.from-yellow-400, h1.from-amber-300 {
    ========================================================================== */
 button {
   border-radius: 100px !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
   text-transform: none !important;
   font-weight: 600 !important;
@@ -200,13 +198,10 @@ button {
 
 button:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 button:active {
   transform: translateY(1px) scale(0.98) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* ==========================================================================
