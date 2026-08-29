@@ -235,8 +235,8 @@ button:active {
 
 .active-nav-item i, .active-filter i { color: #fff !important; }
 
-/* Sidebar & Headers */
-#sidebar, #main-header {
+/* Sidebar */
+#sidebar {
   background-color: var(--bg-panel) !important;
   border-color: var(--border-strong) !important;
   border-width: 0 1px 1px 0 !important;
