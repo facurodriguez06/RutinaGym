@@ -5718,8 +5718,8 @@ function renderContent() {
         <div class="px-4 w-full">
             ${setRowsHTML}
             
-            <!-- Agregar serie button (Mock/Aesthetic) -->
-            <div class="flex items-center gap-4 mt-2 mb-2 group cursor-not-allowed opacity-80">
+            <!-- Agregar serie button -->
+            <div onclick="addExerciseSet('${activeTab}', ${idx})" class="flex items-center gap-4 mt-2 mb-2 group cursor-pointer transition-opacity hover:opacity-80">
                 <div class="w-10 h-10 rounded-full bg-[#ea580c] text-black flex items-center justify-center shrink-0">
                     <i data-lucide="plus" class="w-5 h-5 font-bold"></i>
                 </div>
@@ -8387,3 +8387,25 @@ function getLastReps(exerciseName, user, dayIndex) {
   }
   return "";
 }
+// Global Helpers
+window.addExerciseSet = function(tabId, exerciseIndex) {
+  const dayRoutine = routineData[tabId];
+  if (!dayRoutine) return;
+  const ex = dayRoutine.exercises[exerciseIndex];
+  if (ex) {
+    let sets = parseInt(ex.sets) || 3;
+    sets += 1;
+    ex.sets = String(sets);
+    
+    // Save to localStorage
+    if (typeof routinesList !== "undefined") {
+      localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+    }
+    
+    // Re-render
+    renderContent();
+    if (typeof lucide !== "undefined" && lucide.createIcons) {
+      lucide.createIcons();
+    }
+  }
+};
