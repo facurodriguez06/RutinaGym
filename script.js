@@ -3991,7 +3991,7 @@ function updateTimerDisplay() {
 function hideTimer(user) {
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {
-    LiveActivity.endRestTimer({ userName: user === "facu" ? "Facu" : (user === "session" ? "Session" : "Alma") }).catch(e => alert("Error (endRestTimer): " + JSON.stringify(e)));
+    LiveActivity.endRestTimer({ userName: user === "facu" ? "Facu" : (user === "session" ? "Session" : "Alma"), dismissImmediately: true }).catch(e => alert("Error (endRestTimer): " + JSON.stringify(e)));
   }
 
   if (user) {

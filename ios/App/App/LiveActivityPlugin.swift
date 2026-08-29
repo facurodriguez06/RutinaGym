@@ -120,40 +120,65 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc public func endRestTimer(_ call: CAPPluginCall) {
         let userName = call.getString("userName", "")
+        let dismissImmediately = call.getBool("dismissImmediately", false)
         if #available(iOS 16.2, *) {
             Task {
                 if let activity = Activity<RestTimerAttributes>.activities.first(where: { $0.activityState == .active }) {
                     var contentState = activity.content.state
                     
-                    if userName.lowercased() == "facu" {
-                        contentState.facu?.isFinished = true
-                    } else if userName.lowercased() == "alma" {
-                        contentState.alma?.isFinished = true
-                    } else if userName.lowercased() == "session" {
-                        contentState.session?.isFinished = true
+                    if dismissImmediately {
+                        if userName.lowercased() == "facu" { contentState.facu = nil }
+                        else if userName.lowercased() == "alma" { contentState.alma = nil }
+                        else if userName.lowercased() == "session" { contentState.session = nil }
+                        else {
+                            contentState.facu = nil
+                            contentState.alma = nil
+                            contentState.session = nil
+                        }
                     } else {
-                        // Kill all if no specific user provided or unknown user
-                        contentState.facu?.isFinished = true
-                        contentState.alma?.isFinished = true
-                        contentState.session?.isFinished = true
+                        if userName.lowercased() == "facu" {
+                            contentState.facu?.isFinished = true
+                        } else if userName.lowercased() == "alma" {
+                            contentState.alma?.isFinished = true
+                        } else if userName.lowercased() == "session" {
+                            contentState.session?.isFinished = true
+                        } else {
+                            contentState.facu?.isFinished = true
+                            contentState.alma?.isFinished = true
+                            contentState.session?.isFinished = true
+                        }
                     }
                     
-                    let allFinished = (contentState.facu == nil || contentState.facu?.isFinished == true) &&
+                    let allFinishedOrNil = (contentState.facu == nil || contentState.facu?.isFinished == true) &&
                                       (contentState.alma == nil || contentState.alma?.isFinished == true) &&
                                       (contentState.session == nil || contentState.session?.isFinished == true)
                     
-                    let content = ActivityContent(state: contentState, staleDate: nil)
-                    if allFinished {
-                        await activity.end(content, dismissalPolicy: .default)
+                    let isEmpty = contentState.facu == nil && contentState.alma == nil && contentState.session == nil
+                    
+                    if isEmpty {
+                        await activity.end(nil, dismissalPolicy: .immediate)
+                        self.currentActivity = nil
+                    } else if allFinishedOrNil {
+                        let content = ActivityContent(state: contentState, staleDate: nil)
+                        await activity.end(content, dismissalPolicy: dismissImmediately ? .immediate : .default)
                         self.currentActivity = nil
                     } else {
+                        let content = ActivityContent(state: contentState, staleDate: nil)
                         await activity.update(content)
                     }
+                    call.resolve()
+                } else {
+                    // Try to catch any stray activities and force end them if dismissing
+                    if dismissImmediately {
+                        for oldActivity in Activity<RestTimerAttributes>.activities {
+                            await oldActivity.end(nil, dismissalPolicy: .immediate)
+                        }
+                    }
+                    call.resolve()
                 }
-                call.resolve(["success": true])
             }
         } else {
-            call.resolve(["success": true])
+            call.resolve()
         }
     }
 }
