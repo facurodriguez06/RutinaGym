@@ -9,9 +9,9 @@ public struct RestTimerAttributes: ActivityAttributes {
         public var isPaused: Bool
         public var isStopwatch: Bool
         public var startTime: Date?
-        public var isFinished: Bool
+        public var isFinished: Bool?
         
-        public init(endTime: Date, totalSeconds: Double, exerciseName: String, isPaused: Bool = false, isStopwatch: Bool = false, startTime: Date? = nil, isFinished: Bool = false) {
+        public init(endTime: Date, totalSeconds: Double, exerciseName: String, isPaused: Bool = false, isStopwatch: Bool = false, startTime: Date? = nil, isFinished: Bool? = false) {
             self.endTime = endTime
             self.totalSeconds = totalSeconds
             self.exerciseName = exerciseName

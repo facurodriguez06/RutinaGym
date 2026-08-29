@@ -110,7 +110,7 @@ public struct RestTimerLiveActivity: Widget {
                 // MARK: - COMPACT TRAILING
                 VStack(alignment: .trailing, spacing: -1) {
                     if let facu = context.state.facu {
-                        if facu.isFinished {
+                        if facu.isFinished == true {
                             Text("FIN")
                                 .font(.system(size: 12, weight: .black, design: .rounded))
                                 .foregroundColor(.green)
@@ -122,7 +122,7 @@ public struct RestTimerLiveActivity: Widget {
                         }
                     }
                     if let alma = context.state.alma {
-                        if alma.isFinished {
+                        if alma.isFinished == true {
                             Text("FIN")
                                 .font(.system(size: 12, weight: .black, design: .rounded))
                                 .foregroundColor(.green)
@@ -191,7 +191,7 @@ struct UserTimerRow: View {
             Spacer()
 
             VStack(alignment: .center, spacing: 4) {
-                if state.isFinished {
+                if state.isFinished == true {
                     Text("¡TIEMPO!")
                         .font(.system(size: 28, weight: .black, design: .rounded))
                         .foregroundColor(.green)
@@ -248,7 +248,7 @@ struct UserExpandedTimer: View {
     let state: RestTimerAttributes.TimerState
     
     var body: some View {
-        if state.isFinished {
+        if state.isFinished == true {
             Text("¡TIEMPO!")
                 .font(.system(size: 20, weight: .black, design: .rounded))
                 .foregroundColor(.green)
