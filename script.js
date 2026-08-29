@@ -5959,7 +5959,7 @@ function renderContent() {
         </div>
         
         <!-- Quick Actions (Pills) -->
-        <div class="px-4 flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar scroll-smooth">
+        <div class="px-4 py-1 flex items-center gap-2 mb-5 overflow-x-auto no-scrollbar scroll-smooth">
             <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[13px] text-white whitespace-nowrap">
                 <i data-lucide="timer" class="w-3.5 h-3.5 text-slate-400"></i> ${restTime >= 60 ? Math.floor(restTime/60) + ':00' : restTime + 's'}
             </div>
