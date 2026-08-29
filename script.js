@@ -6081,29 +6081,6 @@ function renderContent(skipAnimations = false) {
     listContainer.appendChild(card);
   });
 
-  // BLOQUE FINAL: CORE
-  const coreBlock = document.createElement("div");
-  coreBlock.className =
-    "core-block mt-6 mb-8 p-4 bg-gradient-to-r from-indigo-900/20 to-slate-900 rounded-xl border border-indigo-700/50";
-  coreBlock.innerHTML = `
-                <div class="flex items-center gap-2 mb-3">
-                    <i data-lucide="zap" class="w-5 h-5 text-indigo-400"></i>
-                    <h3 class="text-lg font-bold text-indigo-400">BLOQUE FINAL: CORE</h3>
-                    <span class="text-xs text-slate-400 ml-2">(Opcional si sobra energía)</span>
-                </div>
-                <ul class="space-y-3 text-sm mb-4">
-                    <li class="flex items-start gap-2 text-slate-300">
-                        <i data-lucide="target" class="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0"></i>
-                        <span><strong>Crunch Abdominal o Elevación de Piernas:</strong> 3 series x 15 repes.</span>
-                    </li>
-                    <li class="flex items-start gap-2 text-slate-300">
-                        <i data-lucide="target" class="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0"></i>
-                        <span><strong>Espinales (Superman o Máquina):</strong> 3 series x 12 repes.</span>
-                    </li>
-                </ul>
-            `;
-  listContainer.appendChild(coreBlock);
-
   // RESET BUTTON
   const resetBtnContainer = document.createElement("div");
   resetBtnContainer.className =
