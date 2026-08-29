@@ -5549,14 +5549,8 @@ function renderContent() {
     }
     card.className = cardClasses;
 
-    // Table Header for Sets
-    let setRowsHTML = `
-      <div class="grid ${whoTrainsToday === 'both' ? 'grid-cols-[40px_1fr_1fr]' : 'grid-cols-[40px_1fr]'} gap-px bg-slate-800 border-b border-slate-800">
-          <div class="p-2 flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-slate-500 bg-slate-950">SET</div>
-          ${showFacu ? `<div class="p-2 flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-blue-400 bg-slate-950">FACU</div>` : ''}
-          ${showAlma ? `<div class="p-2 flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-pink-400 bg-slate-950">ALMA</div>` : ''}
-      </div>
-    `;
+    // Table Header for Sets (Removed in favor of Pill design)
+    let setRowsHTML = `<div class="flex flex-col gap-4 mt-2">`;
 
     // Generate Set Rows
     for (let s = 0; s < numSets; s++) {
@@ -5579,39 +5573,43 @@ function renderContent() {
       }
 
       setRowsHTML += `
-      <div class="grid ${whoTrainsToday === 'both' ? 'grid-cols-[40px_1fr_1fr]' : 'grid-cols-[40px_1fr]'} gap-px bg-slate-800 group/row">
-          <div class="bg-slate-950 p-2 flex items-center justify-center text-xs font-bold text-slate-500">${s + 1}</div>
+      <div class="flex flex-col">
+          <div class="flex items-center gap-2 mb-1.5 px-1">
+              <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">SET ${s + 1}</span>
+              <div class="h-px flex-1 bg-slate-800/50"></div>
+          </div>
           
-          ${showFacu ? `
-          <div class="bg-slate-950 p-3 flex flex-col sm:flex-row items-center justify-center gap-3 transition-colors ${setData.facu ? 'bg-[var(--accent-facu)]/5' : ''}">
-              <div class="relative flex items-center">
-                  <input type="number" value="${weightFacu}" placeholder="--" data-set-key="${setKey}" data-user="facu"
-                      class="weight-input w-16 h-10 bg-slate-900 rounded-xl text-center font-bold text-sm text-white border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-600"
-                      onclick="event.stopPropagation()">
-                  <span class="absolute -right-2 translate-x-full text-[10px] text-slate-500 font-bold hidden sm:block">kg</span>
-              </div>
-              <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
-                  class="set-btn shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all ${setData.facu ? 'bg-blue-500 text-black shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}">
-                  ${setData.facu ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<div class="w-3.5 h-3.5 rounded-full border-2 border-slate-500"></div>'}
-              </button>
-          </div>` : ''}
+          <div class="flex gap-3">
+              ${showFacu ? `
+              <div class="flex-1 p-1 bg-slate-900 border border-slate-800 rounded-[1.25rem] flex items-center justify-between transition-all duration-300 ${setData.facu ? 'bg-[var(--accent-facu)]/10 border-[var(--accent-facu)]/30 ring-1 ring-[var(--accent-facu)]/20' : 'hover:border-slate-700'}">
+                  <div class="relative flex-1 flex items-center justify-center">
+                      <input type="number" value="${weightFacu}" placeholder="--" data-set-key="${setKey}" data-user="facu"
+                          class="weight-input w-full h-10 bg-transparent text-center font-bold text-base text-white outline-none transition-all placeholder:text-slate-700"
+                          onclick="event.stopPropagation()">
+                  </div>
+                  <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
+                      class="set-btn shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all ${setData.facu ? 'bg-blue-500 text-black shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-white'}">
+                      ${setData.facu ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<span class="text-[10px] font-black">FACU</span>'}
+                  </button>
+              </div>` : ''}
 
-          ${showAlma ? `
-          <div class="bg-slate-950 p-3 flex flex-col sm:flex-row items-center justify-center gap-3 transition-colors ${setData.alma ? 'bg-[var(--accent-alma)]/5' : ''}">
-              <div class="relative flex items-center">
-                  <input type="number" value="${weightAlma}" placeholder="--" data-set-key="${setKey}" data-user="alma"
-                      class="weight-input w-16 h-10 bg-slate-900 rounded-xl text-center font-bold text-sm text-white border border-slate-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-all placeholder:text-slate-600"
-                      onclick="event.stopPropagation()">
-                  <span class="absolute -right-2 translate-x-full text-[10px] text-slate-500 font-bold hidden sm:block">kg</span>
-              </div>
-              <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
-                  class="set-btn shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all ${setData.alma ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.3)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}">
-                  ${setData.alma ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<div class="w-3.5 h-3.5 rounded-full border-2 border-slate-500"></div>'}
-              </button>
-          </div>` : ''}
+              ${showAlma ? `
+              <div class="flex-1 p-1 bg-slate-900 border border-slate-800 rounded-[1.25rem] flex items-center justify-between transition-all duration-300 ${setData.alma ? 'bg-[var(--accent-alma)]/10 border-[var(--accent-alma)]/30 ring-1 ring-[var(--accent-alma)]/20' : 'hover:border-slate-700'}">
+                  <div class="relative flex-1 flex items-center justify-center">
+                      <input type="number" value="${weightAlma}" placeholder="--" data-set-key="${setKey}" data-user="alma"
+                          class="weight-input w-full h-10 bg-transparent text-center font-bold text-base text-white outline-none transition-all placeholder:text-slate-700"
+                          onclick="event.stopPropagation()">
+                  </div>
+                  <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
+                      class="set-btn shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all ${setData.alma ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)]' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-white'}">
+                      ${setData.alma ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<span class="text-[10px] font-black">ALMA</span>'}
+                  </button>
+              </div>` : ''}
+          </div>
       </div>
       `;
     }
+    setRowsHTML += `</div>`;
 
     // Assemble Card HTML
     card.innerHTML = `
@@ -5658,15 +5656,15 @@ function renderContent() {
 
             ${exercise.notes ? `
             <!-- Coach Note Banner -->
-            <div class="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-3 items-start shadow-inner">
+            <div class="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-3 items-start">
                 <i data-lucide="lightbulb" class="w-5 h-5 text-amber-500 shrink-0 mt-0.5"></i>
                 <p class="text-xs text-amber-200/80 leading-relaxed font-medium">
                     ${exercise.notes.replace(/Descanso:.*?(min|seg)\.?/gi, "").trim()}
                 </p>
             </div>` : ""}
 
-            <!-- Sets Table/Rows -->
-            <div class="w-full rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-inner">
+            <!-- Sets Tracker (Pills Layout) -->
+            <div class="w-full">
                 ${setRowsHTML}
             </div>
         </div>
