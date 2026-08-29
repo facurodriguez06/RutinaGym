@@ -94,17 +94,27 @@ body.theme-both::before {
 }
 
 body.theme-facu::before {
-  background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.05), transparent 70%);
+  background: radial-gradient(circle at 20% -20%, rgba(14, 165, 233, 0.25), transparent 70%),
+              radial-gradient(circle at 80% 120%, rgba(14, 165, 233, 0.15), transparent 70%);
 }
 body.theme-facu {
+  --bg-panel: rgba(14, 165, 233, 0.08) !important;
+  --bg-panel-alt: rgba(14, 165, 233, 0.12) !important;
+  --border-strong: rgba(14, 165, 233, 0.3) !important;
+  --border-dim: rgba(14, 165, 233, 0.15) !important;
   --accent-vigor: var(--accent-facu);
   --glow-vigor: var(--glow-facu);
 }
 
 body.theme-alma::before {
-  background: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.05), transparent 70%);
+  background: radial-gradient(circle at 20% -20%, rgba(236, 72, 153, 0.25), transparent 70%),
+              radial-gradient(circle at 80% 120%, rgba(236, 72, 153, 0.15), transparent 70%);
 }
 body.theme-alma {
+  --bg-panel: rgba(236, 72, 153, 0.08) !important;
+  --bg-panel-alt: rgba(236, 72, 153, 0.12) !important;
+  --border-strong: rgba(236, 72, 153, 0.3) !important;
+  --border-dim: rgba(236, 72, 153, 0.15) !important;
   --accent-vigor: var(--accent-alma);
   --glow-vigor: var(--glow-alma);
 }
