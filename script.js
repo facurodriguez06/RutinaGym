@@ -5684,8 +5684,6 @@ function toggleWarmupTimer(id) {
         exerciseName: exName,
         userName: whoTrainsToday === "alma" ? "Alma" : "Facu",
         seconds: state.time
-      }).then(() => {
-        showToast("check-circle", "text-emerald-400", "Dynamic Island Activada");
       }).catch(e => alert("Error iniciando Dynamic Island: " + JSON.stringify(e)));
     }
   }
