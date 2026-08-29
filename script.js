@@ -5540,19 +5540,15 @@ function renderContent() {
 
     const card = document.createElement("div");
     const staggerClass = idx < 6 ? `stagger-${idx + 1}` : "";
-    let cardClasses = `animate-slide-up ${staggerClass} relative group rounded-3xl border bg-slate-950 border-slate-800 flex flex-col overflow-hidden mb-6 shadow-2xl transition-all duration-300 `;
+    let cardClasses = `animate-slide-up ${staggerClass} relative bg-[#09090b] flex flex-col mb-8 `;
     
     if (isExerciseCompleted) {
-      cardClasses += `opacity-80 scale-[0.99] border-${activeColor}-900/50`;
-    } else {
-      cardClasses += `hover:border-${activeColor}-500/50 hover:shadow-${activeColor}-900/10`;
+      cardClasses += `opacity-60`;
     }
     card.className = cardClasses;
 
-    // Table Header for Sets (Removed in favor of Pill design)
-    let setRowsHTML = `<div class="flex flex-col gap-4 mt-2">`;
-
     // Generate Set Rows
+    let setRowsHTML = `<div class="flex flex-col">`;
     for (let s = 0; s < numSets; s++) {
       const setKey = `${activeTab}-${idx}-${s}`;
       if (typeof completedSets[setKey] !== "object") {
@@ -5573,38 +5569,54 @@ function renderContent() {
       }
 
       setRowsHTML += `
-      <div class="flex flex-col">
-          <div class="flex items-center gap-2 mb-1.5 px-1">
-              <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">SET ${s + 1}</span>
-              <div class="h-px flex-1 bg-slate-800/50"></div>
+      <div class="flex relative group">
+          <!-- Timeline Vertical Line -->
+          <div class="absolute left-[19px] top-10 bottom-[-16px] w-0.5 bg-[#27272a] group-last:hidden"></div>
+          
+          <!-- Set Circle -->
+          <div class="w-10 flex flex-col items-center shrink-0 z-10 pt-1">
+              <div class="w-10 h-10 rounded-full bg-[#18181b] text-slate-400 font-bold flex items-center justify-center border-[4px] border-[#09090b] shadow-sm">
+                  ${s + 1}
+              </div>
           </div>
           
-          <div class="flex gap-3">
+          <!-- Inputs Column -->
+          <div class="flex-1 ml-3 flex flex-col gap-2 pb-6">
               ${showFacu ? `
-              <div class="flex-1 p-1 bg-slate-900 border border-slate-800 rounded-[1.25rem] flex items-center justify-between transition-all duration-300 ${setData.facu ? 'bg-[var(--accent-facu)]/10 border-[var(--accent-facu)]/30 ring-1 ring-[var(--accent-facu)]/20' : 'hover:border-slate-700'}">
-                  <div class="relative flex-1 flex items-center justify-center">
-                      <input type="number" value="${weightFacu}" placeholder="--" data-set-key="${setKey}" data-user="facu"
-                          class="weight-input w-full h-10 bg-transparent text-center font-bold text-base text-white outline-none transition-all placeholder:text-slate-700"
-                          onclick="event.stopPropagation()">
+              <div class="flex items-center justify-between bg-[#18181b] border border-[#27272a] rounded-xl p-1.5 pl-4 transition-colors ${setData.facu ? 'border-[var(--accent-facu)]/30 bg-[var(--accent-facu)]/5' : ''}">
+                  <div class="flex items-center gap-3">
+                      ${whoTrainsToday === 'both' ? `<div class="w-2 h-2 rounded-full bg-[var(--accent-facu)]"></div>` : ''}
+                      <span class="text-white font-bold text-lg w-7 text-center">${exercise.reps}</span>
+                      <span class="text-slate-500 text-sm font-medium hidden sm:inline">reps</span>
+                      <span class="text-slate-600 font-bold mx-1 hidden sm:inline">·</span>
+                      <input type="number" value="${weightFacu}" placeholder="0" data-set-key="${setKey}" data-user="facu"
+                          class="weight-input w-12 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                      <span class="text-slate-500 text-sm font-medium">kg</span>
                   </div>
                   <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
-                      class="set-btn shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all ${setData.facu ? 'bg-blue-500 text-black shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-white'}">
-                      ${setData.facu ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<span class="text-[10px] font-black">FACU</span>'}
+                      class="set-btn shrink-0 w-12 h-10 rounded-lg flex items-center justify-center transition-all ${setData.facu ? 'bg-[var(--accent-facu)] text-black' : 'bg-[#27272a] text-slate-500 hover:text-white'}">
+                      <i data-lucide="check" class="w-5 h-5"></i>
                   </button>
-              </div>` : ''}
-
+              </div>
+              ` : ''}
+              
               ${showAlma ? `
-              <div class="flex-1 p-1 bg-slate-900 border border-slate-800 rounded-[1.25rem] flex items-center justify-between transition-all duration-300 ${setData.alma ? 'bg-[var(--accent-alma)]/10 border-[var(--accent-alma)]/30 ring-1 ring-[var(--accent-alma)]/20' : 'hover:border-slate-700'}">
-                  <div class="relative flex-1 flex items-center justify-center">
-                      <input type="number" value="${weightAlma}" placeholder="--" data-set-key="${setKey}" data-user="alma"
-                          class="weight-input w-full h-10 bg-transparent text-center font-bold text-base text-white outline-none transition-all placeholder:text-slate-700"
-                          onclick="event.stopPropagation()">
+              <div class="flex items-center justify-between bg-[#18181b] border border-[#27272a] rounded-xl p-1.5 pl-4 transition-colors ${setData.alma ? 'border-[var(--accent-alma)]/30 bg-[var(--accent-alma)]/5' : ''}">
+                  <div class="flex items-center gap-3">
+                      ${whoTrainsToday === 'both' ? `<div class="w-2 h-2 rounded-full bg-[var(--accent-alma)]"></div>` : ''}
+                      <span class="text-white font-bold text-lg w-7 text-center">${exercise.reps}</span>
+                      <span class="text-slate-500 text-sm font-medium hidden sm:inline">reps</span>
+                      <span class="text-slate-600 font-bold mx-1 hidden sm:inline">·</span>
+                      <input type="number" value="${weightAlma}" placeholder="0" data-set-key="${setKey}" data-user="alma"
+                          class="weight-input w-12 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                      <span class="text-slate-500 text-sm font-medium">kg</span>
                   </div>
                   <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
-                      class="set-btn shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all ${setData.alma ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)]' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-white'}">
-                      ${setData.alma ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<span class="text-[10px] font-black">ALMA</span>'}
+                      class="set-btn shrink-0 w-12 h-10 rounded-lg flex items-center justify-center transition-all ${setData.alma ? 'bg-[var(--accent-alma)] text-white' : 'bg-[#27272a] text-slate-500 hover:text-white'}">
+                      <i data-lucide="check" class="w-5 h-5"></i>
                   </button>
-              </div>` : ''}
+              </div>
+              ` : ''}
           </div>
       </div>
       `;
@@ -5614,58 +5626,63 @@ function renderContent() {
     // Assemble Card HTML
     card.innerHTML = `
         <!-- Header -->
-        <div class="relative w-full px-5 py-4 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between z-10 overflow-hidden">
-            <!-- Completion Background Strip -->
-            <div class="absolute left-0 top-0 bottom-0 w-1 transition-colors duration-300 ${isExerciseCompleted ? `bg-${activeColor}-500` : `bg-slate-700 group-hover:bg-${activeColor}-500/50`}"></div>
-            
-            <div class="flex items-center gap-3 flex-1 min-w-0 pr-4">
-                <div class="transition-all duration-300 shrink-0">
-                    ${isExerciseCompleted ? `<i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-500 fill-emerald-500/20"></i>` : `<i data-lucide="circle" class="w-6 h-6 text-slate-600 group-hover:text-emerald-500/50"></i>`}
+        <div class="px-4 py-4 flex items-center gap-4">
+            <!-- Thumbnail (SVG scaled down inside a white box) -->
+            <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative cursor-pointer" onclick='event.stopPropagation(); openMuscleMapModal(${JSON.stringify(exercise.muscles.primary)}, ${JSON.stringify(exercise.muscles.secondary)})'>
+                <!-- The muscle map SVG scales poorly by itself, we use transform scale -->
+                <div class="absolute inset-0 flex items-center justify-center scale-[0.45] pointer-events-none">
+                     ${getMuscleMapSVG(exercise.muscles.primary, exercise.muscles.secondary)}
                 </div>
-                
-                <h3 class="font-bold text-lg sm:text-xl tracking-tight truncate transition-colors duration-300 ${isExerciseCompleted ? 'text-slate-500 line-through decoration-slate-600' : 'text-slate-100 group-hover:text-white'}">${exercise.name}</h3>
             </div>
             
-            <!-- Right side: History & Muscle Map -->
-            <div class="flex items-center gap-2 shrink-0">
-                <button onclick='event.stopPropagation(); openMuscleMapModal(${JSON.stringify(exercise.muscles.primary)}, ${JSON.stringify(exercise.muscles.secondary)})' 
-                    class="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:text-emerald-400 text-slate-500 transition-all flex items-center gap-1 group/btn" title="Impacto Muscular">
-                    <i data-lucide="activity" class="w-4 h-4"></i>
-                </button>
-                <button onclick="event.stopPropagation(); showExerciseHistory('${exercise.name}')"
-                    class="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 hover:text-blue-400 text-slate-500 transition-all flex items-center gap-1" title="Ver Historial">
-                    <i data-lucide="trending-up" class="w-4 h-4"></i>
-                </button>
+            <!-- Title & Info -->
+            <div class="flex-1 flex flex-col justify-center min-w-0">
+                <div class="flex justify-between items-start gap-2">
+                    <h3 class="font-bold text-[22px] text-white leading-tight tracking-tight truncate">${exercise.name}</h3>
+                    <button onclick="event.stopPropagation(); showExerciseHistory('${exercise.name}')" class="text-slate-400 hover:text-white shrink-0 mt-1">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <p class="text-[13px] text-slate-400 mt-1.5 truncate">
+                    ${exercise.muscles.primary.join(", ")}
+                </p>
             </div>
         </div>
         
-        <!-- Body -->
-        <div class="p-5 flex flex-col gap-5 z-10 bg-slate-950">
-            <!-- Technical Details (Pills) -->
-            <div class="flex flex-wrap gap-2">
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">
-                    <i data-lucide="repeat" class="w-3.5 h-3.5 text-slate-500"></i> ${exercise.reps}
-                </div>
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-orange-400">
-                    <i data-lucide="zap" class="w-3.5 h-3.5 text-orange-500/50"></i> RIR ${exercise.rir}
-                </div>
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-cyan-400">
-                    <i data-lucide="timer" class="w-3.5 h-3.5 text-cyan-500/50"></i> ${restTime >= 60 ? Math.floor(restTime/60) + 'm' : restTime + 's'}
-                </div>
+        <!-- Quick Actions (Pills) -->
+        <div class="px-4 flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar scroll-smooth">
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181b] border border-[#27272a] text-[13px] text-white whitespace-nowrap">
+                Reps y carga <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
             </div>
-
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181b] border border-[#27272a] text-[13px] text-white whitespace-nowrap">
+                <i data-lucide="timer" class="w-3.5 h-3.5 text-slate-400"></i> ${restTime >= 60 ? Math.floor(restTime/60) + ':00' : restTime + 's'}
+            </div>
             ${exercise.notes ? `
-            <!-- Coach Note Banner -->
-            <div class="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-3 items-start">
-                <i data-lucide="lightbulb" class="w-5 h-5 text-amber-500 shrink-0 mt-0.5"></i>
-                <p class="text-xs text-amber-200/80 leading-relaxed font-medium">
-                    ${exercise.notes.replace(/Descanso:.*?(min|seg)\.?/gi, "").trim()}
-                </p>
-            </div>` : ""}
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181b] border border-[#27272a] text-[13px] text-white whitespace-nowrap">
+                <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i> Notas
+            </div>` : ''}
+        </div>
+        
+        <!-- Coach Note Dropdown -->
+        ${exercise.notes ? `
+        <div class="px-4 mb-4">
+             <div class="p-3 rounded-xl bg-[#18181b] border border-amber-500/20 text-xs text-amber-200/90 flex gap-2 items-start">
+                 <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"></i>
+                 ${exercise.notes.replace(/Descanso:.*?(min|seg)\.?/gi, "").trim()}
+             </div>
+        </div>
+        ` : ''}
 
-            <!-- Sets Tracker (Pills Layout) -->
-            <div class="w-full">
-                ${setRowsHTML}
+        <!-- Sets Tracker Timeline -->
+        <div class="px-4 w-full">
+            ${setRowsHTML}
+            
+            <!-- Agregar serie button (Mock/Aesthetic) -->
+            <div class="flex items-center gap-4 mt-2 mb-2 group cursor-not-allowed opacity-80">
+                <div class="w-10 h-10 rounded-full bg-[#ea580c] text-black flex items-center justify-center shrink-0">
+                    <i data-lucide="plus" class="w-5 h-5 font-bold"></i>
+                </div>
+                <span class="text-[#ea580c] font-medium text-sm">Agregar serie</span>
             </div>
         </div>
     `;
