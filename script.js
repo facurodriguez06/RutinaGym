@@ -666,8 +666,16 @@ function getAlmaUserId() {
   return baseId.slice(0, -1) + newLastChar;
 }
 
+function getCloudApiBaseUrl() {
+  return localStorage.getItem("gymCloudApiBaseUrl") || (window.__CLOUD_API_URL__ || "");
+}
+
 const cloudAdapter = {
   stateEndpoint() {
+    const customUrl = getCloudApiBaseUrl();
+    if (customUrl) {
+      return `${customUrl.replace(/\/+$/, "")}/api/state`;
+    }
     if (window.__CLOUD_API_URL__) {
       return `${window.__CLOUD_API_URL__}/api/state`;
     }
@@ -5760,8 +5768,8 @@ function renderContent() {
         <!-- Header -->
         <div class="px-4 py-4 flex items-center gap-4">
             <!-- Thumbnail (Image) -->
-            <div class="w-20 h-20 bg-black rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative cursor-pointer border border-[#27272a]" onclick='event.stopPropagation(); openImageModal("${exercise.image || "./assets/exercises/squat.jpg"}")'>
-                <img src="${exercise.image || "./assets/exercises/squat.jpg"}" class="w-full h-full object-cover grayscale opacity-80 transition-opacity duration-300 hover:opacity-100" />
+            <div class="w-20 h-20 bg-black rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative cursor-pointer border border-[#27272a]" onclick='event.stopPropagation(); openImageModal("${getExerciseImage(exercise)}")'>
+                <img src="${getExerciseImage(exercise)}" alt="${exercise.name}" class="w-full h-full object-cover grayscale opacity-80 transition-opacity duration-300 hover:opacity-100" onerror="this.onerror=null; this.src='./assets/exercises/squat.jpg';" />
             </div>
             
             <!-- Title & Info -->

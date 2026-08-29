@@ -45,6 +45,14 @@ filesToCopy.forEach(file => {
   }
 });
 
+// Copy assets folder recursively
+const assetsSrc = path.join(__dirname, 'assets');
+const assetsDest = path.join(destDir, 'assets');
+if (fs.existsSync(assetsSrc)) {
+  fs.cpSync(assetsSrc, assetsDest, { recursive: true });
+  console.log(`[OK] Copied assets folder -> www/assets`);
+}
+
 // Regenerate config.js with remote API URL if env var is set
 const cloudApiUrl = process.env.CLOUD_API_URL || process.env.VITE_CLOUD_API_URL || '';
 if (cloudApiUrl) {
