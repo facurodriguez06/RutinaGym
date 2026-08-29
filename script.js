@@ -414,6 +414,11 @@ function closeWhoTrainsModal() {
     setTimeout(() => {
       modal.classList.add("hidden");
       modal.classList.remove("flex", "opacity-0", "pointer-events-none");
+      
+      const appContent = document.getElementById("app-content");
+      if (appContent) {
+        appContent.classList.remove("hidden");
+      }
     }, 250);
   }
 }
@@ -465,6 +470,11 @@ function checkPromptWhoTrainsToday() {
   // Gatekeeper: Always require user to pick who trains upon launching the web app
   if (!sessionTraineeSelected) {
     openWhoTrainsModal();
+  } else {
+    const appContent = document.getElementById("app-content");
+    if (appContent) {
+      appContent.classList.remove("hidden");
+    }
   }
   updateWhoTrainsUI();
 }
