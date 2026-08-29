@@ -513,27 +513,29 @@ input[type="number"].reps-input:focus, input[type="number"].weight-input:focus {
 }
 
 /* COMPREHENSIVE TAILWIND THEME OVERRIDES FOR HARDCODED CLASSES */
-[class*="bg-slate-9"] {
-  background-color: var(--bg-panel) !important;
-}
+html:not(.dark) {
+  [class*="bg-slate-9"] {
+    background-color: var(--bg-panel) !important;
+  }
 
-[class*="bg-slate-8"], [class*="bg-slate-7"] {
-  background-color: var(--bg-panel-alt) !important;
-}
+  [class*="bg-slate-8"], [class*="bg-slate-7"] {
+    background-color: var(--bg-panel-alt) !important;
+  }
 
-[class*="border-slate-9"], [class*="border-slate-8"], [class*="border-slate-7"] {
-  border-color: var(--border-strong) !important;
-}
+  [class*="border-slate-9"], [class*="border-slate-8"], [class*="border-slate-7"] {
+    border-color: var(--border-strong) !important;
+  }
 
-[class*="text-slate-1"], [class*="text-slate-2"], [class*="text-slate-3"], .text-white {
-  color: var(--text-main) !important;
-}
+  [class*="text-slate-1"], [class*="text-slate-2"], [class*="text-slate-3"], .text-white {
+    color: var(--text-main) !important;
+  }
 
-[class*="text-slate-4"], [class*="text-slate-5"], [class*="text-slate-6"] {
-  color: var(--text-dim) !important;
-}
+  [class*="text-slate-4"], [class*="text-slate-5"], [class*="text-slate-6"] {
+    color: var(--text-dim) !important;
+  }
 
-[class*="text-amber-2"], [class*="text-amber-3"], [class*="text-amber-4"] {
-  color: var(--text-amber) !important;
+  [class*="text-amber-2"], [class*="text-amber-3"], [class*="text-amber-4"] {
+    color: var(--text-amber) !important;
+  }
 }
 
