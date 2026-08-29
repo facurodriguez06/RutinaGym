@@ -5671,7 +5671,18 @@ window.toggleExerciseComplete = function(tabIdx, exerciseIdx, numSets, isComplet
     if (showFacu) completedSets[setKey].facu = !isCompleted;
     if (showAlma) completedSets[setKey].alma = !isCompleted;
   }
-  saveData();
+  localStorage.setItem("gymRoutineSets_" + activeRoutineId, JSON.stringify(completedSets));
+  
+  const today = getDateKey(new Date());
+  if (!trainingHistory[today]) {
+    trainingHistory[today] = { alma: false, facu: false, weights: {}, completed_sets: {} };
+  }
+  trainingHistory[today].completed_sets = completedSets;
+  if (typeof debouncedSaveToCloud === 'function') debouncedSaveToCloud(1000);
+  
+  if (!isCompleted && typeof isSessionTimerRunning !== "undefined" && !isSessionTimerRunning) {
+    if (typeof startWorkoutSession === "function") startWorkoutSession();
+  }
   renderContent();
   if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   triggerHaptic();
