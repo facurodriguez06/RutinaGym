@@ -650,20 +650,56 @@ function initializeRoutines() {
   routineData = activeRoutine.data;
 }
 
+const PRIMARY_FACU_ID = "197ab9a4-e3e6-40d3-8b61-55b3da6c1085";
+const PRIMARY_ALMA_ID = "197ab9a4-e3e6-40d3-8b61-55b3da6c108a";
+
+const SUPABASE_DEFAULT_URL = "https://gyocrhodtttlmgkszpeh.supabase.co";
+const SUPABASE_DEFAULT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b2NyaG9kdHR0bG1na3N6cGVoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTQ0MjM2NCwiZXhwIjoyMDk1MDE4MzY0fQ.qaZskkRDSlc_rVDMM2donaCA840D9SpVgCBVMBcGNCk";
+
+function getSupabaseConfig() {
+  const url = (window.__SUPABASE_URL__ || localStorage.getItem("gymSupabaseUrl") || SUPABASE_DEFAULT_URL).replace(/\/+$/, "");
+  const key = window.__SUPABASE_KEY__ || localStorage.getItem("gymSupabaseKey") || SUPABASE_DEFAULT_KEY;
+  return { url, key };
+}
+
+async function directSupabaseFetch(path, options = {}) {
+  const { url, key } = getSupabaseConfig();
+  if (!url || !key) return null;
+  const response = await fetch(`${url}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(text || `Supabase error (${response.status})`);
+  }
+  if (response.status === 204) return null;
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) return response.json();
+  return response.text();
+}
+
 function getCloudUserId() {
   let userId = localStorage.getItem("gymCloudUserId");
-  if (!userId) {
-    userId = makeRowId("gym-user");
+  if (!userId || userId.startsWith("gym-user-") || userId === "test-user-id") {
+    userId = PRIMARY_FACU_ID;
     localStorage.setItem("gymCloudUserId", userId);
   }
   return userId;
 }
 
 function getAlmaUserId() {
-  const baseId = getCloudUserId();
-  const lastChar = baseId.charAt(baseId.length - 1);
-  const newLastChar = lastChar === 'a' ? 'b' : 'a';
-  return baseId.slice(0, -1) + newLastChar;
+  let userId = localStorage.getItem("gymAlmaCloudUserId");
+  if (!userId || userId.startsWith("gym-user-") || userId === "test-user-ia") {
+    userId = PRIMARY_ALMA_ID;
+    localStorage.setItem("gymAlmaCloudUserId", userId);
+  }
+  return userId;
 }
 
 function getCloudApiBaseUrl() {
@@ -671,53 +707,151 @@ function getCloudApiBaseUrl() {
 }
 
 const cloudAdapter = {
-  stateEndpoint() {
-    const customUrl = getCloudApiBaseUrl();
-    if (customUrl) {
-      return `${customUrl.replace(/\/+$/, "")}/api/state`;
-    }
-    if (window.__CLOUD_API_URL__) {
-      return `${window.__CLOUD_API_URL__}/api/state`;
-    }
-    if (window.location.protocol === "file:") {
-      return "http://localhost:3000/api/state";
-    }
-    if (window.location.protocol === "capacitor:") {
-      return "http://localhost:3000/api/state";
-    }
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      if (window.__CLOUD_PORT__) {
-        return `http://localhost:${window.__CLOUD_PORT__}/api/state`;
-      }
-      return "http://localhost:3000/api/state";
-    }
-    return `${window.location.origin}/api/state`;
-  },
   async getState() {
+    // 1. Direct Supabase Query (Universal, reliable on iOS, Android, Capacitor, PWA, Web)
     try {
-      const response = await fetch(this.stateEndpoint(), { method: "GET" });
-      if (!response.ok) return null;
-      return await response.json();
-    } catch {
-      return null;
+      const [profiles, routines, days, exercises, history, gamification, water] = await Promise.all([
+        directSupabaseFetch("profiles?select=*"),
+        directSupabaseFetch("routines?select=*&order=is_base.desc,created_at.asc"),
+        directSupabaseFetch("routine_days?select=*&order=day_index.asc"),
+        directSupabaseFetch("routine_exercises?select=*&order=position.asc"),
+        directSupabaseFetch("training_history?select=*&order=date_key.asc"),
+        directSupabaseFetch("gamification?select=*"),
+        directSupabaseFetch("water_state?select=*"),
+      ]);
+
+      return {
+        profiles: profiles || [],
+        routines: routines || [],
+        routine_days: days || [],
+        routine_exercises: exercises || [],
+        training_history: history || [],
+        gamification: gamification || [],
+        water_state: water || [],
+      };
+    } catch (e) {
+      console.warn("Direct Supabase getState failed, attempting proxy fallback:", e);
     }
-  },
-  async saveState(payload) {
+
+    // 2. Fallback to proxy endpoint if available
     try {
-      const response = await fetch(this.stateEndpoint(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save", payload }),
-      });
-      if (!response.ok) {
-        console.warn("Cloud save failed", response.status, await response.text().catch(() => ""));
+      const customUrl = getCloudApiBaseUrl();
+      const endpoint = customUrl
+        ? `${customUrl.replace(/\/+$/, "")}/api/state`
+        : window.__CLOUD_API_URL__
+        ? `${window.__CLOUD_API_URL__}/api/state`
+        : window.location.origin.startsWith("http") && !window.location.origin.includes("localhost")
+        ? `${window.location.origin}/api/state`
+        : null;
+
+      if (endpoint) {
+        const response = await fetch(endpoint, { method: "GET" });
+        if (response.ok) return await response.json();
+      }
+    } catch (e) {
+      console.warn("Fallback proxy getState failed:", e);
+    }
+
+    return null;
+  },
+
+  async saveState(payload) {
+    // 1. Direct Supabase Upsert
+    try {
+      const results = [];
+      const headers = { Prefer: "resolution=merge-duplicates,return=minimal" };
+
+      if (payload.profile) {
+        results.push(directSupabaseFetch("profiles?on_conflict=id", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload.profile),
+        }));
+      }
+
+      if (Array.isArray(payload.routines) && payload.routines.length > 0) {
+        results.push(directSupabaseFetch("routines?on_conflict=id", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload.routines),
+        }));
+      }
+
+      if (Array.isArray(payload.routine_days) && payload.routine_days.length > 0) {
+        results.push(directSupabaseFetch("routine_days?on_conflict=id", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload.routine_days),
+        }));
+      }
+
+      if (Array.isArray(payload.routine_exercises) && payload.routine_exercises.length > 0) {
+        results.push(directSupabaseFetch("routine_exercises?on_conflict=id", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload.routine_exercises),
+        }));
+      }
+
+      if (Array.isArray(payload.training_history) && payload.training_history.length > 0) {
+        results.push(directSupabaseFetch("training_history?on_conflict=user_id,date_key", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload.training_history),
+        }));
+      }
+
+      if (payload.gamification) {
+        results.push(directSupabaseFetch("gamification?on_conflict=user_id", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload.gamification),
+        }));
+      }
+
+      if (payload.water_state) {
+        results.push(directSupabaseFetch("water_state?on_conflict=user_id", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload.water_state),
+        }));
+      }
+
+      const settled = await Promise.allSettled(results);
+      const rejected = settled.filter((s) => s.status === "rejected");
+      if (rejected.length > 0) {
+        console.warn("Some direct Supabase upserts rejected:", rejected.map(r => r.reason?.message));
         return false;
       }
       return true;
-    } catch {
-      console.warn("Cloud save failed: network error");
-      return false;
+    } catch (e) {
+      console.warn("Direct Supabase saveState error:", e);
     }
+
+    // 2. Fallback to proxy endpoint if direct failed
+    try {
+      const customUrl = getCloudApiBaseUrl();
+      const endpoint = customUrl
+        ? `${customUrl.replace(/\/+$/, "")}/api/state`
+        : window.__CLOUD_API_URL__
+        ? `${window.__CLOUD_API_URL__}/api/state`
+        : window.location.origin.startsWith("http") && !window.location.origin.includes("localhost")
+        ? `${window.location.origin}/api/state`
+        : null;
+
+      if (endpoint) {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save", payload }),
+        });
+        return response.ok;
+      }
+    } catch (e) {
+      console.warn("Proxy saveState fallback failed:", e);
+    }
+
+    return false;
   },
 };
 
@@ -1103,12 +1237,12 @@ function updateDOMInPlace() {
 function applyCloudState(state, triggerTimers = false) {
   if (!state) return false;
 
-  const profile = state.profiles?.[0];
-  if (profile?.id) {
-    localStorage.setItem("gymCloudUserId", profile.id);
+  const facuProfile = (state.profiles || []).find(p => p.id === PRIMARY_FACU_ID || p.display_name === "Facu") || state.profiles?.[0];
+  if (facuProfile?.id) {
+    localStorage.setItem("gymCloudUserId", facuProfile.id);
   }
-  if (profile?.display_name) {
-    localStorage.setItem("gymUserDisplayName", profile.display_name);
+  if (facuProfile?.display_name) {
+    localStorage.setItem("gymUserDisplayName", facuProfile.display_name);
   }
 
   if (Array.isArray(state.routines) && state.routines.length) {
@@ -1253,31 +1387,36 @@ function applyCloudState(state, triggerTimers = false) {
     const facuId = getCloudUserId();
     const almaId = getAlmaUserId();
     
-    const facuG = state.gamification.find((r) => r.user_id === facuId);
+    // Match exact user_id or pick primary record with highest points / achievements
+    const facuG = state.gamification.find((r) => r.user_id === facuId || r.user_id === PRIMARY_FACU_ID) ||
+                  state.gamification.filter(r => r.user_id && !r.user_id.endsWith("a")).sort((a,b) => (b.points||0) - (a.points||0))[0];
+
+    const almaG = state.gamification.find((r) => r.user_id === almaId || r.user_id === PRIMARY_ALMA_ID) ||
+                  state.gamification.filter(r => r.user_id && r.user_id.endsWith("a")).sort((a,b) => (b.points||0) - (a.points||0))[0];
+
     if (facuG) {
       gamification.facu = {
         ...gamification.facu,
-        points: facuG.points || 0,
-        streak: facuG.streak || 0,
-        freezes: facuG.freezes || 0,
-        frozenDays: facuG.frozen_days || [],
-        achievements: facuG.achievements || [],
-        lastReset: facuG.last_reset || 0,
-        lastRescuePromptDate: facuG.last_rescue_prompt_date || null,
+        points: facuG.points ?? gamification.facu.points,
+        streak: facuG.streak ?? gamification.facu.streak,
+        freezes: facuG.freezes ?? gamification.facu.freezes,
+        frozenDays: facuG.frozen_days || facuG.frozenDays || gamification.facu.frozenDays || [],
+        achievements: Array.from(new Set([...(gamification.facu.achievements || []), ...(facuG.achievements || [])])),
+        lastReset: facuG.last_reset || gamification.facu.lastReset || 0,
+        lastRescuePromptDate: facuG.last_rescue_prompt_date || gamification.facu.lastRescuePromptDate || null,
       };
     }
     
-    const almaG = state.gamification.find((r) => r.user_id === almaId);
     if (almaG) {
       gamification.alma = {
         ...gamification.alma,
-        points: almaG.points || 0,
-        streak: almaG.streak || 0,
-        freezes: almaG.freezes || 0,
-        frozenDays: almaG.frozen_days || [],
-        achievements: almaG.achievements || [],
-        lastReset: almaG.last_reset || 0,
-        lastRescuePromptDate: almaG.last_rescue_prompt_date || null,
+        points: almaG.points ?? gamification.alma.points,
+        streak: almaG.streak ?? gamification.alma.streak,
+        freezes: almaG.freezes ?? gamification.alma.freezes,
+        frozenDays: almaG.frozen_days || almaG.frozenDays || gamification.alma.frozenDays || [],
+        achievements: Array.from(new Set([...(gamification.alma.achievements || []), ...(almaG.achievements || [])])),
+        lastReset: almaG.last_reset || gamification.alma.lastReset || 0,
+        lastRescuePromptDate: almaG.last_rescue_prompt_date || gamification.alma.lastRescuePromptDate || null,
       };
     }
     localStorage.setItem("gymGamification", JSON.stringify(gamification));
@@ -1287,14 +1426,16 @@ function applyCloudState(state, triggerTimers = false) {
     const facuId = getCloudUserId();
     const almaId = getAlmaUserId();
     
-    const facuW = state.water_state.find((r) => r.user_id === facuId);
+    const facuW = state.water_state.find((r) => r.user_id === facuId || r.user_id === PRIMARY_FACU_ID) ||
+                  state.water_state.find(r => !r.user_id.endsWith("a"));
     if (facuW) {
       waterState.facu = facuW.current_water_ml || 0;
       waterState.facuGoal = facuW.goal_ml || 2500;
       waterState.date = facuW.last_updated_date || waterState.date;
     }
     
-    const almaW = state.water_state.find((r) => r.user_id === almaId);
+    const almaW = state.water_state.find((r) => r.user_id === almaId || r.user_id === PRIMARY_ALMA_ID) ||
+                  state.water_state.find(r => r.user_id.endsWith("a"));
     if (almaW) {
       waterState.alma = almaW.current_water_ml || 0;
       waterState.almaGoal = almaW.goal_ml || 2500;
@@ -1323,9 +1464,7 @@ function startCloudPolling() {
     if (Date.now() - lastLocalChangeTime < 10000) return; // Skip if user edited recently
     
     try {
-      const response = await fetch(cloudAdapter.stateEndpoint(), { method: "GET" });
-      if (!response.ok) return;
-      const state = await response.json();
+      const state = await cloudAdapter.getState();
       if (state && !state.error) {
         if (isSyncing || Date.now() - lastLocalChangeTime < 10000) return;
         applyCloudState(state, true);
@@ -1380,9 +1519,13 @@ loadActiveRoutineState();
 
 // Try cloud sync on boot, fallback remains localStorage
 syncFromCloud().then(() => {
-  seedCloudIfEmpty();
   if (typeof updateGamificationUI === "function") updateGamificationUI();
   if (typeof renderAquaFlow === "function") renderAquaFlow();
+  if (typeof renderContent === "function") renderContent();
+  if (typeof renderCalendar === "function") renderCalendar();
+  if (typeof updateStreakDisplay === "function") updateStreakDisplay();
+  if (typeof updateDOMInPlace === "function") updateDOMInPlace();
+  if (typeof updateHeaderStats === "function") updateHeaderStats();
 });
 
 // --- TIMER STATE ---

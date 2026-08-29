@@ -1,1 +1,2 @@
-// config.js for local dev - set CLOUD_API_URL env var before `npm run build` for Capacitor builds
+window.__SUPABASE_URL__ = "https://gyocrhodtttlmgkszpeh.supabase.co";
+window.__SUPABASE_KEY__ = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b2NyaG9kdHR0bG1na3N6cGVoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTQ0MjM2NCwiZXhwIjoyMDk1MDE4MzY0fQ.qaZskkRDSlc_rVDMM2donaCA840D9SpVgCBVMBcGNCk";

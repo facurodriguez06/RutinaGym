@@ -53,12 +53,17 @@ if (fs.existsSync(assetsSrc)) {
   console.log(`[OK] Copied assets folder -> www/assets`);
 }
 
-// Regenerate config.js with remote API URL if env var is set
+// Generate config.js with Supabase credentials and optional Cloud API URL
 const cloudApiUrl = process.env.CLOUD_API_URL || process.env.VITE_CLOUD_API_URL || '';
+const supabaseUrl = process.env.SUPABASE_URL || "https://gyocrhodtttlmgkszpeh.supabase.co";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b2NyaG9kdHR0bG1na3N6cGVoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTQ0MjM2NCwiZXhwIjoyMDk1MDE4MzY0fQ.qaZskkRDSlc_rVDMM2donaCA840D9SpVgCBVMBcGNCk";
+
+let configContent = `window.__SUPABASE_URL__ = ${JSON.stringify(supabaseUrl)};\nwindow.__SUPABASE_KEY__ = ${JSON.stringify(supabaseKey)};\n`;
 if (cloudApiUrl) {
-  const configContent = `window.__CLOUD_API_URL__ = ${JSON.stringify(cloudApiUrl.replace(/\/+$/, ''))};\n`;
-  fs.writeFileSync(path.join(destDir, 'config.js'), configContent);
+  configContent += `window.__CLOUD_API_URL__ = ${JSON.stringify(cloudApiUrl.replace(/\/+$/, ''))};\n`;
   console.log(`[OK] config.js → CLOUD_API_URL=${cloudApiUrl}`);
 }
+fs.writeFileSync(path.join(destDir, 'config.js'), configContent);
+fs.writeFileSync(path.join(__dirname, 'config.js'), configContent);
 
 console.log('Build completed successfully!');
