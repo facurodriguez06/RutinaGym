@@ -96,9 +96,17 @@ body.theme-both::before {
 body.theme-facu::before {
   background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.05), transparent 70%);
 }
+body.theme-facu {
+  --accent-vigor: var(--accent-facu);
+  --glow-vigor: var(--glow-facu);
+}
 
 body.theme-alma::before {
   background: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.05), transparent 70%);
+}
+body.theme-alma {
+  --accent-vigor: var(--accent-alma);
+  --glow-vigor: var(--glow-alma);
 }
 
 /* ==========================================================================
