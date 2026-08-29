@@ -5540,41 +5540,34 @@ function renderContent() {
 
     const card = document.createElement("div");
     const staggerClass = idx < 6 ? `stagger-${idx + 1}` : "";
-
-    // Add active-theme class for CSS targeting
-    let cardClasses = `animate-slide-up ${staggerClass} relative group p-0 rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col md:flex-row active-theme-${activeColor} `;
-
+    let cardClasses = `animate-slide-up ${staggerClass} relative group rounded-3xl border bg-slate-950 border-slate-800 flex flex-col overflow-hidden mb-6 shadow-2xl transition-all duration-300 `;
+    
     if (isExerciseCompleted) {
-      cardClasses += `bg-${activeColor}-900/10 border-${activeColor}-900/20 opacity-80 scale-[0.99]`;
+      cardClasses += `opacity-80 scale-[0.99] border-${activeColor}-900/50`;
     } else {
-      cardClasses += `bg-slate-900 border-slate-800 hover:border-${activeColor}-500/50 hover:shadow-xl hover:shadow-${activeColor}-900/10`;
+      cardClasses += `hover:border-${activeColor}-500/50 hover:shadow-${activeColor}-900/10`;
     }
     card.className = cardClasses;
 
-    const muscleMapHTML = getMuscleMapSVG(
-      exercise.muscles.primary,
-      exercise.muscles.secondary,
-    );
+    // Table Header for Sets
+    let setRowsHTML = `
+      <div class="grid ${whoTrainsToday === 'both' ? 'grid-cols-[40px_1fr_1fr]' : 'grid-cols-[40px_1fr]'} gap-px bg-slate-800 border-b border-slate-800">
+          <div class="p-2 flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-slate-500 bg-slate-950">SET</div>
+          ${showFacu ? `<div class="p-2 flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-blue-400 bg-slate-950">FACU</div>` : ''}
+          ${showAlma ? `<div class="p-2 flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-pink-400 bg-slate-950">ALMA</div>` : ''}
+      </div>
+    `;
 
-    // Generate set buttons HTML
-    let setButtonsHTML = "";
+    // Generate Set Rows
     for (let s = 0; s < numSets; s++) {
       const setKey = `${activeTab}-${idx}-${s}`;
-      // Ensure object structure
       if (typeof completedSets[setKey] !== "object") {
         completedSets[setKey] = { facu: false, alma: false };
       }
       const setData = completedSets[setKey];
 
-      let weightFacu =
-        setWeights[setKey] && setWeights[setKey].facu
-          ? setWeights[setKey].facu
-          : "";
-
-      let weightAlma =
-        setWeights[setKey] && setWeights[setKey].alma
-          ? setWeights[setKey].alma
-          : "";
+      let weightFacu = setWeights[setKey] && setWeights[setKey].facu ? setWeights[setKey].facu : "";
+      let weightAlma = setWeights[setKey] && setWeights[setKey].alma ? setWeights[setKey].alma : "";
 
       if (!weightFacu) {
         const last = getLastWeight(exercise.name, "facu", activeTab);
@@ -5585,215 +5578,99 @@ function renderContent() {
         if (last) weightAlma = last;
       }
 
-      let facuColHTML = "";
-      if (showFacu) {
-        facuColHTML = `
-          <!-- Facu Column -->
-          <div class="flex flex-col items-center gap-1.5">
-            <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${
-              exercise.name
-            }" data-rest-time="${restTime}"
-                  class="set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
-                  ${
-                    setData.facu
-                      ? `bg-[var(--accent-facu)] text-black border-black`
-                      : `bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-facu)] hover:text-[var(--accent-facu)]`
-                  }" title="Facu">
-                  ${
-                    setData.facu
-                      ? '<i data-lucide="check" class="w-5 h-5"></i>'
-                      : "F"
-                  }
-              </button>
-              <input type="number" 
-                     value="${weightFacu}" 
-                     placeholder="kg" 
-                     data-set-key="${setKey}" 
-                     data-user="facu"
-                     class="weight-input w-12 h-8 bg-[var(--bg-base)] text-center text-xs font-black text-white border-2 border-[var(--border-strong)] focus:border-[var(--accent-facu)] outline-none p-0 transition-all placeholder:text-[var(--text-dim)] shadow-[2px_2px_0_#000]"
-                     onclick="event.stopPropagation()">
-          </div>
-        `;
-      }
-
-      let almaColHTML = "";
-      if (showAlma) {
-        almaColHTML = `
-          <!-- Alma Column -->
-          <div class="flex flex-col items-center gap-1.5">
-            <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${
-              exercise.name
-            }" data-rest-time="${restTime}"
-                  class="set-btn w-12 h-12 font-black text-sm transition-all duration-100 flex items-center justify-center border-2 shadow-[2px_2px_0_#000] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
-                  ${
-                    setData.alma
-                      ? `bg-[var(--accent-alma)] text-white border-black`
-                      : `bg-[var(--bg-base)] text-[var(--text-dim)] border-[var(--border-strong)] hover:border-[var(--accent-alma)] hover:text-[var(--accent-alma)]`
-                  }" title="Alma">
-                  ${
-                    setData.alma
-                      ? '<i data-lucide="check" class="w-5 h-5"></i>'
-                      : "A"
-                  }
-              </button>
-              <input type="number" 
-                     value="${weightAlma}" 
-                     placeholder="kg" 
-                     data-set-key="${setKey}" 
-                     data-user="alma"
-                     class="weight-input w-12 h-8 bg-[var(--bg-base)] text-center text-xs font-black text-white border-2 border-[var(--border-strong)] focus:border-[var(--accent-alma)] outline-none p-0 transition-all placeholder:text-[var(--text-dim)] shadow-[2px_2px_0_#000]"
-                     onclick="event.stopPropagation()">
-          </div>
-        `;
-      }
-
-      setButtonsHTML += `
-          <div class="flex flex-col items-center gap-2 bg-[var(--bg-panel-alt)] p-2 border-2 border-[var(--border-strong)]">
-              <span class="text-[10px] text-white font-black uppercase tracking-wider">Set ${
-                s + 1
-              }</span>
-              <div class="flex gap-2">
-                  ${facuColHTML}
-                  ${almaColHTML}
+      setRowsHTML += `
+      <div class="grid ${whoTrainsToday === 'both' ? 'grid-cols-[40px_1fr_1fr]' : 'grid-cols-[40px_1fr]'} gap-px bg-slate-800 group/row">
+          <div class="bg-slate-950 p-2 flex items-center justify-center text-xs font-bold text-slate-500">${s + 1}</div>
+          
+          ${showFacu ? `
+          <div class="bg-slate-950 p-3 flex flex-col sm:flex-row items-center justify-center gap-3 transition-colors ${setData.facu ? 'bg-[var(--accent-facu)]/5' : ''}">
+              <div class="relative flex items-center">
+                  <input type="number" value="${weightFacu}" placeholder="--" data-set-key="${setKey}" data-user="facu"
+                      class="weight-input w-16 h-10 bg-slate-900 rounded-xl text-center font-bold text-sm text-white border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-600"
+                      onclick="event.stopPropagation()">
+                  <span class="absolute -right-2 translate-x-full text-[10px] text-slate-500 font-bold hidden sm:block">kg</span>
               </div>
-          </div>
+              <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
+                  class="set-btn shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all ${setData.facu ? 'bg-blue-500 text-black shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}">
+                  ${setData.facu ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<div class="w-3.5 h-3.5 rounded-full border-2 border-slate-500"></div>'}
+              </button>
+          </div>` : ''}
+
+          ${showAlma ? `
+          <div class="bg-slate-950 p-3 flex flex-col sm:flex-row items-center justify-center gap-3 transition-colors ${setData.alma ? 'bg-[var(--accent-alma)]/5' : ''}">
+              <div class="relative flex items-center">
+                  <input type="number" value="${weightAlma}" placeholder="--" data-set-key="${setKey}" data-user="alma"
+                      class="weight-input w-16 h-10 bg-slate-900 rounded-xl text-center font-bold text-sm text-white border border-slate-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-all placeholder:text-slate-600"
+                      onclick="event.stopPropagation()">
+                  <span class="absolute -right-2 translate-x-full text-[10px] text-slate-500 font-bold hidden sm:block">kg</span>
+              </div>
+              <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
+                  class="set-btn shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all ${setData.alma ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.3)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}">
+                  ${setData.alma ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<div class="w-3.5 h-3.5 rounded-full border-2 border-slate-500"></div>'}
+              </button>
+          </div>` : ''}
+      </div>
       `;
     }
 
+    // Assemble Card HTML
     card.innerHTML = `
-                    <!-- Completion Strip -->
-                    <div class="absolute left-0 top-0 bottom-0 w-1 z-10 transition-colors duration-300 ${
-                      isExerciseCompleted
-                        ? `bg-${activeColor}-500`
-                        : `bg-transparent group-hover:bg-${activeColor}-500/50`
-                    }"></div>
+        <!-- Header -->
+        <div class="relative w-full px-5 py-4 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between z-10 overflow-hidden">
+            <!-- Completion Background Strip -->
+            <div class="absolute left-0 top-0 bottom-0 w-1 transition-colors duration-300 ${isExerciseCompleted ? `bg-${activeColor}-500` : `bg-slate-700 group-hover:bg-${activeColor}-500/50`}"></div>
+            
+            <div class="flex items-center gap-3 flex-1 min-w-0 pr-4">
+                <div class="transition-all duration-300 shrink-0">
+                    ${isExerciseCompleted ? `<i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-500 fill-emerald-500/20"></i>` : `<i data-lucide="circle" class="w-6 h-6 text-slate-600 group-hover:text-emerald-500/50"></i>`}
+                </div>
+                
+                <h3 class="font-bold text-lg sm:text-xl tracking-tight truncate transition-colors duration-300 ${isExerciseCompleted ? 'text-slate-500 line-through decoration-slate-600' : 'text-slate-100 group-hover:text-white'}">${exercise.name}</h3>
+            </div>
+            
+            <!-- Right side: History & Muscle Map -->
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick='event.stopPropagation(); openMuscleMapModal(${JSON.stringify(exercise.muscles.primary)}, ${JSON.stringify(exercise.muscles.secondary)})' 
+                    class="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:text-emerald-400 text-slate-500 transition-all flex items-center gap-1 group/btn" title="Impacto Muscular">
+                    <i data-lucide="activity" class="w-4 h-4"></i>
+                </button>
+                <button onclick="event.stopPropagation(); showExerciseHistory('${exercise.name}')"
+                    class="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 hover:text-blue-400 text-slate-500 transition-all flex items-center gap-1" title="Ver Historial">
+                    <i data-lucide="trending-up" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Body -->
+        <div class="p-5 flex flex-col gap-5 z-10 bg-slate-950">
+            <!-- Technical Details (Pills) -->
+            <div class="flex flex-wrap gap-2">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">
+                    <i data-lucide="repeat" class="w-3.5 h-3.5 text-slate-500"></i> ${exercise.reps}
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-orange-400">
+                    <i data-lucide="zap" class="w-3.5 h-3.5 text-orange-500/50"></i> RIR ${exercise.rir}
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-cyan-400">
+                    <i data-lucide="timer" class="w-3.5 h-3.5 text-cyan-500/50"></i> ${restTime >= 60 ? Math.floor(restTime/60) + 'm' : restTime + 's'}
+                </div>
+            </div>
 
-                    <!-- Left Info -->
-                    <div class="flex-1 p-5">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-2">
-                                    <div class="p-2 rounded-lg transition-colors duration-300 ${
-                                      isExerciseCompleted
-                                        ? "bg-emerald-500/20 text-emerald-400"
-                                        : "bg-slate-800 text-slate-300 group-hover:bg-slate-700"
-                                    }">
-                                        <i data-lucide="dumbbell" class="w-5 h-5 ${
-                                          isExerciseCompleted
-                                            ? "animate-pulse"
-                                            : ""
-                                        }"></i>
-                                    </div>
-                                    <h3 class="font-bold text-lg transition-all duration-300 flex-1 ${
-                                      isExerciseCompleted
-                                        ? "text-slate-500 line-through decoration-slate-600 decoration-2"
-                                        : "text-slate-100 group-hover:text-emerald-300"
-                                    }">
-                                        ${exercise.name}
-                                    </h3>
-                                    <!-- History Button -->
-                                    <button onclick="event.stopPropagation(); showExerciseHistory('${exercise.name}')"
-                                        class="p-2 rounded-full hover:bg-slate-800 text-slate-500 hover:text-blue-400 transition-colors"
-                                        title="Ver Historial">
-                                        <i data-lucide="trending-up" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                                
-                                <!-- Sets Row -->
-                                <div class="mt-4 mb-3">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Progreso</span>
-                                        <div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden ml-2">
-                                            <div class="h-full bg-emerald-500 transition-all duration-300" style="width: ${
-                                              (exerciseCompletedChecks /
-                                                (numSets * multiplier)) *
-                                              100
-                                            }%"></div>
-                                        </div>
-                                    </div>
-                                    <div class="flex gap-2 flex-wrap items-end">
-                                        ${setButtonsHTML}
-                                    </div>
-                                </div>
+            ${exercise.notes ? `
+            <!-- Coach Note Banner -->
+            <div class="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-3 items-start shadow-inner">
+                <i data-lucide="lightbulb" class="w-5 h-5 text-amber-500 shrink-0 mt-0.5"></i>
+                <p class="text-xs text-amber-200/80 leading-relaxed font-medium">
+                    ${exercise.notes.replace(/Descanso:.*?(min|seg)\.?/gi, "").trim()}
+                </p>
+            </div>` : ""}
 
-                                <div class="grid grid-cols-3 gap-x-4 gap-y-2 text-sm transition-opacity duration-300 ${
-                                  isExerciseCompleted
-                                    ? "opacity-50"
-                                    : "opacity-100"
-                                }">
-                                    <div class="flex flex-col">
-                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Reps</span>
-                                        <span class="font-mono text-white font-medium">${
-                                          exercise.reps
-                                        }</span>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Intensidad</span>
-                                        <span class="text-orange-400 font-medium">${
-                                          exercise.rir
-                                        }</span>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="text-slate-500 text-xs uppercase font-bold tracking-wider">Descanso</span>
-                                        <span class="text-cyan-400 font-medium">${
-                                          restTime >= 60
-                                            ? Math.floor(restTime / 60) + " min"
-                                            : restTime + "s"
-                                        }</span>
-                                    </div>
-                                </div>
-
-                                ${
-                                  exercise.notes
-                                    ? `
-                                <div class="mt-3 pt-3 border-t border-slate-800/50 transition-opacity duration-300 ${
-                                  isExerciseCompleted
-                                    ? "opacity-40"
-                                    : "opacity-100"
-                                }">
-                                    <p class="text-slate-400 text-sm italic flex items-start gap-1.5">
-                                        <span class="text-emerald-500 not-italic font-bold">Tip:</span> 
-                                        ${exercise.notes
-                                          .replace(
-                                            /Descanso:.*?(min|seg)\.?/gi,
-                                            "",
-                                          )
-                                          .trim()}
-                                    </p>
-                                </div>`
-                                    : ""
-                                }
-                            </div>
-
-                            <div class="mt-1">
-                                ${
-                                  isExerciseCompleted
-                                    ? `<i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-500 fill-emerald-500/20 animate-pop drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"></i>`
-                                    : `<i data-lucide="circle" class="w-8 h-8 text-slate-700 group-hover:text-emerald-500/50 transition-all duration-300 transform group-hover:scale-110"></i>`
-                                }
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Muscle Map -->
-                    <div onclick='openMuscleMapModal(${JSON.stringify(exercise.muscles.primary)}, ${JSON.stringify(exercise.muscles.secondary)})' 
-                        class="w-full md:w-32 bg-slate-950/50 border-t md:border-t-0 md:border-l border-slate-800 p-2 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer hover:bg-slate-900 group/map ${
-                          isExerciseCompleted ? "opacity-50 grayscale" : ""
-                        }">
-                        <span class="text-[10px] uppercase text-slate-500 font-bold mb-1 tracking-wider text-center group-hover/map:text-emerald-400 transition-colors">Impacto Muscular <i data-lucide="zoom-in" class="inline w-3 h-3 ml-1"></i></span>
-                        ${muscleMapHTML}
-                        <div class="flex gap-2 mt-2 justify-center">
-                            <div class="flex items-center gap-1">
-                                <div class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
-                                <span class="text-[9px] text-slate-400">1º</span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <div class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)]"></div>
-                                <span class="text-[9px] text-slate-400">2º</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            <!-- Sets Table/Rows -->
+            <div class="w-full rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-inner">
+                ${setRowsHTML}
+            </div>
+        </div>
+    `;
     listContainer.appendChild(card);
   });
 
