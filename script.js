@@ -5718,12 +5718,25 @@ function renderContent() {
         <div class="px-4 w-full">
             ${setRowsHTML}
             
-            <!-- Agregar serie button -->
-            <div onclick="addExerciseSet('${activeTab}', ${idx})" class="flex items-center gap-4 mt-2 mb-2 group cursor-pointer transition-opacity hover:opacity-80">
-                <div class="w-10 h-10 rounded-full bg-[#ea580c] text-black flex items-center justify-center shrink-0">
-                    <i data-lucide="plus" class="w-5 h-5 font-bold"></i>
+            <!-- Action buttons -->
+            <div class="flex items-center gap-6 mt-2 mb-2">
+                <!-- Agregar serie button -->
+                <div onclick="addExerciseSet('${activeTab}', ${idx})" class="flex items-center gap-3 group cursor-pointer transition-opacity hover:opacity-80">
+                    <div class="w-10 h-10 rounded-full bg-[#ea580c] text-black flex items-center justify-center shrink-0">
+                        <i data-lucide="plus" class="w-5 h-5 font-bold"></i>
+                    </div>
+                    <span class="text-[#ea580c] font-medium text-sm">Agregar</span>
                 </div>
-                <span class="text-[#ea580c] font-medium text-sm">Agregar serie</span>
+                
+                <!-- Quitar serie button -->
+                ${numSets > 1 ? `
+                <div onclick="removeExerciseSet('${activeTab}', ${idx})" class="flex items-center gap-3 group cursor-pointer transition-opacity hover:opacity-80">
+                    <div class="w-10 h-10 rounded-full bg-[#27272a] text-slate-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="minus" class="w-5 h-5 font-bold"></i>
+                    </div>
+                    <span class="text-slate-400 font-medium text-sm">Quitar</span>
+                </div>
+                ` : ''}
             </div>
         </div>
     `;
@@ -8406,6 +8419,30 @@ window.addExerciseSet = function(tabId, exerciseIndex) {
     renderContent();
     if (typeof lucide !== "undefined" && lucide.createIcons) {
       lucide.createIcons();
+    }
+  }
+};
+
+window.removeExerciseSet = function(tabId, exerciseIndex) {
+  const dayRoutine = routineData[tabId];
+  if (!dayRoutine) return;
+  const ex = dayRoutine.exercises[exerciseIndex];
+  if (ex) {
+    let sets = parseInt(ex.sets) || 3;
+    if (sets > 1) {
+      sets -= 1;
+      ex.sets = String(sets);
+      
+      // Save to localStorage
+      if (typeof routinesList !== "undefined") {
+        localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
+      }
+      
+      // Re-render
+      renderContent();
+      if (typeof lucide !== "undefined" && lucide.createIcons) {
+        lucide.createIcons();
+      }
     }
   }
 };
