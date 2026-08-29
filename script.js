@@ -3496,35 +3496,32 @@ function renderTimerUI() {
 
 function createMiniTimerBubble(user, state) {
   const div = document.createElement("div");
-  const color = user === "facu" ? "blue" : "pink";
-  const borderColor = user === "facu" ? "border-blue-500" : "border-pink-500";
-  const textColor = user === "facu" ? "text-blue-400" : "text-pink-400";
-  const shadowColor =
-    user === "facu" ? "shadow-blue-500/30" : "shadow-pink-500/30";
+  const textColor = user === "facu" ? "text-sky-400" : "text-pink-400";
+  const ringColor = user === "facu" ? "text-sky-500" : "text-pink-500";
 
-  div.className = `bg-slate-900 border-2 ${borderColor} rounded-2xl p-3 shadow-xl ${shadowColor} cursor-pointer hover:scale-105 transition-all duration-200 pointer-events-auto flex items-center gap-3`;
+  // Vigor Aesthetic for minimized bubble: solid #09090b bg, subtle border, rounded-[24px]
+  div.className = `bg-[#09090b] border border-[#27272a] rounded-[24px] p-3 pr-5 shadow-2xl cursor-pointer hover:scale-105 hover:bg-[#18181b] transition-all duration-200 pointer-events-auto flex items-center gap-3`;
   div.onclick = () => expandTimer(user);
 
   div.innerHTML = `
-        <div class="relative w-10 h-10">
-             <svg class="w-10 h-10 transform -rotate-90">
-                <circle cx="20" cy="20" r="16" stroke="#1e293b" stroke-width="3" fill="none" />
-                <circle id="mini-ring-${user}" cx="20" cy="20" r="16" stroke="currentColor" stroke-width="3"
-                    fill="none" stroke-linecap="round" stroke-dasharray="100.53" stroke-dashoffset="0"
-                    class="${textColor} transition-all duration-1000 ease-linear" />
+        <div class="relative w-11 h-11 flex-shrink-0">
+             <svg class="w-11 h-11 transform -rotate-90 drop-shadow-md">
+                <circle cx="22" cy="22" r="18" stroke="#27272a" stroke-width="4" fill="none" />
+                <circle id="mini-ring-${user}" cx="22" cy="22" r="18" stroke="currentColor" stroke-width="4"
+                    fill="none" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="0"
+                    class="${ringColor} transition-all duration-1000 ease-linear drop-shadow-[0_0_8px_rgba(currentColor,0.5)]" />
             </svg>
              <div class="absolute inset-0 flex items-center justify-center">
-                 <span class="text-[10px] font-bold uppercase text-slate-500">${user === "facu" ? "F" : "A"}</span>
+                 <span class="text-[12px] font-black uppercase text-slate-300">${user === "facu" ? "F" : "A"}</span>
              </div>
         </div>
-        <div class="text-left">
-            <div id="mini-display-${user}" class="text-xl font-mono font-bold ${textColor} tabular-nums leading-tight">0:00</div>
-            <p class="text-[10px] text-slate-500 max-w-[100px] truncate">${state.exerciseName}</p>
+        <div class="text-left flex flex-col justify-center">
+            <div id="mini-display-${user}" class="text-2xl font-mono font-black text-white tabular-nums leading-none tracking-tight">0:00</div>
+            <p class="text-[10px] text-slate-400 max-w-[100px] truncate font-bold uppercase mt-1">${state.exerciseName}</p>
         </div>
     `;
   return div;
 }
-
 function updateTimerDisplay() {
   if (
     activeFullModalUser &&
