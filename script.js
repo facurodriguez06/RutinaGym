@@ -5659,6 +5659,23 @@ function updateTimerDOM(id) {
 window.toggleWarmupTimer = toggleWarmupTimer;
 window.resetWarmupTimer = resetWarmupTimer;
 window.skipWarmupTimer = skipWarmupTimer;
+window.toggleExerciseComplete = function(tabIdx, exerciseIdx, numSets, isCompleted) {
+  const showFacu = whoTrainsToday === "both" || whoTrainsToday === "facu";
+  const showAlma = whoTrainsToday === "both" || whoTrainsToday === "alma";
+  
+  for (let s = 0; s < numSets; s++) {
+    const setKey = `${tabIdx}-${exerciseIdx}-${s}`;
+    if (!completedSets[setKey]) {
+      completedSets[setKey] = { facu: false, alma: false };
+    }
+    if (showFacu) completedSets[setKey].facu = !isCompleted;
+    if (showAlma) completedSets[setKey].alma = !isCompleted;
+  }
+  saveData();
+  renderContent();
+  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  triggerHaptic();
+};
 
 function renderContent() {
   if (activeTab >= routineData.length) {
@@ -5950,6 +5967,10 @@ function renderContent() {
             <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[13px] text-white whitespace-nowrap">
                 <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i> Notas
             </div>` : ''}
+            <button onclick="toggleExerciseComplete('${activeTab}', ${idx}, ${numSets}, ${isExerciseCompleted})" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full ${isExerciseCompleted ? 'bg-slate-800 border border-slate-700 text-slate-400' : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500'} text-[13px] font-bold whitespace-nowrap hover:bg-opacity-80 transition-all active:scale-95 ml-auto">
+                <i data-lucide="${isExerciseCompleted ? 'rotate-ccw' : 'check-circle-2'}" class="w-3.5 h-3.5"></i>
+                ${isExerciseCompleted ? 'Deshacer todo' : 'Completar todo'}
+            </button>
         </div>
         
         <!-- Coach Note Dropdown -->
