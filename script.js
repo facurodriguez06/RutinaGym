@@ -6101,14 +6101,6 @@ function renderContent(skipAnimations = false) {
                         <span><strong>Espinales (Superman o Máquina):</strong> 3 series x 12 repes.</span>
                     </li>
                 </ul>
-                
-                <!-- Advertencia Coach -->
-                <div class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3 flex gap-3">
-                    <i data-lucide="triangle-alert" class="w-5 h-5 text-yellow-500 flex-shrink-0"></i>
-                    <div class="text-xs text-yellow-200/90 leading-relaxed">
-                        <strong>⚠️ Advertencia Coach:</strong> Facundo, con tus espinales ten mucho cuidado. No hagas movimientos bruscos. Prefiero que hagas "Bird-Dog" (cuadrupedia levantando mano y pierna contraria) para fortalecer la zona sin comprimir las vértebras.
-                    </div>
-                </div>
             `;
   listContainer.appendChild(coreBlock);
 
