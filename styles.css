@@ -177,20 +177,12 @@ h1.from-yellow-400, h1.from-amber-300 {
 }
 
 /* Containers / Panels */
-.bg-slate-900, .bg-slate-950, .glass-panel, .brutal-panel {
+.glass-panel, .brutal-panel {
   background-color: var(--bg-panel) !important;
   border: 1px solid var(--border-strong) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-}
-
-.bg-slate-800 {
-  background-color: var(--bg-panel-alt) !important;
-  border: 1px solid var(--border-dim) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border-radius: 16px !important;
 }
 
 /* ==========================================================================
