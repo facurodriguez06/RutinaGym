@@ -933,8 +933,8 @@
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Advisor / Settings Sidebar -->
-                <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 flex flex-col gap-6">
+                <!-- Advisor / Settings Sidebar (Hidden on mobile) -->
+                <div class="hidden md:flex bg-slate-900 rounded-2xl border border-slate-800 p-6 flex-col gap-6">
                     <div class="text-center pb-4 border-b border-slate-800">
                         <div class="inline-flex items-center justify-center p-4 bg-cyan-500/10 rounded-full mb-3 ring-2 ring-cyan-500/20">
                             <i data-lucide="dumbbell" class="w-10 h-10 text-cyan-400"></i>
@@ -979,8 +979,13 @@
                             <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                             <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Coach en Línea</span>
                         </div>
-                        <div id="api-key-status" class="text-xs">
-                            <!-- Injected by JS: status of Gemini API key -->
+                        <div class="flex items-center gap-3">
+                            <div id="api-key-status" class="text-xs">
+                                <!-- Injected by JS: status of Gemini API key -->
+                            </div>
+                            <button onclick="resetAIChat()" class="md:hidden p-1.5 text-slate-500 hover:text-red-400 transition-colors" title="Reiniciar Chat">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
                         </div>
                     </div>
 
