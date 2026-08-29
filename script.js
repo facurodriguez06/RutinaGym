@@ -3723,7 +3723,7 @@ function renderTimerUI() {
   miniContainer.innerHTML = "";
 
   // Check if anyone is active
-  const anyActive = timerState.facu.active || timerState.alma.active;
+  const anyActive = timerState.facu.active || timerState.alma.active || (timerState.session && timerState.session.active);
 
   if (!anyActive) {
     modal.classList.add("hidden");
@@ -4004,9 +4004,6 @@ function hideTimer(user) {
       } else {
         // Others are minimized or inactive
         // We do NOT expand them automatically. We just clear the full screen slot.
-        activeFullModalUser = null;
-      } else {
-        // No one else is active
         activeFullModalUser = null;
       }
     }
