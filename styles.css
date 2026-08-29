@@ -499,3 +499,18 @@ body.light .btn-ai-routine {
 }
 .pr-badge.alltime { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
 
+
+/* Fix for timeline inputs overriding global !important styles */
+.reps-input, .weight-input {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: inherit !important; /* revert jetbrains if needed */
+}
+.reps-input:focus, .weight-input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
