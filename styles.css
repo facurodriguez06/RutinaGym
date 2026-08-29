@@ -501,7 +501,7 @@ body.light .btn-ai-routine {
 
 
 /* Fix for timeline inputs overriding global !important styles */
-.reps-input, .weight-input {
+input[type="number"].reps-input, input[type="number"].weight-input {
   background-color: transparent !important;
   border: none !important;
   padding: 0 !important;
@@ -509,7 +509,7 @@ body.light .btn-ai-routine {
   box-shadow: none !important;
   font-family: inherit !important; /* revert jetbrains if needed */
 }
-.reps-input:focus, .weight-input:focus {
+input[type="number"].reps-input:focus, input[type="number"].weight-input:focus {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
