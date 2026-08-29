@@ -8,6 +8,7 @@ public struct RestTimerAttributes: ActivityAttributes {
         public var exerciseName: String
         public var isPaused: Bool
         public var isStopwatch: Bool
+        public var startTime: Date?
         public var isFinished: Bool
         
         public init(endTime: Date, totalSeconds: Double, exerciseName: String, isPaused: Bool = false, isStopwatch: Bool = false, startTime: Date? = nil, isFinished: Bool = false) {
