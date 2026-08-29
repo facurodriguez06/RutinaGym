@@ -7989,7 +7989,7 @@ function addChatMessage(sender, text) {
   bubbleContent.className = `p-4 rounded-2xl text-sm leading-relaxed ${
     sender === "user" 
       ? "bg-blue-600 text-white rounded-tr-none shadow-md" 
-      : "bg-slate-900 border border-slate-700 text-slate-200 rounded-tl-none shadow-sm"
+      : "bg-slate-800 border border-slate-700 text-slate-200 rounded-tl-none shadow-sm"
   }`;
   
   // Format text: Convert markdown-like syntax to HTML safely
