@@ -3754,7 +3754,7 @@ function createMiniTimerBubble(user, state) {
   const ringColor = user === "facu" ? "text-sky-500" : "text-pink-500";
 
   // Vigor Aesthetic for minimized bubble: solid #09090b bg, subtle border, rounded-[24px]
-  div.className = `bg-[#09090b] border border-[#27272a] rounded-[24px] p-3 pr-5 shadow-2xl cursor-pointer hover:scale-105 hover:bg-[#18181b] transition-all duration-200 pointer-events-auto flex items-center gap-3`;
+  div.className = `bg-slate-950 border border-slate-800 rounded-[24px] p-3 pr-5 shadow-2xl cursor-pointer hover:scale-105 hover:bg-slate-900 transition-all duration-200 pointer-events-auto flex items-center gap-3`;
   div.onclick = () => expandTimer(user);
 
   div.innerHTML = `
@@ -5795,7 +5795,7 @@ function renderContent() {
 
     const card = document.createElement("div");
     const staggerClass = idx < 6 ? `stagger-${idx + 1}` : "";
-    let cardClasses = `animate-slide-up ${staggerClass} relative bg-[#09090b] flex flex-col mb-8 `;
+    let cardClasses = `animate-slide-up ${staggerClass} relative bg-slate-950 flex flex-col mb-8 `;
     
     if (isExerciseCompleted) {
       cardClasses += `opacity-60`;
@@ -5838,11 +5838,11 @@ function renderContent() {
       setRowsHTML += `
       <div class="flex relative group">
           <!-- Timeline Vertical Line -->
-          <div class="absolute left-[19px] top-10 bottom-[-16px] w-0.5 bg-[#27272a] group-last:hidden"></div>
+          <div class="absolute left-[19px] top-10 bottom-[-16px] w-0.5 bg-slate-800 group-last:hidden"></div>
           
           <!-- Set Circle -->
           <div class="w-10 flex flex-col items-center shrink-0 z-10 pt-1">
-              <div class="w-10 h-10 rounded-full bg-[#18181b] text-slate-400 font-bold flex items-center justify-center border-[4px] border-[#09090b] shadow-sm">
+              <div class="w-10 h-10 rounded-full bg-slate-900 text-slate-400 font-bold flex items-center justify-center border-[4px] border-slate-900 shadow-sm">
                   ${s + 1}
               </div>
           </div>
@@ -5850,7 +5850,7 @@ function renderContent() {
           <!-- Inputs Column -->
           <div class="flex-1 ml-3 flex flex-col gap-2 pb-6">
               ${showFacu ? `
-              <div class="flex items-center justify-between bg-[#18181b] border border-[#27272a] rounded-xl p-1.5 pl-4 transition-colors ${setData.facu ? 'border-[var(--accent-facu)]/30 bg-[var(--accent-facu)]/5' : ''}">
+              <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl p-1.5 pl-4 transition-colors ${setData.facu ? 'border-[var(--accent-facu)]/30 bg-[var(--accent-facu)]/5' : ''}">
                   <div class="flex items-center gap-2">
                       ${whoTrainsToday === 'both' ? `<div class="w-2 h-2 rounded-full bg-[var(--accent-facu)]"></div>` : ''}
                       
@@ -5871,14 +5871,14 @@ function renderContent() {
                       </div>
                   </div>
                   <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
-                      class="set-btn shrink-0 w-12 h-10 rounded-lg flex items-center justify-center transition-all ${setData.facu ? 'bg-[var(--accent-facu)] text-black' : 'bg-[#27272a] text-slate-500 hover:text-white'}">
+                      class="set-btn shrink-0 w-12 h-10 rounded-lg flex items-center justify-center transition-all ${setData.facu ? 'bg-[var(--accent-facu)] text-black' : 'bg-slate-800 text-slate-500 hover:text-white'}">
                       <i data-lucide="check" class="w-5 h-5"></i>
                   </button>
               </div>
               ` : ''}
               
               ${showAlma ? `
-              <div class="flex items-center justify-between bg-[#18181b] border border-[#27272a] rounded-xl p-1.5 pl-4 transition-colors ${setData.alma ? 'border-[var(--accent-alma)]/30 bg-[var(--accent-alma)]/5' : ''}">
+              <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl p-1.5 pl-4 transition-colors ${setData.alma ? 'border-[var(--accent-alma)]/30 bg-[var(--accent-alma)]/5' : ''}">
                   <div class="flex items-center gap-2">
                       ${whoTrainsToday === 'both' ? `<div class="w-2 h-2 rounded-full bg-[var(--accent-alma)]"></div>` : ''}
                       
@@ -5899,7 +5899,7 @@ function renderContent() {
                       </div>
                   </div>
                   <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
-                      class="set-btn shrink-0 w-12 h-10 rounded-lg flex items-center justify-center transition-all ${setData.alma ? 'bg-[var(--accent-alma)] text-white' : 'bg-[#27272a] text-slate-500 hover:text-white'}">
+                      class="set-btn shrink-0 w-12 h-10 rounded-lg flex items-center justify-center transition-all ${setData.alma ? 'bg-[var(--accent-alma)] text-white' : 'bg-slate-800 text-slate-500 hover:text-white'}">
                       <i data-lucide="check" class="w-5 h-5"></i>
                   </button>
               </div>
@@ -5915,7 +5915,7 @@ function renderContent() {
         <!-- Header -->
         <div class="px-4 py-4 flex items-center gap-4">
             <!-- Thumbnail (Image) -->
-            <div class="w-20 h-20 bg-black rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative cursor-pointer border border-[#27272a]" onclick='event.stopPropagation(); openImageModal("${getExerciseImage(exercise)}")'>
+            <div class="w-20 h-20 bg-black rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative cursor-pointer border border-slate-800" onclick='event.stopPropagation(); openImageModal("${getExerciseImage(exercise)}")'>
                 <img src="${getExerciseImage(exercise)}" alt="${exercise.name}" class="w-full h-full object-cover grayscale opacity-80 transition-opacity duration-300 hover:opacity-100" onerror="this.onerror=null; this.src='./assets/exercises/squat.jpg';" />
             </div>
             
@@ -5935,7 +5935,7 @@ function renderContent() {
         
         <!-- Objective Note -->
         <div class="px-4 mb-4 mt-2">
-             <div class="p-3 rounded-xl bg-slate-900 border border-[#27272a] text-sm text-slate-300 flex gap-2 items-center">
+             <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm text-slate-300 flex gap-2 items-center">
                  <i data-lucide="target" class="w-4 h-4 text-emerald-500 shrink-0"></i>
                  <span class="font-medium">Objetivo: <span class="text-white">${numSets} series de ${exercise.reps} reps</span></span>
              </div>
@@ -5943,11 +5943,11 @@ function renderContent() {
         
         <!-- Quick Actions (Pills) -->
         <div class="px-4 flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar scroll-smooth">
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181b] border border-[#27272a] text-[13px] text-white whitespace-nowrap">
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[13px] text-white whitespace-nowrap">
                 <i data-lucide="timer" class="w-3.5 h-3.5 text-slate-400"></i> ${restTime >= 60 ? Math.floor(restTime/60) + ':00' : restTime + 's'}
             </div>
             ${exercise.notes ? `
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181b] border border-[#27272a] text-[13px] text-white whitespace-nowrap">
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[13px] text-white whitespace-nowrap">
                 <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i> Notas
             </div>` : ''}
         </div>
@@ -5955,7 +5955,7 @@ function renderContent() {
         <!-- Coach Note Dropdown -->
         ${exercise.notes ? `
         <div class="px-4 mb-4">
-             <div class="p-3 rounded-xl bg-[#18181b] border border-amber-500/20 text-xs text-amber-200/90 flex gap-2 items-start">
+             <div class="p-3 rounded-xl bg-slate-900 border border-amber-500/20 text-xs text-amber-200/90 flex gap-2 items-start">
                  <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"></i>
                  ${exercise.notes.replace(/Descanso:.*?(min|seg)\.?/gi, "").trim()}
              </div>
@@ -5979,7 +5979,7 @@ function renderContent() {
                 <!-- Quitar serie button -->
                 ${numSets > 1 ? `
                 <div onclick="removeExerciseSet('${activeTab}', ${idx})" class="flex items-center gap-3 group cursor-pointer transition-opacity hover:opacity-80">
-                    <div class="w-10 h-10 rounded-full bg-[#27272a] text-slate-400 flex items-center justify-center shrink-0">
+                    <div class="w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center shrink-0">
                         <i data-lucide="minus" class="w-5 h-5 font-bold"></i>
                     </div>
                     <span class="text-slate-400 font-medium text-sm">Quitar</span>
