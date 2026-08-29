@@ -40,7 +40,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Hip Thrust (Máquina o Barra)",
-        image: "assets/exercises/squat.jpg",
+        image: "assets/exercises/hip_thrust.jpg",
         sets: "4",
         reps: "10-12",
         rir: "RIR 1",
