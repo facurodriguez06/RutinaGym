@@ -7,22 +7,28 @@ public struct RestTimerAttributes: ActivityAttributes {
         public var totalSeconds: Double
         public var exerciseName: String
         public var isPaused: Bool
+        public var isStopwatch: Bool
+        public var startTime: Date?
         
-        public init(endTime: Date, totalSeconds: Double, exerciseName: String, isPaused: Bool = false) {
+        public init(endTime: Date, totalSeconds: Double, exerciseName: String, isPaused: Bool = false, isStopwatch: Bool = false, startTime: Date? = nil) {
             self.endTime = endTime
             self.totalSeconds = totalSeconds
             self.exerciseName = exerciseName
             self.isPaused = isPaused
+            self.isStopwatch = isStopwatch
+            self.startTime = startTime
         }
     }
     
     public struct ContentState: Codable, Hashable {
         public var facu: TimerState?
         public var alma: TimerState?
+        public var session: TimerState?
         
-        public init(facu: TimerState? = nil, alma: TimerState? = nil) {
+        public init(facu: TimerState? = nil, alma: TimerState? = nil, session: TimerState? = nil) {
             self.facu = facu
             self.alma = alma
+            self.session = session
         }
     }
     

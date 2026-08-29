@@ -24,14 +24,9 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         let seconds = call.getDouble("seconds", -1)
-        guard seconds > 0 else {
-            call.resolve([
-                "success": false,
-                "message": "Missing required parameter: seconds (must be > 0)"
-            ])
-            return
-        }
-
+        let isStopwatch = call.getBool("isStopwatch", false)
+        let startTimeMs = call.getDouble("startTime", -1)
+        
         let userName = call.getString("userName", "Facu")
 
         if #available(iOS 16.2, *) {
@@ -44,17 +39,34 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             Task {
-                let newTimer = RestTimerAttributes.TimerState(
-                    endTime: Date().addingTimeInterval(seconds),
-                    totalSeconds: seconds,
-                    exerciseName: exerciseName
-                )
+                var newTimer: RestTimerAttributes.TimerState
+                
+                if isStopwatch {
+                    let startDate = startTimeMs > 0 ? Date(timeIntervalSince1970: startTimeMs / 1000.0) : Date()
+                    newTimer = RestTimerAttributes.TimerState(
+                        endTime: Date.distantFuture,
+                        totalSeconds: 0,
+                        exerciseName: exerciseName,
+                        isStopwatch: true,
+                        startTime: startDate
+                    )
+                } else {
+                    newTimer = RestTimerAttributes.TimerState(
+                        endTime: Date().addingTimeInterval(seconds),
+                        totalSeconds: seconds,
+                        exerciseName: exerciseName,
+                        isStopwatch: false,
+                        startTime: nil
+                    )
+                }
                 
                 if let activity = Activity<RestTimerAttributes>.activities.first {
                     // Update existing activity
                     var contentState = activity.content.state
                     if userName.lowercased() == "facu" {
                         contentState.facu = newTimer
+                    } else if userName.lowercased() == "session" {
+                        contentState.session = newTimer
                     } else {
                         contentState.alma = newTimer
                     }
@@ -64,9 +76,11 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
                     call.resolve(["id": activity.id, "success": true])
                 } else {
                     // Create new activity
-                    var contentState = RestTimerAttributes.ContentState(facu: nil, alma: nil)
+                    var contentState = RestTimerAttributes.ContentState(facu: nil, alma: nil, session: nil)
                     if userName.lowercased() == "facu" {
                         contentState.facu = newTimer
+                    } else if userName.lowercased() == "session" {
+                        contentState.session = newTimer
                     } else {
                         contentState.alma = newTimer
                     }
@@ -108,13 +122,16 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
                         contentState.facu = nil
                     } else if userName.lowercased() == "alma" {
                         contentState.alma = nil
+                    } else if userName.lowercased() == "session" {
+                        contentState.session = nil
                     } else {
-                        // Kill both if no specific user provided or unknown user
+                        // Kill all if no specific user provided or unknown user
                         contentState.facu = nil
                         contentState.alma = nil
+                        contentState.session = nil
                     }
                     
-                    if contentState.facu == nil && contentState.alma == nil {
+                    if contentState.facu == nil && contentState.alma == nil && contentState.session == nil {
                         await activity.end(nil, dismissalPolicy: .immediate)
                         self.currentActivity = nil
                     } else {

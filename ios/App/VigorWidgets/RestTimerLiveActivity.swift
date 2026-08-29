@@ -14,12 +14,20 @@ public struct RestTimerLiveActivity: Widget {
                     UserTimerRow(state: facu, userName: "Facu", color: .cyan)
                 }
                 
-                if context.state.facu != nil && context.state.alma != nil {
+                if (context.state.facu != nil || context.state.session != nil) && context.state.alma != nil {
                     Divider().background(Color.white.opacity(0.2))
                 }
                 
                 if let alma = context.state.alma {
                     UserTimerRow(state: alma, userName: "Alma", color: .pink)
+                }
+                
+                if (context.state.facu != nil || context.state.alma != nil) && context.state.session != nil {
+                    Divider().background(Color.white.opacity(0.2))
+                }
+                
+                if let session = context.state.session {
+                    UserTimerRow(state: session, userName: "Session", color: .green)
                 }
             }
             .activityBackgroundTint(Color.black.opacity(0.92))
@@ -36,6 +44,9 @@ public struct RestTimerLiveActivity: Widget {
                         if let alma = context.state.alma {
                             UserExpandedInfo(state: alma, userName: "Alma", color: .pink)
                         }
+                        if let session = context.state.session {
+                            UserExpandedInfo(state: session, userName: "Sess", color: .green)
+                        }
                     }
                     .padding(.leading, 6)
                 }
@@ -47,6 +58,9 @@ public struct RestTimerLiveActivity: Widget {
                         }
                         if let alma = context.state.alma {
                             UserExpandedTimer(state: alma)
+                        }
+                        if let session = context.state.session {
+                            UserExpandedTimer(state: session)
                         }
                     }
                     .padding(.trailing, 6)
@@ -62,6 +76,7 @@ public struct RestTimerLiveActivity: Widget {
                             ProgressView(timerInterval: Date()...alma.endTime, countsDown: true)
                                 .tint(.pink)
                         }
+                        // Stopwatches do not use ProgressView
                     }
                     .padding(.horizontal, 8)
                     .padding(.top, 4)
@@ -75,13 +90,18 @@ public struct RestTimerLiveActivity: Widget {
                     VStack(alignment: .leading, spacing: -1) {
                         if context.state.facu != nil {
                             Text("F")
-                                .font(.system(size: context.state.alma != nil ? 9 : 12, weight: .black, design: .monospaced))
+                                .font(.system(size: context.state.alma != nil || context.state.session != nil ? 9 : 12, weight: .black, design: .monospaced))
                                 .foregroundColor(.cyan)
                         }
                         if context.state.alma != nil {
                             Text("A")
-                                .font(.system(size: context.state.facu != nil ? 9 : 12, weight: .black, design: .monospaced))
+                                .font(.system(size: context.state.facu != nil || context.state.session != nil ? 9 : 12, weight: .black, design: .monospaced))
                                 .foregroundColor(.pink)
+                        }
+                        if context.state.session != nil {
+                            Image(systemName: "timer")
+                                .font(.system(size: context.state.facu != nil || context.state.alma != nil ? 9 : 12, weight: .black))
+                                .foregroundColor(.green)
                         }
                     }
                 }
@@ -92,14 +112,20 @@ public struct RestTimerLiveActivity: Widget {
                     if let facu = context.state.facu {
                         Text(timerInterval: Date()...facu.endTime, countsDown: true)
                             .monospacedDigit()
-                            .font(.system(size: context.state.alma != nil ? 9 : 13, weight: .bold, design: .rounded))
+                            .font(.system(size: context.state.alma != nil || context.state.session != nil ? 9 : 13, weight: .bold, design: .rounded))
                             .foregroundColor(.cyan)
                     }
                     if let alma = context.state.alma {
                         Text(timerInterval: Date()...alma.endTime, countsDown: true)
                             .monospacedDigit()
-                            .font(.system(size: context.state.facu != nil ? 9 : 13, weight: .bold, design: .rounded))
+                            .font(.system(size: context.state.facu != nil || context.state.session != nil ? 9 : 13, weight: .bold, design: .rounded))
                             .foregroundColor(.pink)
+                    }
+                    if let session = context.state.session, let start = session.startTime {
+                        Text(start, style: .timer)
+                            .monospacedDigit()
+                            .font(.system(size: context.state.facu != nil || context.state.alma != nil ? 9 : 13, weight: .bold, design: .rounded))
+                            .foregroundColor(.green)
                     }
                 }
                 .frame(width: 44, alignment: .trailing)
@@ -124,9 +150,15 @@ struct UserTimerRow: View {
         HStack(spacing: 16) {
             ZStack {
                 Circle().fill(color.opacity(0.2)).frame(width: 48, height: 48)
-                Text(userName.prefix(1).uppercased())
-                    .font(.system(size: 24, weight: .heavy, design: .monospaced))
-                    .foregroundColor(color)
+                if state.isStopwatch {
+                    Image(systemName: "timer")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(color)
+                } else {
+                    Text(userName.prefix(1).uppercased())
+                        .font(.system(size: 24, weight: .heavy, design: .monospaced))
+                        .foregroundColor(color)
+                }
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -138,7 +170,7 @@ struct UserTimerRow: View {
                     Text(userName.uppercased())
                         .font(.system(size: 11, weight: .heavy, design: .monospaced))
                         .foregroundColor(color)
-                    Text("• DESCANSO")
+                    Text(state.isStopwatch ? "• ACTIVA" : "• DESCANSO")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.gray)
                 }
@@ -147,15 +179,22 @@ struct UserTimerRow: View {
             Spacer()
 
             VStack(alignment: .center, spacing: 4) {
-                Text(timerInterval: Date()...state.endTime, countsDown: true)
-                    .monospacedDigit()
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(color)
-                
-                ProgressView(timerInterval: Date()...state.endTime, countsDown: true)
-                    .labelsHidden()
-                    .tint(color)
-                    .frame(width: 80)
+                if state.isStopwatch, let start = state.startTime {
+                    Text(start, style: .timer)
+                        .monospacedDigit()
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(color)
+                } else {
+                    Text(timerInterval: Date()...state.endTime, countsDown: true)
+                        .monospacedDigit()
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(color)
+                    
+                    ProgressView(timerInterval: Date()...state.endTime, countsDown: true)
+                        .labelsHidden()
+                        .tint(color)
+                        .frame(width: 80)
+                }
             }
         }
         .padding(.horizontal, 20)
@@ -190,9 +229,16 @@ struct UserExpandedTimer: View {
     let state: RestTimerAttributes.TimerState
     
     var body: some View {
-        Text(timerInterval: Date()...state.endTime, countsDown: true)
-            .monospacedDigit()
-            .font(.system(size: 20, weight: .bold, design: .rounded))
-            .foregroundColor(.white)
+        if state.isStopwatch, let start = state.startTime {
+            Text(start, style: .timer)
+                .monospacedDigit()
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+        } else {
+            Text(timerInterval: Date()...state.endTime, countsDown: true)
+                .monospacedDigit()
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+        }
     }
 }

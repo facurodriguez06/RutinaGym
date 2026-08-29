@@ -1537,6 +1537,8 @@ const timerState = {
     exerciseName: "",
     minimized: false,
     active: false,
+    isStopwatch: false,
+    startTime: null,
   },
   alma: {
     endTime: null,
@@ -1545,6 +1547,18 @@ const timerState = {
     exerciseName: "",
     minimized: false,
     active: false,
+    isStopwatch: false,
+    startTime: null,
+  },
+  session: {
+    endTime: null,
+    totalSeconds: 0,
+    currentSeconds: 0,
+    exerciseName: "",
+    minimized: false,
+    active: false,
+    isStopwatch: false,
+    startTime: null,
   },
 };
 
@@ -3467,15 +3481,19 @@ function updateBodyScrollLock() {
   }
 }
 
-function showTimer(user, exerciseName, seconds) {
+function showTimer(user, exerciseName, seconds, options = {}) {
+  const isStopwatch = options.isStopwatch || false;
+  
   // 1. Set State for this user
   timerState[user] = {
-    endTime: Date.now() + seconds * 1000,
+    endTime: isStopwatch ? null : Date.now() + seconds * 1000,
+    startTime: isStopwatch ? (options.startTime || Date.now()) : null,
     totalSeconds: seconds,
-    currentSeconds: seconds,
+    currentSeconds: isStopwatch ? 0 : seconds,
     exerciseName: exerciseName,
     minimized: false,
     active: true,
+    isStopwatch: isStopwatch
   };
 
   // 2. Logic to determine display
@@ -3511,8 +3529,10 @@ function showTimer(user, exerciseName, seconds) {
   if (window.Capacitor?.Plugins?.LiveActivity) {
     window.Capacitor.Plugins.LiveActivity.startRestTimer({
       exerciseName: exerciseName,
-      userName: user === "facu" ? "Facu" : "Alma",
-      seconds: seconds
+      userName: user === "facu" ? "Facu" : (user === "session" ? "Session" : "Alma"),
+      seconds: seconds,
+      isStopwatch: isStopwatch,
+      startTime: timerState[user].startTime ? timerState[user].startTime : -1
     }).then(result => {
       if (!result || !result.success) {
         console.error("[LA] Error: ", result?.message || "unknown");
@@ -3534,18 +3554,24 @@ function startGlobalTimerIfNeeded() {
     const now = Date.now();
     let anyoneActive = false;
 
-    ["facu", "alma"].forEach((user) => {
+    ["facu", "alma", "session"].forEach((user) => {
       const state = timerState[user];
-      if (!state.active) return;
+      if (!state || !state.active) return;
       anyoneActive = true;
 
-      const diff = state.endTime - now;
-      state.currentSeconds = Math.ceil(diff / 1000);
+      if (state.isStopwatch) {
+          const diff = now - state.startTime;
+          state.currentSeconds = Math.floor(diff / 1000);
+          state.totalSeconds = state.currentSeconds; // Update total for progress bars (though hidden)
+      } else {
+          const diff = state.endTime - now;
+          state.currentSeconds = Math.ceil(diff / 1000);
 
-      if (state.currentSeconds <= 0) {
-        state.currentSeconds = 0;
-        // Timer Finished Logic
-        handleTimerComplete(user);
+          if (state.currentSeconds <= 0) {
+            state.currentSeconds = 0;
+            // Timer Finished Logic
+            handleTimerComplete(user);
+          }
       }
     });
 
@@ -3558,15 +3584,23 @@ function startGlobalTimerIfNeeded() {
     } else {
       updateTimerDisplay();
 
-      const mainUser = activeFullModalUser || (timerState.facu.active ? "facu" : "alma");
+      const mainUser = activeFullModalUser || (timerState.facu.active ? "facu" : (timerState.alma.active ? "alma" : "session"));
       const state = timerState[mainUser];
 
       if (state && state.active) {
         const displaySecs = Math.max(0, state.currentSeconds);
-        const mins = Math.floor(displaySecs / 60);
+        const hrs = Math.floor(displaySecs / 3600);
+        const mins = Math.floor((displaySecs % 3600) / 60);
         const secs = displaySecs % 60;
-        const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
-        const userName = mainUser === "facu" ? "Facu" : "Alma";
+        
+        let timeStr = "";
+        if (hrs > 0) {
+            timeStr = `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+        } else {
+            timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+        }
+        
+        const userName = mainUser === "facu" ? "Facu" : (mainUser === "session" ? "Session" : "Alma");
 
         // Update document tab title
         document.title = `⏱️ ${timeStr} | ${state.exerciseName} - VIGOR`;
@@ -3723,7 +3757,7 @@ function renderTimerUI() {
     // Update static elements of modal if needed (titles, colors)
     // We'll update dynamic values in updateTimerDisplay
     document.getElementById("timer-exercise-name").textContent =
-      `${state.exerciseName} (${user === "facu" ? "Facu" : "Alma"})`;
+      `${state.exerciseName} (${user === "facu" ? "Facu" : (user === "session" ? "Session" : "Alma")})`;
 
     // Just ensure the container looks right for the user?
     // Optionally trigger a color update or just keep it emerald/neutral.
@@ -3736,7 +3770,7 @@ function renderTimerUI() {
   }
 
   // Render Bubbles (for anyone minimized or NOT the active full screen)
-  ["facu", "alma"].forEach((user) => {
+  ["facu", "alma", "session"].forEach((user) => {
     const state = timerState[user];
     if (state.active && (state.minimized || user !== activeFullModalUser)) {
       // Render Bubble
@@ -3757,20 +3791,30 @@ function createMiniTimerBubble(user, state) {
   div.className = `bg-slate-950 border border-slate-800 rounded-[24px] p-3 pr-5 shadow-2xl cursor-pointer hover:scale-105 hover:bg-slate-900 transition-all duration-200 pointer-events-auto flex items-center gap-3`;
   div.onclick = () => expandTimer(user);
 
+  const hrs = Math.floor(state.currentSeconds / 3600);
+  const mins = Math.floor((state.currentSeconds % 3600) / 60);
+  const secs = state.currentSeconds % 60;
+  let timeStr = "";
+  if (hrs > 0) {
+      timeStr = `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  } else {
+      timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+  }
+
   div.innerHTML = `
         <div class="relative w-11 h-11 flex-shrink-0">
-             <svg class="w-11 h-11 transform -rotate-90 drop-shadow-md">
+             <svg class="w-11 h-11 transform -rotate-90 drop-shadow-md ${state.isStopwatch ? 'hidden' : ''}">
                 <circle cx="22" cy="22" r="18" stroke="#27272a" stroke-width="4" fill="none" />
                 <circle id="mini-ring-${user}" cx="22" cy="22" r="18" stroke="currentColor" stroke-width="4"
                     fill="none" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="0"
                     class="${ringColor} transition-all duration-1000 ease-linear drop-shadow-[0_0_8px_rgba(currentColor,0.5)]" />
             </svg>
              <div class="absolute inset-0 flex items-center justify-center">
-                 <span class="text-[12px] font-black uppercase text-slate-300">${user === "facu" ? "F" : "A"}</span>
+                 ${state.isStopwatch ? `<i data-lucide="timer" class="w-5 h-5 text-emerald-500"></i>` : `<span class="text-[12px] font-black uppercase text-slate-300">${user === "facu" ? "F" : "A"}</span>`}
              </div>
         </div>
         <div class="text-left flex flex-col justify-center">
-            <div id="mini-display-${user}" class="text-2xl font-mono font-black text-white tabular-nums leading-none tracking-tight">0:00</div>
+            <div id="mini-display-${user}" class="text-2xl font-mono font-black text-white tabular-nums leading-none tracking-tight">${timeStr}</div>
             <p class="text-[10px] text-slate-400 max-w-[100px] truncate font-bold uppercase mt-1">${state.exerciseName}</p>
         </div>
     `;
@@ -3790,18 +3834,31 @@ function updateTimerDisplay() {
     const secondsLeft = document.getElementById("timer-seconds-left");
 
     const displaySeconds = Math.max(0, state.currentSeconds);
-    const mins = Math.floor(displaySeconds / 60);
+    const hrs = Math.floor(displaySeconds / 3600);
+    const mins = Math.floor((displaySeconds % 3600) / 60);
     const secs = displaySeconds % 60;
-    const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+    
+    let timeStr = "";
+    if (hrs > 0) {
+        timeStr = `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    } else {
+        timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+    }
 
     // Optimization: Don't touch DOM if text matches
     if (display.textContent !== timeStr) {
       display.textContent = timeStr;
       secondsLeft.textContent = displaySeconds;
 
-      const circumference = 364.42;
-      const progress = Math.max(0, displaySeconds / state.totalSeconds);
-      ring.style.strokeDashoffset = circumference * (1 - progress);
+      if (state.isStopwatch) {
+          // Hide ring for stopwatches
+          if (ring) ring.parentElement.classList.add('hidden');
+      } else {
+          if (ring) ring.parentElement.classList.remove('hidden');
+          const circumference = 364.42;
+          const progress = Math.max(0, displaySeconds / state.totalSeconds);
+          if (ring) ring.style.strokeDashoffset = circumference * (1 - progress);
+      }
     }
 
     // Low time warning colors
@@ -3867,7 +3924,7 @@ function updateTimerDisplay() {
   }
 
   // Update Minis
-  ["facu", "alma"].forEach((user) => {
+  ["facu", "alma", "session"].forEach((user) => {
     const displayMini = document.getElementById(`mini-display-${user}`);
     const ringMini = document.getElementById(`mini-ring-${user}`);
     const container = displayMini?.closest("div.bg-slate-900"); // Get the bubble container
@@ -3899,8 +3956,16 @@ function updateTimerDisplay() {
         }
       } else {
         // Restore default colors
-        const defaultColor = user === "facu" ? "blue" : "pink";
-        ringMini.style.stroke = user === "facu" ? "#60a5fa" : "#f472b6"; // tailwind blue-400 / pink-400 hex approx
+        let defaultColor = "blue";
+        let strokeColor = "#60a5fa";
+        if (user === "alma") {
+            defaultColor = "pink";
+            strokeColor = "#f472b6";
+        } else if (user === "session") {
+            defaultColor = "green";
+            strokeColor = "#4ade80";
+        }
+        ringMini.style.stroke = strokeColor;
         // Re-add correct text color
         displayMini.classList.remove("text-red-400");
         displayMini.classList.add(`text-${defaultColor}-400`);
@@ -3920,7 +3985,7 @@ function updateTimerDisplay() {
 function hideTimer(user) {
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {
-    LiveActivity.endRestTimer({ userName: user === "facu" ? "Facu" : "Alma" }).catch(() => {});
+    LiveActivity.endRestTimer({ userName: user === "facu" ? "Facu" : (user === "session" ? "Session" : "Alma") }).catch(() => {});
   }
 
   if (user) {
@@ -3929,19 +3994,15 @@ function hideTimer(user) {
 
     // Logic: If the user being hidden was the Active Full Screen one...
     if (activeFullModalUser === user) {
-      const otherUser = user === "facu" ? "alma" : "facu";
+      // If there are other active users, we could expand one.
+      // For simplicity, we just clear the full screen if the active one is hidden.
+      const others = ["facu", "alma", "session"].filter(u => u !== user);
+      const nextUser = others.find(u => timerState[u].active && !timerState[u].minimized);
 
-      // Check if other user is active AND NOT minimized
-      // If the other user is active but minimized, we should probably keep them minimized
-      // unless the user explicitly expands them.
-
-      if (timerState[otherUser].active && !timerState[otherUser].minimized) {
-        expandTimer(otherUser);
-      } else if (
-        timerState[otherUser].active &&
-        timerState[otherUser].minimized
-      ) {
-        // Other user is active but chose to be minimized.
+      if (nextUser) {
+        expandTimer(nextUser);
+      } else {
+        // Others are minimized or inactive
         // We do NOT expand them automatically. We just clear the full screen slot.
         activeFullModalUser = null;
       } else {
@@ -8388,8 +8449,10 @@ function startWorkoutSession() {
   isSessionTimerRunning = true;
   localStorage.setItem("vigor_sessionTimerRunning", "true");
   
-  startGlobalSessionInterval();
   updateStopwatchControls();
+  
+  // Show global session timer (Stopwatch mode)
+  showTimer("session", "Entrenamiento", 0, { isStopwatch: true, startTime: sessionStartTime });
   
   // Show the panel in case it was hidden
   const panel = document.getElementById("session-control-panel");
@@ -8397,20 +8460,7 @@ function startWorkoutSession() {
 }
 
 function startGlobalSessionInterval() {
-  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
-  
-  sessionTimerInterval = setInterval(() => {
-    if (!isSessionTimerRunning) {
-      clearInterval(sessionTimerInterval);
-      sessionTimerInterval = null;
-      return;
-    }
-    
-    const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-    sessionElapsedSeconds = elapsed;
-    localStorage.setItem("vigor_sessionElapsedSeconds", sessionElapsedSeconds.toString());
-    updateStopwatchUI();
-  }, 1000);
+  // Deprecated. Handled by globalTimerInterval in showTimer
 }
 
 function pauseWorkoutSession() {
@@ -8419,11 +8469,14 @@ function pauseWorkoutSession() {
   isSessionTimerRunning = false;
   localStorage.setItem("vigor_sessionTimerRunning", "false");
   
-  if (sessionTimerInterval) {
-    clearInterval(sessionTimerInterval);
-    sessionTimerInterval = null;
+  // Save current elapsed seconds
+  if (timerState["session"] && timerState["session"].currentSeconds > 0) {
+      sessionElapsedSeconds = timerState["session"].currentSeconds;
+      localStorage.setItem("vigor_sessionElapsedSeconds", sessionElapsedSeconds.toString());
   }
+  
   updateStopwatchControls();
+  hideTimer("session");
 }
 
 function confirmResetWorkoutSession() {
@@ -8441,30 +8494,13 @@ function resetWorkoutSession() {
   localStorage.removeItem("vigor_sessionElapsedSeconds");
   localStorage.setItem("vigor_sessionTimerRunning", "false");
   
-  if (sessionTimerInterval) {
-    clearInterval(sessionTimerInterval);
-    sessionTimerInterval = null;
-  }
-  
   updateStopwatchUI();
   updateStopwatchControls();
   updateLiveVolumeUI();
+  hideTimer("session");
 }
 
-function updateStopwatchUI() {
-  const hours = Math.floor(sessionElapsedSeconds / 3600);
-  const minutes = Math.floor((sessionElapsedSeconds % 3600) / 60);
-  const seconds = sessionElapsedSeconds % 60;
-  
-  const formatted = [
-    hours.toString().padStart(2, "0"),
-    minutes.toString().padStart(2, "0"),
-    seconds.toString().padStart(2, "0")
-  ].join(":");
-  
-  const el = document.getElementById("session-stopwatch");
-  if (el) el.textContent = formatted;
-}
+// updateStopwatchUI was removed because it's handled globally by updateTimerDisplay()
 
 function updateStopwatchControls() {
   const btnPlay = document.getElementById("btn-session-play");
