@@ -27,6 +27,7 @@ const DEFAULT_ROUTINE = [
     exercises: [
       {
         name: "Sentadilla (Barra o Hack)",
+        image: "assets/exercises/squat.jpg",
         sets: "3",
         reps: "8-10",
         rir: "RIR 2",
@@ -39,6 +40,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Hip Thrust (Máquina o Barra)",
+        image: "assets/exercises/squat.jpg",
         sets: "4",
         reps: "10-12",
         rir: "RIR 1",
@@ -48,6 +50,8 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Prensa de Piernas",
+        image: "assets/exercises/squat.jpg",
+        image: "assets/exercises/squat.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 1",
@@ -57,6 +61,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Sillón de Aductores (Máquina)",
+        image: "assets/exercises/adductor.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 1",
@@ -66,6 +71,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Sillón de Cuádriceps (Extensiones)",
+        image: "assets/exercises/leg_extension.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -75,6 +81,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl Femoral (Máquina)",
+        image: "assets/exercises/squat.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -84,6 +91,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Gemelos en Máquina (Pantorrillas)",
+        image: "assets/exercises/calf_raise.jpg",
         sets: "4",
         reps: "15-20",
         rir: "RIR 0",
@@ -98,6 +106,7 @@ const DEFAULT_ROUTINE = [
     exercises: [
       {
         name: "Press de Banca Plano (Barra)",
+        image: "assets/exercises/bench_press.jpg",
         sets: "4",
         reps: "6-8",
         rir: "RIR 2",
@@ -107,6 +116,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press Declinado (Barra o Manc)",
+        image: "assets/exercises/bench_press.jpg",
         sets: "3",
         reps: "8-10",
         rir: "RIR 2",
@@ -116,6 +126,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press Inclinado (Máquina)",
+        image: "assets/exercises/bench_press.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 1",
@@ -125,6 +136,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Fondos (Dips) en Paralelas",
+        image: "assets/exercises/dips.jpg",
         sets: "3",
         reps: "Fallo",
         rir: "RIR 0",
@@ -134,6 +146,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Elevaciones Laterales (Manc)",
+        image: "assets/exercises/shoulders.jpg",
         sets: "4",
         reps: "15-20",
         rir: "RIR 0",
@@ -143,6 +156,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Aperturas (Peck Deck)",
+        image: "assets/exercises/chest_fly.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -152,6 +166,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Extensiones Tríceps (Polea)",
+        image: "assets/exercises/dips.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -160,6 +175,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Extensión Unilateral (Manc/Polea)",
+        image: "assets/exercises/dips.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -175,6 +191,7 @@ const DEFAULT_ROUTINE = [
     exercises: [
       {
         name: "Jalón al Pecho (Agarre Ancho)",
+        image: "assets/exercises/back.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 2",
@@ -183,6 +200,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press Militar (Máquina)",
+        image: "assets/exercises/shoulders.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 1",
@@ -191,6 +209,8 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Remo en Polea Baja",
+        image: "assets/exercises/back.jpg",
+        image: "assets/exercises/back.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 1",
@@ -200,6 +220,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press Pecho Plano (Mancuernas)",
+        image: "assets/exercises/bench_press.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 2",
@@ -208,6 +229,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Elevaciones Laterales (Polea o Mancuernas)",
+        image: "assets/exercises/shoulders.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -216,6 +238,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl de Bíceps con Barra (Z o Recta)",
+        image: "assets/exercises/biceps.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -231,6 +254,7 @@ const DEFAULT_ROUTINE = [
     exercises: [
       {
         name: "Jalón al Pecho (Agarre Neutro)",
+        image: "assets/exercises/back.jpg",
         sets: "4",
         reps: "8-10",
         rir: "RIR 1",
@@ -240,6 +264,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Remo en Máquina (o T-Bar)",
+        image: "assets/exercises/back.jpg",
         sets: "4",
         reps: "8-10",
         rir: "RIR 1",
@@ -252,6 +277,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Encogimientos (Shrugs) con Mancuernas",
+        image: "assets/exercises/shoulders.jpg",
         sets: "4",
         reps: "12-15",
         rir: "RIR 1",
@@ -261,6 +287,8 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Pull-Over en Polea Alta",
+        image: "assets/exercises/back.jpg",
+        image: "assets/exercises/back.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -270,6 +298,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Vuelos Posteriores (Pájaros)",
+        image: "assets/exercises/shoulders.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -279,6 +308,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl Predicador (Máquina)",
+        image: "assets/exercises/biceps.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 0",
@@ -288,6 +318,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl Martillo (Mancuernas)",
+        image: "assets/exercises/biceps.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 0",
@@ -296,6 +327,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl de Muñeca (Barra tras espalda)",
+        image: "assets/exercises/biceps.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -311,6 +343,7 @@ const DEFAULT_ROUTINE = [
     exercises: [
       {
         name: "Peso Muerto Rumano (Manc/Barra)",
+        image: "assets/exercises/squat.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 2",
@@ -323,6 +356,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press de Pecho (Máquina)",
+        image: "assets/exercises/bench_press.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -332,6 +366,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Sillón de Cuádriceps (Leg Ext.)",
+        image: "assets/exercises/leg_extension.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -340,6 +375,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Sillón de Aductores (Máquina)",
+        image: "assets/exercises/adductor.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 2",
@@ -349,6 +385,8 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Patada de Glúteo en Máquina",
+        image: "assets/exercises/squat.jpg",
+        image: "assets/exercises/squat.jpg",
         sets: "4",
         reps: "12-15",
         rir: "RIR 0",
@@ -358,6 +396,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Face Pull (Polea Alta)",
+        image: "assets/exercises/shoulders.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 1",
@@ -367,6 +406,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Copa Tríceps (Mancuerna a 2 manos)",
+        image: "assets/exercises/dips.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -376,6 +416,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "BONUS A ELECCIÓN (Ver abajo)",
+        image: "assets/exercises/biceps.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -5660,12 +5701,9 @@ function renderContent() {
     card.innerHTML = `
         <!-- Header -->
         <div class="px-4 py-4 flex items-center gap-4">
-            <!-- Thumbnail (SVG scaled down inside a white box) -->
-            <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative cursor-pointer" onclick='event.stopPropagation(); openMuscleMapModal(${JSON.stringify(exercise.muscles.primary)}, ${JSON.stringify(exercise.muscles.secondary)})'>
-                <!-- The muscle map SVG scales poorly by itself, we use transform scale -->
-                <div class="absolute inset-0 flex items-center justify-center scale-[0.45] pointer-events-none">
-                     ${getMuscleMapSVG(exercise.muscles.primary, exercise.muscles.secondary)}
-                </div>
+            <!-- Thumbnail (Image) -->
+            <div class="w-20 h-20 bg-black rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative cursor-pointer border border-[#27272a]" onclick='event.stopPropagation(); openImageModal("${exercise.image || "assets/exercises/squat.jpg"}")'>
+                <img src="${exercise.image || "assets/exercises/squat.jpg"}" class="w-full h-full object-cover grayscale opacity-80 transition-opacity duration-300 hover:opacity-100" />
             </div>
             
             <!-- Title & Info -->
@@ -5920,6 +5958,36 @@ function renderContent() {
 
   // Re-init icons for newly added elements
   safeCreateIcons();
+}
+
+function openImageModal(imgSrc) {
+  const modal = document.getElementById("image-modal");
+  const container = document.getElementById("image-modal-content");
+
+  if (!modal || !container) return;
+
+  // Ensure modal background is visible
+  modal.classList.remove("hidden");
+  
+  // Inject the image full size
+  container.innerHTML = `<img src="${imgSrc}" class="w-full h-full object-cover rounded-3xl shadow-2xl grayscale" />`;
+
+  // Animate in
+  setTimeout(() => {
+    modal.classList.remove("opacity-0");
+    modal.children[0].classList.remove("scale-95", "opacity-0");
+  }, 10);
+}
+
+function closeImageModal() {
+  const modal = document.getElementById("image-modal");
+  if (!modal) return;
+  modal.classList.add("opacity-0");
+  modal.children[0].classList.add("scale-95", "opacity-0");
+
+  setTimeout(() => {
+    modal.classList.add("hidden");
+  }, 300);
 }
 
 // --- VISIBILITY HANDLER ---
