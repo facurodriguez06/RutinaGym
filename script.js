@@ -8360,3 +8360,30 @@ window.updateLiveVolumeUI = updateLiveVolumeUI;
 window.initSessionStopwatch = initSessionStopwatch;
 
 
+
+function getLastReps(exerciseName, user, dayIndex) {
+  const dates = Object.keys(trainingHistory).sort(
+    (a, b) => new Date(b) - new Date(a),
+  );
+
+  const dayRoutine = routineData[dayIndex];
+  if (!dayRoutine) return "";
+
+  const exIndex = dayRoutine.exercises.findIndex(
+    (e) => e.name === exerciseName,
+  );
+  if (exIndex === -1) return "";
+
+  for (const date of dates) {
+    const dayData = trainingHistory[date];
+    if (dayData && dayData.reps) {
+      for (let s = 0; s < 6; s++) {
+        const key = `${dayIndex}-${exIndex}-${s}`;
+        if (dayData.reps[key] && dayData.reps[key][user]) {
+          return dayData.reps[key][user];
+        }
+      }
+    }
+  }
+  return "";
+}
