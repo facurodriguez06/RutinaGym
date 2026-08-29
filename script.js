@@ -392,6 +392,7 @@ let activeRoutineId = 'routine-1';
 let routineData = [];
 let completedSets = {};
 let setWeights = {};
+let setReps = {};
 let lastLocalUpdates = {};
 let whoTrainsToday = localStorage.getItem("gymWhoTrainsToday") || "both"; // 'both', 'facu', 'alma'
 let sessionTraineeSelected = false;
@@ -511,6 +512,7 @@ function migrateLegacyData() {
 function loadActiveRoutineState() {
   completedSets = JSON.parse(localStorage.getItem("gymRoutineSets_" + activeRoutineId)) || {};
   setWeights = JSON.parse(localStorage.getItem("gymRoutineWeights_" + activeRoutineId)) || {};
+  setReps = JSON.parse(localStorage.getItem("gymRoutineReps_" + activeRoutineId)) || {};
 }
 
 function initializeRoutines() {
@@ -787,6 +789,7 @@ function loadActiveRoutineStateFromHistory(triggerTimers = false) {
     if (todayRecord.weights) {
       const cloudWeights = todayRecord.weights;
       const mergedWeights = { ...setWeights };
+      const mergedReps = { ...setReps };
       let weightsChanged = false;
       
       Object.keys(cloudWeights).forEach((key) => {
@@ -2762,6 +2765,7 @@ function setDayTraining(who) {
       facu: false,
       deleted: false,
       weights: trainingHistory[selectedDateKey]?.weights || {},
+      reps: trainingHistory[selectedDateKey]?.reps || {},
       completed_sets: trainingHistory[selectedDateKey]?.completed_sets || {},
       water: trainingHistory[selectedDateKey]?.water || {}
     };
@@ -5558,6 +5562,8 @@ function renderContent() {
 
       let weightFacu = setWeights[setKey] && setWeights[setKey].facu ? setWeights[setKey].facu : "";
       let weightAlma = setWeights[setKey] && setWeights[setKey].alma ? setWeights[setKey].alma : "";
+      let repsFacu = setReps[setKey] && setReps[setKey].facu ? setReps[setKey].facu : "";
+      let repsAlma = setReps[setKey] && setReps[setKey].alma ? setReps[setKey].alma : "";
 
       if (!weightFacu) {
         const last = getLastWeight(exercise.name, "facu", activeTab);
@@ -5567,6 +5573,16 @@ function renderContent() {
         const last = getLastWeight(exercise.name, "alma", activeTab);
         if (last) weightAlma = last;
       }
+      if (!repsFacu) {
+        const last = getLastReps(exercise.name, "facu", activeTab);
+        if (last) repsFacu = last;
+      }
+      if (!repsAlma) {
+        const last = getLastReps(exercise.name, "alma", activeTab);
+        if (last) repsAlma = last;
+      }
+      
+      const targetRepsPlaceholder = exercise.reps ? exercise.reps.replace(/[^0-9-]/g, '').split('-')[0] || "10" : "10";
 
       setRowsHTML += `
       <div class="flex relative group">
@@ -5584,14 +5600,24 @@ function renderContent() {
           <div class="flex-1 ml-3 flex flex-col gap-2 pb-6">
               ${showFacu ? `
               <div class="flex items-center justify-between bg-[#18181b] border border-[#27272a] rounded-xl p-1.5 pl-4 transition-colors ${setData.facu ? 'border-[var(--accent-facu)]/30 bg-[var(--accent-facu)]/5' : ''}">
-                  <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-2">
                       ${whoTrainsToday === 'both' ? `<div class="w-2 h-2 rounded-full bg-[var(--accent-facu)]"></div>` : ''}
-                      <span class="text-white font-bold text-lg w-7 text-center">${exercise.reps}</span>
-                      <span class="text-slate-500 text-sm font-medium hidden sm:inline">reps</span>
-                      <span class="text-slate-600 font-bold mx-1 hidden sm:inline">·</span>
-                      <input type="number" value="${weightFacu}" placeholder="0" data-set-key="${setKey}" data-user="facu"
-                          class="weight-input w-12 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
-                      <span class="text-slate-500 text-sm font-medium">kg</span>
+                      
+                      <!-- Reps Input -->
+                      <div class="flex items-center">
+                          <input type="number" value="${repsFacu}" placeholder="${targetRepsPlaceholder}" data-set-key="${setKey}" data-user="facu"
+                              class="reps-input w-10 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                          <span class="text-slate-500 text-sm font-medium mr-1 hidden sm:inline">reps</span>
+                      </div>
+                      
+                      <span class="text-slate-600 font-bold hidden sm:inline">·</span>
+                      
+                      <!-- Weight Input -->
+                      <div class="flex items-center">
+                          <input type="number" value="${weightFacu}" placeholder="0" data-set-key="${setKey}" data-user="facu"
+                              class="weight-input w-12 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                          <span class="text-slate-500 text-sm font-medium">kg</span>
+                      </div>
                   </div>
                   <button data-set-key="${setKey}" data-user="facu" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
                       class="set-btn shrink-0 w-12 h-10 rounded-lg flex items-center justify-center transition-all ${setData.facu ? 'bg-[var(--accent-facu)] text-black' : 'bg-[#27272a] text-slate-500 hover:text-white'}">
@@ -5602,14 +5628,24 @@ function renderContent() {
               
               ${showAlma ? `
               <div class="flex items-center justify-between bg-[#18181b] border border-[#27272a] rounded-xl p-1.5 pl-4 transition-colors ${setData.alma ? 'border-[var(--accent-alma)]/30 bg-[var(--accent-alma)]/5' : ''}">
-                  <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-2">
                       ${whoTrainsToday === 'both' ? `<div class="w-2 h-2 rounded-full bg-[var(--accent-alma)]"></div>` : ''}
-                      <span class="text-white font-bold text-lg w-7 text-center">${exercise.reps}</span>
-                      <span class="text-slate-500 text-sm font-medium hidden sm:inline">reps</span>
-                      <span class="text-slate-600 font-bold mx-1 hidden sm:inline">·</span>
-                      <input type="number" value="${weightAlma}" placeholder="0" data-set-key="${setKey}" data-user="alma"
-                          class="weight-input w-12 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
-                      <span class="text-slate-500 text-sm font-medium">kg</span>
+                      
+                      <!-- Reps Input -->
+                      <div class="flex items-center">
+                          <input type="number" value="${repsAlma}" placeholder="${targetRepsPlaceholder}" data-set-key="${setKey}" data-user="alma"
+                              class="reps-input w-10 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                          <span class="text-slate-500 text-sm font-medium mr-1 hidden sm:inline">reps</span>
+                      </div>
+                      
+                      <span class="text-slate-600 font-bold hidden sm:inline">·</span>
+                      
+                      <!-- Weight Input -->
+                      <div class="flex items-center">
+                          <input type="number" value="${weightAlma}" placeholder="0" data-set-key="${setKey}" data-user="alma"
+                              class="weight-input w-12 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                          <span class="text-slate-500 text-sm font-medium">kg</span>
+                      </div>
                   </div>
                   <button data-set-key="${setKey}" data-user="alma" data-exercise-name="${exercise.name}" data-rest-time="${restTime}"
                       class="set-btn shrink-0 w-12 h-10 rounded-lg flex items-center justify-center transition-all ${setData.alma ? 'bg-[var(--accent-alma)] text-white' : 'bg-[#27272a] text-slate-500 hover:text-white'}">
@@ -5649,11 +5685,16 @@ function renderContent() {
             </div>
         </div>
         
+        <!-- Objective Note -->
+        <div class="px-4 mb-4 mt-2">
+             <div class="p-3 rounded-xl bg-slate-900 border border-[#27272a] text-sm text-slate-300 flex gap-2 items-center">
+                 <i data-lucide="target" class="w-4 h-4 text-emerald-500 shrink-0"></i>
+                 <span class="font-medium">Objetivo: <span class="text-white">${numSets} series de ${exercise.reps} reps</span></span>
+             </div>
+        </div>
+        
         <!-- Quick Actions (Pills) -->
         <div class="px-4 flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar scroll-smooth">
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181b] border border-[#27272a] text-[13px] text-white whitespace-nowrap">
-                Reps y carga <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
-            </div>
             <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181b] border border-[#27272a] text-[13px] text-white whitespace-nowrap">
                 <i data-lucide="timer" class="w-3.5 h-3.5 text-slate-400"></i> ${restTime >= 60 ? Math.floor(restTime/60) + ':00' : restTime + 's'}
             </div>
