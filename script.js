@@ -6138,6 +6138,11 @@ function renderContent(skipAnimations = false) {
       } else {
         // TURN OFF
         completedSets[setKey][user] = false;
+        
+        // Hide the timer if it is currently active for this user
+        if (timerState[user] && timerState[user].active) {
+            hideTimer(user);
+        }
       }
 
       localStorage.setItem("gymRoutineSets_" + activeRoutineId, JSON.stringify(completedSets));
