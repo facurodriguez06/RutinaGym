@@ -31,13 +31,14 @@
   /* Core Colors - OLED Black & Deep Grays */
   --bg-base: #000000;
   --bg-panel: rgba(20, 20, 22, 0.65);
-  --bg-panel-alt: rgba(28, 28, 32, 0.8);
+  --bg-panel-alt: rgba(30, 30, 34, 0.85);
   
   --border-dim: rgba(255, 255, 255, 0.05);
   --border-strong: rgba(255, 255, 255, 0.1);
   
   --text-main: #fcfcfc;
-  --text-dim: #9ca3af;
+  --text-dim: #a1a1aa;
+  --text-amber: #fbbf24; /* amber-400 for dark mode */
   
   /* Brand Accents - Vibrant Gradients */
   --accent-vigor: #10b981; /* Emerald */
@@ -52,15 +53,16 @@
 
 html:not(.dark) {
   /* Core Colors */
-  --bg-base: #f8fafc;
-  --bg-panel: rgba(255, 255, 255, 0.85);
-  --bg-panel-alt: rgba(241, 245, 249, 0.95);
+  --bg-base: #f1f5f9;
+  --bg-panel: #ffffff;
+  --bg-panel-alt: #f8fafc;
   
   --border-dim: rgba(0, 0, 0, 0.05);
   --border-strong: rgba(0, 0, 0, 0.1);
   
   --text-main: #0f172a;
   --text-dim: #64748b;
+  --text-amber: #d97706; /* amber-600 for readability on light */
   
   --accent-vigor: #059669;
   --accent-facu: #0284c7; 
@@ -534,5 +536,9 @@ input[type="number"].reps-input:focus, input[type="number"].weight-input:focus {
 
 [class*="text-slate-4"], [class*="text-slate-5"], [class*="text-slate-6"] {
   color: var(--text-dim) !important;
+}
+
+[class*="text-amber-2"], [class*="text-amber-3"], [class*="text-amber-4"] {
+  color: var(--text-amber) !important;
 }
 
