@@ -193,8 +193,10 @@ struct UserTimerRow: View {
             VStack(alignment: .center, spacing: 4) {
                 if state.isFinished == true {
                     Text("¡TIEMPO!")
-                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .font(.system(size: 24, weight: .black, design: .rounded))
                         .foregroundColor(.green)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
                     Text("Toca para continuar")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.green.opacity(0.8))
@@ -252,6 +254,8 @@ struct UserExpandedTimer: View {
             Text("¡TIEMPO!")
                 .font(.system(size: 20, weight: .black, design: .rounded))
                 .foregroundColor(.green)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
         } else if state.isStopwatch, let start = state.startTime {
             Text(start, style: .timer)
                 .monospacedDigit()
