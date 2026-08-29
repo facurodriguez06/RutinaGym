@@ -60,7 +60,14 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
                     )
                 }
                 
-                if let activity = Activity<RestTimerAttributes>.activities.first {
+                // Clean up any ended activities from the lock screen when starting a new timer
+                for oldActivity in Activity<RestTimerAttributes>.activities {
+                    if oldActivity.activityState == .ended {
+                        Task { await oldActivity.end(nil, dismissalPolicy: .immediate) }
+                    }
+                }
+                
+                if let activity = Activity<RestTimerAttributes>.activities.first(where: { $0.activityState == .active }) {
                     // Update existing activity
                     var contentState = activity.content.state
                     if userName.lowercased() == "facu" {
@@ -115,7 +122,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
         let userName = call.getString("userName", "")
         if #available(iOS 16.2, *) {
             Task {
-                if let activity = Activity<RestTimerAttributes>.activities.first {
+                if let activity = Activity<RestTimerAttributes>.activities.first(where: { $0.activityState == .active }) {
                     var contentState = activity.content.state
                     
                     if userName.lowercased() == "facu" {
