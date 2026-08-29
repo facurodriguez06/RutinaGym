@@ -3626,7 +3626,8 @@ function startGlobalTimerIfNeeded() {
 }
 
 function handleTimerComplete(user) {
-  const state = timerState[user];
+  try {
+    const state = timerState[user];
   state.active = false;
 
   // Sound
@@ -3641,7 +3642,7 @@ function handleTimerComplete(user) {
   document.title = `¡TIEMPO! - ${state.exerciseName} (${user === "facu" ? "Facu" : "Alma"})`;
 
   // Notifications
-  if (Notification.permission === "granted") {
+  if ("Notification" in window && Notification.permission === "granted") {
     const title = "¡Tiempo Terminado!";
     const options = {
       body: `Descanso finalizado para ${state.exerciseName} (${user === "facu" ? "Facu" : "Alma"})`,
@@ -3667,6 +3668,9 @@ function handleTimerComplete(user) {
 
   // Force UI update immediately to show 0:00
   renderTimerUI();
+  } catch(err) {
+    alert("CRITICAL ERROR in handleTimerComplete: " + err.message);
+  }
 }
 
 function handleNotifications() {
@@ -3674,7 +3678,7 @@ function handleNotifications() {
   // Or just update the one that is Full Screen (most relevant).
   if (
     document.visibilityState === "hidden" &&
-    Notification.permission === "granted"
+    "Notification" in window && Notification.permission === "granted"
   ) {
     // Find the most urgent timer
     let urgentUser = null;
@@ -6338,15 +6342,17 @@ document.addEventListener("visibilitychange", () => {
     ["facu", "alma"].forEach((user) => {
       const state = timerState[user];
       if (state.active) {
-        const diff = state.endTime - now;
-        if (diff <= -1000) {
-          // Expired significantly ago
-          state.currentSeconds = 0;
-          handleTimerComplete(user);
-          needsUpdate = true;
-        } else {
-          state.currentSeconds = Math.ceil(diff / 1000);
-          needsUpdate = true;
+        if (!state.isStopwatch) {
+          const diff = state.endTime - now;
+          if (diff <= 0) {
+            // Expired while in background
+            state.currentSeconds = 0;
+            handleTimerComplete(user);
+            needsUpdate = true;
+          } else {
+            state.currentSeconds = Math.ceil(diff / 1000);
+            needsUpdate = true;
+          }
         }
       }
     });
@@ -6359,6 +6365,34 @@ document.addEventListener("visibilitychange", () => {
     handleNotifications();
   }
 });
+
+// --- CAPACITOR APP STATE FALLBACK (for iOS reliable wakeups) ---
+if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+  window.Capacitor.Plugins.App.addListener('appStateChange', ({ isActive }) => {
+    if (isActive) {
+      unlockAudio();
+      let needsUpdate = false;
+      const now = Date.now();
+      ["facu", "alma", "session"].forEach((user) => {
+        const state = timerState[user];
+        if (state.active && !state.isStopwatch) {
+          const diff = state.endTime - now;
+          if (diff <= 0) {
+            state.currentSeconds = 0;
+            handleTimerComplete(user);
+            needsUpdate = true;
+          } else {
+            state.currentSeconds = Math.ceil(diff / 1000);
+            needsUpdate = true;
+          }
+        }
+      });
+      if (needsUpdate) updateTimerDisplay();
+    } else {
+      handleNotifications();
+    }
+  });
+}
 
 // --- SERVICE WORKER REGISTRATION WITH AUTO-UPDATE ---
 if ("serviceWorker" in navigator) {

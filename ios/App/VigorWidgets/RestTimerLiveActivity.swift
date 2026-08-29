@@ -69,12 +69,22 @@ public struct RestTimerLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: 4) {
                         if let facu = context.state.facu {
-                            ProgressView(timerInterval: Date()...facu.endTime, countsDown: true)
-                                .tint(.cyan)
+                            if facu.isFinished == true || Date() >= facu.endTime {
+                                ProgressView(value: 1.0)
+                                    .tint(.cyan)
+                            } else {
+                                ProgressView(timerInterval: Date()...facu.endTime, countsDown: true)
+                                    .tint(.cyan)
+                            }
                         }
                         if let alma = context.state.alma {
-                            ProgressView(timerInterval: Date()...alma.endTime, countsDown: true)
-                                .tint(.pink)
+                            if alma.isFinished == true || Date() >= alma.endTime {
+                                ProgressView(value: 1.0)
+                                    .tint(.pink)
+                            } else {
+                                ProgressView(timerInterval: Date()...alma.endTime, countsDown: true)
+                                    .tint(.pink)
+                            }
                         }
                         // Stopwatches do not use ProgressView
                     }
@@ -110,7 +120,7 @@ public struct RestTimerLiveActivity: Widget {
                 // MARK: - COMPACT TRAILING
                 VStack(alignment: .trailing, spacing: -1) {
                     if let facu = context.state.facu {
-                        if facu.isFinished == true {
+                        if facu.isFinished == true || Date() >= facu.endTime {
                             Text("FIN")
                                 .font(.system(size: 12, weight: .black, design: .rounded))
                                 .foregroundColor(.green)
@@ -122,7 +132,7 @@ public struct RestTimerLiveActivity: Widget {
                         }
                     }
                     if let alma = context.state.alma {
-                        if alma.isFinished == true {
+                        if alma.isFinished == true || Date() >= alma.endTime {
                             Text("FIN")
                                 .font(.system(size: 12, weight: .black, design: .rounded))
                                 .foregroundColor(.green)
@@ -206,15 +216,27 @@ struct UserTimerRow: View {
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(color)
                 } else {
-                    Text(timerInterval: Date()...state.endTime, countsDown: true)
-                        .monospacedDigit()
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(color)
-                    
-                    ProgressView(timerInterval: Date()...state.endTime, countsDown: true)
-                        .labelsHidden()
-                        .tint(color)
-                        .frame(width: 80)
+                    if Date() >= state.endTime {
+                        Text("0:00")
+                            .monospacedDigit()
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(color)
+                        
+                        ProgressView(value: 1.0)
+                            .labelsHidden()
+                            .tint(color)
+                            .frame(width: 80)
+                    } else {
+                        Text(timerInterval: Date()...state.endTime, countsDown: true)
+                            .monospacedDigit()
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(color)
+                        
+                        ProgressView(timerInterval: Date()...state.endTime, countsDown: true)
+                            .labelsHidden()
+                            .tint(color)
+                            .frame(width: 80)
+                    }
                 }
             }
         }
@@ -262,10 +284,17 @@ struct UserExpandedTimer: View {
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
         } else {
-            Text(timerInterval: Date()...state.endTime, countsDown: true)
-                .monospacedDigit()
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+            if Date() >= state.endTime {
+                Text("0:00")
+                    .monospacedDigit()
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            } else {
+                Text(timerInterval: Date()...state.endTime, countsDown: true)
+                    .monospacedDigit()
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
         }
     }
 }
