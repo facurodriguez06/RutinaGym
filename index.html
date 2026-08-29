@@ -54,11 +54,11 @@
 </head>
 
 <body
-    class="bg-slate-950 text-slate-200 transition-colors duration-300 overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200 min-h-[100dvh] flex flex-col">
+    class="bg-slate-950 text-slate-200 transition-colors duration-300 selection:bg-emerald-500/30 selection:text-emerald-200 min-h-[100dvh] flex flex-col">
     <!-- Sidebar / Drawer -->
     <div id="sidebar-overlay" onclick="toggleSidebar()"
         class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity opacity-0"></div>
-    <div id="app-content" class="hidden w-full flex-1 flex flex-col">
+    <div id="app-content" class="hidden w-full max-w-[100vw] overflow-x-hidden flex-1 flex flex-col">
 <aside id="sidebar"
         class="fixed top-0 left-0 w-64 h-[100dvh] bg-slate-900 border-r border-slate-800 z-50 transform -translate-x-full transition-transform duration-300 ease-out shadow-2xl">
         <div class="p-6 flex flex-col h-full overflow-y-auto">
