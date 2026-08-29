@@ -5606,7 +5606,7 @@ function renderContent() {
                       <!-- Reps Input -->
                       <div class="flex items-center">
                           <input type="number" value="${repsFacu}" placeholder="${targetRepsPlaceholder}" data-set-key="${setKey}" data-user="facu"
-                              class="reps-input w-10 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                              class="reps-input w-12 bg-transparent appearance-none border-none shadow-none font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700 m-0" onclick="event.stopPropagation()">
                           <span class="text-slate-500 text-sm font-medium mr-1 hidden sm:inline">reps</span>
                       </div>
                       
@@ -5615,7 +5615,7 @@ function renderContent() {
                       <!-- Weight Input -->
                       <div class="flex items-center">
                           <input type="number" value="${weightFacu}" placeholder="0" data-set-key="${setKey}" data-user="facu"
-                              class="weight-input w-12 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                              class="weight-input w-14 bg-transparent appearance-none border-none shadow-none font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700 m-0" onclick="event.stopPropagation()">
                           <span class="text-slate-500 text-sm font-medium">kg</span>
                       </div>
                   </div>
@@ -5634,7 +5634,7 @@ function renderContent() {
                       <!-- Reps Input -->
                       <div class="flex items-center">
                           <input type="number" value="${repsAlma}" placeholder="${targetRepsPlaceholder}" data-set-key="${setKey}" data-user="alma"
-                              class="reps-input w-10 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                              class="reps-input w-12 bg-transparent appearance-none border-none shadow-none font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700 m-0" onclick="event.stopPropagation()">
                           <span class="text-slate-500 text-sm font-medium mr-1 hidden sm:inline">reps</span>
                       </div>
                       
@@ -5643,7 +5643,7 @@ function renderContent() {
                       <!-- Weight Input -->
                       <div class="flex items-center">
                           <input type="number" value="${weightAlma}" placeholder="0" data-set-key="${setKey}" data-user="alma"
-                              class="weight-input w-12 bg-transparent font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700" onclick="event.stopPropagation()">
+                              class="weight-input w-14 bg-transparent appearance-none border-none shadow-none font-bold text-white text-lg text-center outline-none p-0 placeholder:text-slate-700 m-0" onclick="event.stopPropagation()">
                           <span class="text-slate-500 text-sm font-medium">kg</span>
                       </div>
                   </div>
