@@ -5683,7 +5683,7 @@ window.toggleExerciseComplete = function(tabIdx, exerciseIdx, numSets, isComplet
   if (!isCompleted && typeof isSessionTimerRunning !== "undefined" && !isSessionTimerRunning) {
     if (typeof startWorkoutSession === "function") startWorkoutSession();
   }
-  renderContent();
+  renderContent(true);
   if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   triggerHaptic();
 };
@@ -5822,8 +5822,8 @@ function renderContent() {
     const isExerciseCompleted = exerciseCompletedChecks === numSets * multiplier;
 
     const card = document.createElement("div");
-    const staggerClass = idx < 6 ? `stagger-${idx + 1}` : "";
-    let cardClasses = `animate-slide-up ${staggerClass} relative bg-slate-950 flex flex-col mb-8 `;
+    const staggerClass = (!skipAnimations && idx < 6) ? `stagger-${idx + 1}` : "";
+    let cardClasses = `${!skipAnimations ? 'animate-slide-up' : ''} ${staggerClass} relative bg-slate-950 flex flex-col mb-8 `;
     
     if (isExerciseCompleted) {
       cardClasses += `opacity-60`;
@@ -6154,7 +6154,7 @@ function renderContent() {
       };
       
       debouncedSaveToCloud(1000);
-      renderContent();
+      renderContent(true);
     });
   });
 
@@ -8725,8 +8725,8 @@ window.addExerciseSet = function(tabId, exerciseIndex) {
       localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
     }
     
-    // Re-render
-    renderContent();
+    // Re-render without full animation
+    renderContent(true);
     if (typeof lucide !== "undefined" && lucide.createIcons) {
       lucide.createIcons();
     }
@@ -8748,8 +8748,8 @@ window.removeExerciseSet = function(tabId, exerciseIndex) {
         localStorage.setItem("gymRoutinesList", JSON.stringify(routinesList));
       }
       
-      // Re-render
-      renderContent();
+      // Re-render without full animation
+      renderContent(true);
       if (typeof lucide !== "undefined" && lucide.createIcons) {
         lucide.createIcons();
       }
