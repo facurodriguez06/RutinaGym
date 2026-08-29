@@ -50,11 +50,11 @@
   --glow-vigor: 0 0 20px rgba(16, 185, 129, 0.2);
 }
 
-body.light {
+html:not(.dark) {
   /* Core Colors */
   --bg-base: #f8fafc;
-  --bg-panel: rgba(255, 255, 255, 0.7);
-  --bg-panel-alt: rgba(241, 245, 249, 0.8);
+  --bg-panel: rgba(255, 255, 255, 0.85);
+  --bg-panel-alt: rgba(241, 245, 249, 0.95);
   
   --border-dim: rgba(0, 0, 0, 0.05);
   --border-strong: rgba(0, 0, 0, 0.1);
@@ -525,7 +525,7 @@ input[type="number"].reps-input:focus, input[type="number"].weight-input:focus {
 [class*="border-slate-9"], [class*="border-slate-8"], [class*="border-slate-7"] {
   border-color: var(--border-strong) !important;
 }
-[class*="text-slate-1"], [class*="text-slate-2"], [class*="text-slate-3"] {
+[class*="text-slate-1"], [class*="text-slate-2"], [class*="text-slate-3"], .text-white {
   color: var(--text-main) !important;
 }
 [class*="text-slate-4"], [class*="text-slate-5"] {

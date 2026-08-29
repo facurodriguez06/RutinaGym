@@ -1863,14 +1863,18 @@ function applyTheme() {
     body.classList.add("light");
     body.classList.remove("dark");
     html.classList.remove("dark"); // Remove from HTML
-    if (icon) icon.setAttribute("data-lucide", "sun");
-    if (sidebarIcon) sidebarIcon.setAttribute("data-lucide", "sun");
+    if (icon) icon.outerHTML = '<i id="theme-icon" data-lucide="sun" class="w-4 h-4 text-slate-300"></i>';
+    if (sidebarIcon) sidebarIcon.outerHTML = '<i id="theme-icon-sidebar" data-lucide="sun" class="w-4 h-4 text-slate-400"></i>';
   } else {
     body.classList.remove("light");
     body.classList.add("dark");
     html.classList.add("dark"); // Add to HTML for Tailwind
-    if (icon) icon.setAttribute("data-lucide", "moon");
-    if (sidebarIcon) sidebarIcon.setAttribute("data-lucide", "moon");
+    if (icon) icon.outerHTML = '<i id="theme-icon" data-lucide="moon" class="w-4 h-4 text-slate-300"></i>';
+    if (sidebarIcon) sidebarIcon.outerHTML = '<i id="theme-icon-sidebar" data-lucide="moon" class="w-4 h-4 text-slate-400"></i>';
+  }
+  
+  if (window.lucide) {
+      window.lucide.createIcons();
   }
 
   // Update theme-color meta tag for mobile status bar matching
