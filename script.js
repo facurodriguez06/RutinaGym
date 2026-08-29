@@ -3540,10 +3540,12 @@ function showTimer(user, exerciseName, seconds, options = {}) {
         console.log("[LA] OK! id=", result.id);
       }
     }).catch(e => {
+      alert("[LA] Exception (startRestTimer): " + JSON.stringify(e));
       console.error("[LA] Exception: ", e);
     });
   } else {
     console.warn("[LA] Plugin NOT found.", capInfo);
+    // Don't alert here to avoid spamming the user when they test in the browser
   }
 }
 
@@ -3985,7 +3987,7 @@ function updateTimerDisplay() {
 function hideTimer(user) {
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {
-    LiveActivity.endRestTimer({ userName: user === "facu" ? "Facu" : (user === "session" ? "Session" : "Alma") }).catch(() => {});
+    LiveActivity.endRestTimer({ userName: user === "facu" ? "Facu" : (user === "session" ? "Session" : "Alma") }).catch(e => alert("Error (endRestTimer): " + JSON.stringify(e)));
   }
 
   if (user) {
@@ -5630,8 +5632,8 @@ function toggleWarmupTimer(id) {
     
     const LiveActivity = getLiveActivityPlugin();
     if (LiveActivity) {
-      LiveActivity.endRestTimer({ userName: "Facu" }).catch(() => {});
-      LiveActivity.endRestTimer({ userName: "Alma" }).catch(() => {});
+      LiveActivity.endRestTimer({ userName: "Facu" }).catch(e => alert("Error pausing (Facu): " + JSON.stringify(e)));
+      LiveActivity.endRestTimer({ userName: "Alma" }).catch(e => alert("Error pausing (Alma): " + JSON.stringify(e)));
     }
   } else {
     // Start
@@ -5649,8 +5651,8 @@ function toggleWarmupTimer(id) {
         
         const LiveActivity = getLiveActivityPlugin();
         if (LiveActivity) {
-          LiveActivity.endRestTimer({ userName: "Facu" }).catch(() => {});
-          LiveActivity.endRestTimer({ userName: "Alma" }).catch(() => {});
+          LiveActivity.endRestTimer({ userName: "Facu" }).catch(e => alert("Error finishing (Facu): " + JSON.stringify(e)));
+          LiveActivity.endRestTimer({ userName: "Alma" }).catch(e => alert("Error finishing (Alma): " + JSON.stringify(e)));
         }
         
         // Play sound? or visual cue
@@ -5682,7 +5684,9 @@ function toggleWarmupTimer(id) {
         exerciseName: exName,
         userName: whoTrainsToday === "alma" ? "Alma" : "Facu",
         seconds: state.time
-      }).catch(e => console.error(e));
+      }).then(() => {
+        showToast("check-circle", "text-emerald-400", "Dynamic Island Activada");
+      }).catch(e => alert("Error iniciando Dynamic Island: " + JSON.stringify(e)));
     }
   }
 
@@ -5702,8 +5706,8 @@ function resetWarmupTimer(id) {
   
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {
-    LiveActivity.endRestTimer({ userName: "Facu" }).catch(() => {});
-    LiveActivity.endRestTimer({ userName: "Alma" }).catch(() => {});
+    LiveActivity.endRestTimer({ userName: "Facu" }).catch(e => alert("Error reset (Facu): " + JSON.stringify(e)));
+    LiveActivity.endRestTimer({ userName: "Alma" }).catch(e => alert("Error reset (Alma): " + JSON.stringify(e)));
   }
   
   renderContent();
@@ -5721,8 +5725,8 @@ function skipWarmupTimer(id) {
 
   const LiveActivity = getLiveActivityPlugin();
   if (LiveActivity) {
-    LiveActivity.endRestTimer({ userName: "Facu" }).catch(() => {});
-    LiveActivity.endRestTimer({ userName: "Alma" }).catch(() => {});
+    LiveActivity.endRestTimer({ userName: "Facu" }).catch(e => alert("Error skip (Facu): " + JSON.stringify(e)));
+    LiveActivity.endRestTimer({ userName: "Alma" }).catch(e => alert("Error skip (Alma): " + JSON.stringify(e)));
   }
 
   renderContent();
