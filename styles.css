@@ -240,7 +240,7 @@ button:active {
 
 /* Sidebar & Headers */
 #sidebar, #main-header {
-  background-color: rgba(10, 10, 12, 0.8) !important;
+  background-color: var(--bg-panel) !important;
   border-color: var(--border-strong) !important;
   border-width: 0 1px 1px 0 !important;
   backdrop-filter: blur(24px) saturate(200%) !important;
@@ -250,7 +250,7 @@ button:active {
 /* Modals */
 #calculator-modal, #history-details-modal, #shop-modal, #muscle-map-modal, #profile-modal, #day-modal, #confirm-modal, #permission-modal, #achievement-modal, #rescue-modal {
   overflow-y: auto !important;
-  background-color: rgba(0, 0, 0, 0.6) !important;
+  background-color: var(--bg-panel) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
 }
@@ -268,7 +268,7 @@ button:active {
 #who-trains-gatekeeper {
   overflow: hidden !important;
   padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px) 16px !important;
-  background-color: rgba(0, 0, 0, 0.8) !important;
+  background-color: var(--bg-base) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
 }
@@ -279,7 +279,7 @@ button:active {
 input[type="number"], input[type="range"] {
   border-radius: 12px !important;
   border: 1px solid var(--border-strong) !important;
-  background-color: rgba(0,0,0,0.3) !important;
+  background-color: var(--bg-panel-alt) !important;
   color: var(--text-main) !important;
   font-family: "JetBrains Mono", monospace;
   padding: 10px !important;
@@ -516,22 +516,23 @@ input[type="number"].reps-input:focus, input[type="number"].weight-input:focus {
 }
 
 /* COMPREHENSIVE TAILWIND THEME OVERRIDES FOR HARDCODED CLASSES */
-.bg-slate-900, .bg-slate-900\/50, .bg-slate-900\/80, .bg-slate-900\/90, .bg-slate-950, .bg-slate-950\/20, .bg-slate-950\/30, .bg-slate-950\/40, .bg-slate-950\/50, .bg-slate-950\/80, .bg-slate-950\/90, .bg-slate-700, .bg-slate-700\/50, .bg-slate-750 {
+[class*="bg-slate-9"] {
   background-color: var(--bg-panel) !important;
 }
 
-.bg-slate-800, .bg-slate-800\/30, .bg-slate-800\/50, .bg-slate-800\/80, .bg-slate-805, .bg-slate-850 {
+[class*="bg-slate-8"], [class*="bg-slate-7"] {
   background-color: var(--bg-panel-alt) !important;
 }
 
-.border-slate-900, .border-slate-800, .border-slate-800\/30, .border-slate-800\/50, .border-slate-700, .border-slate-700\/30, .border-slate-700\/50 {
+[class*="border-slate-9"], [class*="border-slate-8"], [class*="border-slate-7"] {
   border-color: var(--border-strong) !important;
 }
 
-.text-slate-100, .text-slate-200, .text-slate-300, .text-white {
+[class*="text-slate-1"], [class*="text-slate-2"], [class*="text-slate-3"], .text-white {
   color: var(--text-main) !important;
 }
 
-.text-slate-400, .text-slate-500, .text-slate-600 {
+[class*="text-slate-4"], [class*="text-slate-5"], [class*="text-slate-6"] {
   color: var(--text-dim) !important;
 }
+
