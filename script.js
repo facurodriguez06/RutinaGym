@@ -434,10 +434,17 @@ function selectWhoTrainsToday(who) {
   
   closeWhoTrainsModal();
   updateWhoTrainsUI();
+  updateThemeColor();
   renderContent();
+  updateGamificationUI();
   if (typeof updateLiveVolumeUI === "function") {
     updateLiveVolumeUI();
   }
+}
+
+function updateThemeColor() {
+  document.body.classList.remove('theme-facu', 'theme-alma', 'theme-both');
+  document.body.classList.add(`theme-${whoTrainsToday}`);
 }
 
 function updateWhoTrainsUI() {
@@ -476,6 +483,7 @@ function checkPromptWhoTrainsToday() {
       appContent.classList.remove("hidden");
     }
   }
+  updateThemeColor();
   updateWhoTrainsUI();
 }
 
@@ -6401,11 +6409,19 @@ function updateGamificationUI() {
   const container = document.getElementById("streak-display");
   if (container) {
     container.classList.remove("hidden");
-    // Mobile: Stacked vertical for full width and "bonito" look. Desktop: Horizontal.
-    container.className =
-      "grid grid-cols-2 md:flex md:flex-row gap-2 md:gap-3 md:justify-start mt-3 pb-3";
+    
+    const showFacu = whoTrainsToday === "facu" || whoTrainsToday === "both";
+    const showAlma = whoTrainsToday === "alma" || whoTrainsToday === "both";
+    
+    // Si solo hay uno, puede ocupar todo el ancho, sino grid
+    container.className = showFacu && showAlma 
+        ? "grid grid-cols-2 md:flex md:flex-row gap-2 md:gap-3 md:justify-start mt-3 pb-3"
+        : "flex flex-col md:flex-row gap-2 md:gap-3 md:justify-start mt-3 pb-3";
 
-    container.innerHTML = `
+    let html = "";
+
+    if (showFacu) {
+      html += `
             <div class="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 bg-slate-800/80 px-2 md:px-4 py-2 md:py-2 rounded-xl border border-blue-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('facu')">
                 <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest md:min-w-[30px]">FACU</span>
                 <div class="flex items-center gap-2 md:gap-3">
@@ -6423,8 +6439,11 @@ function updateGamificationUI() {
                         <span class="text-xs font-bold ml-0.5 ${gamification.facu.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}">${gamification.facu.freezes}</span>
                     </div>
                 </div>
-            </div>
+            </div>`;
+    }
 
+    if (showAlma) {
+      html += `
             <div class="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 bg-slate-800/80 px-2 md:px-4 py-2 md:py-2 rounded-xl border border-pink-500/30 shadow-sm transition-transform active:scale-95 cursor-pointer w-full md:w-auto" onclick="openShopModal('alma')">
                 <span class="text-[10px] font-bold text-pink-400 uppercase tracking-widest md:min-w-[30px]">ALMA</span>
                 <div class="flex items-center gap-2 md:gap-3">
@@ -6442,8 +6461,10 @@ function updateGamificationUI() {
                         <span class="text-xs font-bold ml-0.5 ${gamification.alma.freezes > 0 ? "text-cyan-400" : "text-slate-400 opacity-50"}">${gamification.alma.freezes}</span>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
+    }
+    
+    container.innerHTML = html;
     safeCreateIcons();
   }
 }
