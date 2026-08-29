@@ -50,8 +50,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Prensa de Piernas",
-        image: "assets/exercises/squat.jpg",
-        image: "assets/exercises/squat.jpg",
+        image: "assets/exercises/leg_press.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 1",
@@ -81,7 +80,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl Femoral (Máquina)",
-        image: "assets/exercises/squat.jpg",
+        image: "assets/exercises/leg_curl.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -116,7 +115,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press Declinado (Barra o Manc)",
-        image: "assets/exercises/bench_press.jpg",
+        image: "assets/exercises/decline_press.jpg",
         sets: "3",
         reps: "8-10",
         rir: "RIR 2",
@@ -126,7 +125,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press Inclinado (Máquina)",
-        image: "assets/exercises/bench_press.jpg",
+        image: "assets/exercises/incline_press.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 1",
@@ -146,7 +145,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Elevaciones Laterales (Manc)",
-        image: "assets/exercises/shoulders.jpg",
+        image: "assets/exercises/lateral_raise_db.jpg",
         sets: "4",
         reps: "15-20",
         rir: "RIR 0",
@@ -166,7 +165,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Extensiones Tríceps (Polea)",
-        image: "assets/exercises/dips.jpg",
+        image: "assets/exercises/tricep_pushdown.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -175,7 +174,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Extensión Unilateral (Manc/Polea)",
-        image: "assets/exercises/dips.jpg",
+        image: "assets/exercises/tricep_single_arm.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -191,7 +190,7 @@ const DEFAULT_ROUTINE = [
     exercises: [
       {
         name: "Jalón al Pecho (Agarre Ancho)",
-        image: "assets/exercises/back.jpg",
+        image: "assets/exercises/lat_pulldown_wide.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 2",
@@ -200,7 +199,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press Militar (Máquina)",
-        image: "assets/exercises/shoulders.jpg",
+        image: "assets/exercises/military_press.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 1",
@@ -209,8 +208,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Remo en Polea Baja",
-        image: "assets/exercises/back.jpg",
-        image: "assets/exercises/back.jpg",
+        image: "assets/exercises/seated_cable_row.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 1",
@@ -220,7 +218,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press Pecho Plano (Mancuernas)",
-        image: "assets/exercises/bench_press.jpg",
+        image: "assets/exercises/dumbbell_bench_press.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 2",
@@ -229,7 +227,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Elevaciones Laterales (Polea o Mancuernas)",
-        image: "assets/exercises/shoulders.jpg",
+        image: "assets/exercises/lateral_raise_cable.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -238,7 +236,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl de Bíceps con Barra (Z o Recta)",
-        image: "assets/exercises/biceps.jpg",
+        image: "assets/exercises/barbell_curl.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -254,7 +252,7 @@ const DEFAULT_ROUTINE = [
     exercises: [
       {
         name: "Jalón al Pecho (Agarre Neutro)",
-        image: "assets/exercises/back.jpg",
+        image: "assets/exercises/lat_pulldown_neutral.jpg",
         sets: "4",
         reps: "8-10",
         rir: "RIR 1",
@@ -264,7 +262,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Remo en Máquina (o T-Bar)",
-        image: "assets/exercises/back.jpg",
+        image: "assets/exercises/tbar_row.jpg",
         sets: "4",
         reps: "8-10",
         rir: "RIR 1",
@@ -277,7 +275,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Encogimientos (Shrugs) con Mancuernas",
-        image: "assets/exercises/shoulders.jpg",
+        image: "assets/exercises/shrugs.jpg",
         sets: "4",
         reps: "12-15",
         rir: "RIR 1",
@@ -287,8 +285,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Pull-Over en Polea Alta",
-        image: "assets/exercises/back.jpg",
-        image: "assets/exercises/back.jpg",
+        image: "assets/exercises/pullover.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -298,7 +295,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Vuelos Posteriores (Pájaros)",
-        image: "assets/exercises/shoulders.jpg",
+        image: "assets/exercises/rear_delt_fly.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -308,7 +305,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl Predicador (Máquina)",
-        image: "assets/exercises/biceps.jpg",
+        image: "assets/exercises/preacher_curl.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 0",
@@ -318,7 +315,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl Martillo (Mancuernas)",
-        image: "assets/exercises/biceps.jpg",
+        image: "assets/exercises/hammer_curl.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 0",
@@ -327,7 +324,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Curl de Muñeca (Barra tras espalda)",
-        image: "assets/exercises/biceps.jpg",
+        image: "assets/exercises/wrist_curl.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 0",
@@ -343,7 +340,7 @@ const DEFAULT_ROUTINE = [
     exercises: [
       {
         name: "Peso Muerto Rumano (Manc/Barra)",
-        image: "assets/exercises/squat.jpg",
+        image: "assets/exercises/romanian_deadlift.jpg",
         sets: "3",
         reps: "10-12",
         rir: "RIR 2",
@@ -356,7 +353,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Press de Pecho (Máquina)",
-        image: "assets/exercises/bench_press.jpg",
+        image: "assets/exercises/machine_chest_press.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -385,8 +382,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Patada de Glúteo en Máquina",
-        image: "assets/exercises/squat.jpg",
-        image: "assets/exercises/squat.jpg",
+        image: "assets/exercises/glute_kickback.jpg",
         sets: "4",
         reps: "12-15",
         rir: "RIR 0",
@@ -396,7 +392,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Face Pull (Polea Alta)",
-        image: "assets/exercises/shoulders.jpg",
+        image: "assets/exercises/face_pull.jpg",
         sets: "3",
         reps: "15-20",
         rir: "RIR 1",
@@ -406,7 +402,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "Copa Tríceps (Mancuerna a 2 manos)",
-        image: "assets/exercises/dips.jpg",
+        image: "assets/exercises/overhead_triceps.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
@@ -416,7 +412,7 @@ const DEFAULT_ROUTINE = [
       },
       {
         name: "BONUS A ELECCIÓN (Ver abajo)",
-        image: "assets/exercises/biceps.jpg",
+        image: "assets/exercises/concentration_curl.jpg",
         sets: "3",
         reps: "12-15",
         rir: "RIR 0",
