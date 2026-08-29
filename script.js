@@ -5688,7 +5688,7 @@ window.toggleExerciseComplete = function(tabIdx, exerciseIdx, numSets, isComplet
   triggerHaptic();
 };
 
-function renderContent() {
+function renderContent(skipAnimations = false) {
   if (activeTab >= routineData.length) {
     activeTab = 0;
   }
