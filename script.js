@@ -9059,6 +9059,7 @@ window.removeExerciseSet = function(tabId, exerciseIndex) {
 // INSTAGRAM STORY GENERATOR (9:16 HIGH DEFINITION CANVAS)
 // ==========================================================================
 let storyPhotoImg = null;
+let storyStyle = "clean"; // 'clean' (minimalista), 'badge' (sticker), 'compact' (tarjeta glass)
 
 function openStoryPhotoModal() {
   const modal = document.getElementById("story-photo-modal");
@@ -9078,6 +9079,24 @@ function closeStoryPhotoModal() {
     modal.classList.add("hidden");
     modal.classList.remove("flex");
   }
+}
+
+function setStoryStyle(style) {
+  storyStyle = style;
+  
+  // Update button active states
+  ["clean", "badge", "compact"].forEach((s) => {
+    const btn = document.getElementById(`story-style-btn-${s}`);
+    if (btn) {
+      if (s === style) {
+        btn.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all bg-[var(--accent-vigor)] text-black shadow-sm";
+      } else {
+        btn.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white";
+      }
+    }
+  });
+  
+  renderStoryCanvas();
 }
 
 function handleStoryPhotoUpload(event) {
@@ -9168,15 +9187,18 @@ function renderStoryCanvas() {
 
     ctx.drawImage(storyPhotoImg, offsetX, offsetY, renderW, renderH);
 
-    // Oscurecimiento y viñeta cinematográfica
-    const darkGrad = ctx.createLinearGradient(0, 0, 0, 1920);
-    darkGrad.addColorStop(0, "rgba(0, 0, 0, 0.7)");
-    darkGrad.addColorStop(0.3, "rgba(0, 0, 0, 0.2)");
-    darkGrad.addColorStop(0.65, "rgba(2, 6, 23, 0.65)");
-    darkGrad.addColorStop(1, "rgba(2, 6, 23, 0.95)");
+    // Viñeta muy sutil en los bordes para máxima claridad de la foto central
+    const topGrad = ctx.createLinearGradient(0, 0, 0, 240);
+    topGrad.addColorStop(0, "rgba(0, 0, 0, 0.5)");
+    topGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = topGrad;
+    ctx.fillRect(0, 0, 1080, 240);
 
-    ctx.fillStyle = darkGrad;
-    ctx.fillRect(0, 0, 1080, 1920);
+    const bottomGrad = ctx.createLinearGradient(0, 1400, 0, 1920);
+    bottomGrad.addColorStop(0, "transparent");
+    bottomGrad.addColorStop(1, "rgba(0, 0, 0, 0.7)");
+    ctx.fillStyle = bottomGrad;
+    ctx.fillRect(0, 1400, 1080, 520);
   } else {
     // Fondo base Dark OLED
     const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
@@ -9187,23 +9209,23 @@ function renderStoryCanvas() {
     ctx.fillRect(0, 0, 1080, 1920);
 
     // Luces de neón ambientales
-    const glow1 = ctx.createRadialGradient(850, 350, 50, 850, 350, 700);
+    const glow1 = ctx.createRadialGradient(850, 450, 50, 850, 450, 700);
     glow1.addColorStop(0, "rgba(16, 185, 129, 0.28)");
-    glow1.addColorStop(0.6, "rgba(6, 182, 212, 0.1)");
+    glow1.addColorStop(0.6, "rgba(6, 182, 212, 0.08)");
     glow1.addColorStop(1, "transparent");
     ctx.fillStyle = glow1;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    const glow2 = ctx.createRadialGradient(250, 1500, 50, 250, 1500, 800);
-    glow2.addColorStop(0, "rgba(14, 165, 233, 0.25)");
+    const glow2 = ctx.createRadialGradient(250, 1400, 50, 250, 1400, 800);
+    glow2.addColorStop(0, "rgba(14, 165, 233, 0.22)");
     glow2.addColorStop(0.7, "rgba(139, 92, 246, 0.08)");
     glow2.addColorStop(1, "transparent");
     ctx.fillStyle = glow2;
     ctx.fillRect(0, 0, 1080, 1920);
 
     // Patrón geométrico sutil
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
+    ctx.lineWidth = 1.5;
     for (let i = 0; i < 1080; i += 120) {
       ctx.beginPath();
       ctx.moveTo(i, 0);
@@ -9271,148 +9293,238 @@ function renderStoryCanvas() {
 
   // Fecha en español
   const now = new Date();
-  const dateStr = now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
+  const dateStr = now.toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
+  const fullDateStr = now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
 
-  // 3. HEADER SUPERIOR: LOGO Y BADGE DE VIGOR
-  // Pill contenedor superior
-  drawCanvasRoundedRect(ctx, 80, 90, 920, 160, 40, "rgba(15, 23, 42, 0.75)", "rgba(255, 255, 255, 0.12)", 2);
-
-  // Logo Dumbbell VIGOR
-  const gradVigor = ctx.createLinearGradient(120, 150, 260, 190);
+  // Gradiente Vigor Signature
+  const gradVigor = ctx.createLinearGradient(0, 0, 300, 0);
   gradVigor.addColorStop(0, "#34d399");
   gradVigor.addColorStop(0.5, "#10b981");
   gradVigor.addColorStop(1, "#0ea5e9");
 
-  drawCanvasRoundedRect(ctx, 130, 162, 80, 16, 8, gradVigor);
-  drawCanvasRoundedRect(ctx, 116, 130, 18, 80, 9, gradVigor);
-  drawCanvasRoundedRect(ctx, 206, 130, 18, 80, 9, gradVigor);
-  drawCanvasRoundedRect(ctx, 96, 146, 15, 48, 7, gradVigor);
-  drawCanvasRoundedRect(ctx, 229, 146, 15, 48, 7, gradVigor);
+  // =========================================================================
+  // ESTILO 1: MINIMALISTA (CLEAN - LA FOTO ES LA PROTAGONISTA)
+  // =========================================================================
+  if (storyStyle === "clean") {
+    // Top Left: Floating Pill Logo
+    drawCanvasRoundedRect(ctx, 60, 60, 240, 64, 32, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.2)", 1.5);
+    
+    // Mini dumbbell icon
+    ctx.fillStyle = gradVigor;
+    drawCanvasRoundedRect(ctx, 84, 88, 30, 8, 4, gradVigor);
+    drawCanvasRoundedRect(ctx, 78, 76, 8, 32, 4, gradVigor);
+    drawCanvasRoundedRect(ctx, 112, 76, 8, 32, 4, gradVigor);
+    
+    ctx.font = "900 28px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("VIGOR", 135, 102);
 
-  // Texto VIGOR
-  ctx.font = "900 48px 'Outfit', 'Plus Jakarta Sans', sans-serif";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText("VIGOR", 270, 184);
+    // Top Right: Floating Date Pill
+    drawCanvasRoundedRect(ctx, 840, 60, 180, 64, 32, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.2)", 1.5);
+    ctx.font = "800 20px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+    ctx.fillStyle = "#e2e8f0";
+    ctx.textAlign = "center";
+    ctx.fillText(dateStr, 930, 100);
+    ctx.textAlign = "left";
 
-  // Tag "SESSION DONE"
-  drawCanvasRoundedRect(ctx, 700, 140, 260, 60, 20, "rgba(16, 185, 129, 0.15)", "rgba(16, 185, 129, 0.4)", 2);
-  ctx.font = "800 22px 'Outfit', 'Plus Jakarta Sans', sans-serif";
-  ctx.fillStyle = "#34d399";
-  ctx.textAlign = "center";
-  ctx.fillText("SESSION DONE", 830, 178);
-  ctx.textAlign = "left";
+    // Bottom: Clean Floating Capsule HUD (Super Compacto y Elegante)
+    const capX = 60;
+    const capY = 1560;
+    const capW = 960;
+    const capH = 260;
+    drawCanvasRoundedRect(ctx, capX, capY, capW, capH, 44, "rgba(15, 23, 42, 0.78)", "rgba(255, 255, 255, 0.18)", 2);
 
-  // 4. TARJETA CENTRAL: TÍTULO DEL DÍA Y FECHA
-  drawCanvasRoundedRect(ctx, 80, 280, 920, 200, 36, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.08)", 1.5);
+    // Header del Capsule
+    ctx.beginPath();
+    ctx.arc(capX + 40, capY + 45, 8, 0, Math.PI * 2);
+    ctx.fillStyle = userColor;
+    ctx.fill();
 
-  ctx.font = "800 24px 'Outfit', 'Plus Jakarta Sans', sans-serif";
-  ctx.fillStyle = userColor;
-  ctx.fillText(dateStr, 120, 340);
+    ctx.font = "900 22px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+    ctx.fillStyle = "#ffffff";
+    const routineShort = dayTitle.length > 25 ? dayTitle.substring(0, 23) + "..." : dayTitle;
+    ctx.fillText(`${userLabel} • ${routineShort.toUpperCase()}`, capX + 60, capY + 53);
 
-  ctx.font = "900 46px 'Outfit', 'Plus Jakarta Sans', sans-serif";
-  ctx.fillStyle = "#ffffff";
-  const truncatedTitle = dayTitle.length > 28 ? dayTitle.substring(0, 26) + "..." : dayTitle;
-  ctx.fillText(truncatedTitle, 120, 410);
+    // Badge 100%
+    drawCanvasRoundedRect(ctx, capX + capW - 220, capY + 24, 180, 42, 21, "rgba(16, 185, 129, 0.2)", "#10b981", 1.5);
+    ctx.font = "800 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "#34d399";
+    ctx.textAlign = "center";
+    ctx.fillText("🔥 COMPLETADO", capX + capW - 130, capY + 51);
+    ctx.textAlign = "left";
 
-  // 5. HUD GLASSMORPHISM PRINCIPAL (PARTE INFERIOR)
-  const hudY = 980;
-  const hudH = 750;
-  drawCanvasRoundedRect(ctx, 70, hudY, 940, hudH, 48, "rgba(15, 23, 42, 0.85)", "rgba(255, 255, 255, 0.16)", 2.5);
+    // Línea separadora
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(capX + 30, capY + 85);
+    ctx.lineTo(capX + capW - 30, capY + 85);
+    ctx.stroke();
 
-  // Header del HUD con usuario y badge
-  drawCanvasRoundedRect(ctx, 110, hudY + 40, 300, 64, 32, `rgba(${userColor === '#ec4899' ? '236,72,153' : userColor === '#0ea5e9' ? '14,165,233' : '16,185,129'}, 0.18)`, userColor, 2);
-  
-  // Icono dot de usuario
-  ctx.beginPath();
-  ctx.arc(146, hudY + 72, 10, 0, Math.PI * 2);
-  ctx.fillStyle = userColor;
-  ctx.fill();
+    // 3 Columnas de Métricas Limpias
+    const colWidth = (capW - 60) / 3;
 
-  ctx.font = "900 26px 'Outfit', 'Plus Jakarta Sans', sans-serif";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(userLabel, 172, hudY + 81);
+    // Col 1: Tiempo
+    ctx.font = "700 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("⏱ TIEMPO", capX + 40, capY + 125);
+    ctx.font = "900 44px 'JetBrains Mono', 'Outfit', monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(duration, capX + 40, capY + 185);
 
-  // Badge 100% Completado
-  drawCanvasRoundedRect(ctx, 630, hudY + 40, 340, 64, 32, "rgba(16, 185, 129, 0.18)", "#10b981", 2);
-  ctx.font = "800 24px 'Outfit', 'Plus Jakarta Sans', sans-serif";
-  ctx.fillStyle = "#34d399";
-  ctx.textAlign = "center";
-  ctx.fillText("🔥 100% COMPLETADO", 800, hudY + 81);
-  ctx.textAlign = "left";
+    // Col 2: Volumen
+    ctx.font = "700 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("⚡ VOLUMEN", capX + 40 + colWidth, capY + 125);
+    ctx.font = "900 44px 'JetBrains Mono', 'Outfit', monospace";
+    ctx.fillStyle = userColor;
+    ctx.fillText(userVol.toLocaleString() + " KG", capX + 40 + colWidth, capY + 185);
 
-  // Línea separadora
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(110, hudY + 140);
-  ctx.lineTo(970, hudY + 140);
-  ctx.stroke();
+    // Col 3: Series
+    ctx.font = "700 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("🎯 SERIES", capX + 40 + colWidth * 2, capY + 125);
+    ctx.font = "900 44px 'JetBrains Mono', 'Outfit', monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(`${completedSetsCount}/${totalSetsCount}`, capX + 40 + colWidth * 2, capY + 185);
 
-  // Grid de 4 Estadísticas Principales
-  // 1. DURACIÓN
-  drawCanvasRoundedRect(ctx, 110, hudY + 170, 400, 240, 32, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.08)", 1.5);
-  ctx.font = "800 22px 'Outfit', sans-serif";
-  ctx.fillStyle = "#94a3b8";
-  ctx.fillText("⏱ TIEMPO ACTIVO", 140, hudY + 225);
+    // Watermark muy sutil abajo
+    ctx.font = "800 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.textAlign = "center";
+    ctx.fillText("⚡ VIGOR ATHLETE", 540, 1870);
+    ctx.textAlign = "left";
 
-  ctx.font = "900 50px 'JetBrains Mono', 'Outfit', monospace";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(duration, 140, hudY + 310);
+  // =========================================================================
+  // ESTILO 2: SELLO / STICKER (CORNER STAMP - ESTILO STRAVA/NIKE)
+  // =========================================================================
+  } else if (storyStyle === "badge") {
+    // Watermark en texto simple arriba
+    ctx.font = "900 36px 'Outfit', sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.shadowColor = "rgba(0,0,0,0.8)";
+    ctx.shadowBlur = 10;
+    ctx.fillText("VIGOR // " + dateStr, 60, 100);
+    ctx.shadowBlur = 0;
 
-  ctx.font = "700 20px 'Outfit', sans-serif";
-  ctx.fillStyle = "#34d399";
-  ctx.fillText("Ritmo sostenido", 140, hudY + 365);
+    // Sello Gym / Floating Sticker en la esquina inferior derecha
+    const stX = 460;
+    const stY = 1420;
+    const stW = 560;
+    const stH = 420;
+    drawCanvasRoundedRect(ctx, stX, stY, stW, stH, 40, "rgba(15, 23, 42, 0.85)", "rgba(16, 185, 129, 0.4)", 2.5);
 
-  // 2. TONELAJE / VOLUMEN
-  drawCanvasRoundedRect(ctx, 570, hudY + 170, 400, 240, 32, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.08)", 1.5);
-  ctx.font = "800 22px 'Outfit', sans-serif";
-  ctx.fillStyle = "#94a3b8";
-  ctx.fillText("⚡ TONELAJE TOTAL", 600, hudY + 225);
+    // Logo Dumbbell en sticker
+    ctx.fillStyle = gradVigor;
+    drawCanvasRoundedRect(ctx, stX + 40, stY + 50, 40, 10, 5, gradVigor);
+    drawCanvasRoundedRect(ctx, stX + 32, stY + 36, 10, 38, 5, gradVigor);
+    drawCanvasRoundedRect(ctx, stX + 78, stY + 36, 10, 38, 5, gradVigor);
 
-  ctx.font = "900 50px 'JetBrains Mono', 'Outfit', monospace";
-  ctx.fillStyle = userColor;
-  const volFormatted = userVol.toLocaleString() + " KG";
-  ctx.fillText(volFormatted, 600, hudY + 310);
+    ctx.font = "900 32px 'Outfit', sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("VIGOR ATHLETE", stX + 105, stY + 68);
 
-  ctx.font = "700 20px 'Outfit', sans-serif";
-  ctx.fillStyle = "#94a3b8";
-  ctx.fillText("Volumen levantado", 600, hudY + 365);
+    ctx.font = "800 20px 'Outfit', sans-serif";
+    ctx.fillStyle = userColor;
+    ctx.fillText(userLabel + " • " + daySubtitle, stX + 40, stY + 120);
 
-  // 3. SERIES Y EJERCICIOS
-  drawCanvasRoundedRect(ctx, 110, hudY + 440, 400, 240, 32, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.08)", 1.5);
-  ctx.font = "800 22px 'Outfit', sans-serif";
-  ctx.fillStyle = "#94a3b8";
-  ctx.fillText("🎯 SERIES TOTALES", 140, hudY + 495);
+    // Gran número de tonelaje
+    ctx.font = "900 68px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(userVol.toLocaleString() + " KG", stX + 40, stY + 210);
 
-  ctx.font = "900 50px 'JetBrains Mono', 'Outfit', monospace";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(`${completedSetsCount} / ${totalSetsCount}`, 140, hudY + 580);
+    ctx.font = "700 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("VOLUMEN TOTAL LEVANTADO", stX + 40, stY + 245);
 
-  ctx.font = "700 20px 'Outfit', sans-serif";
-  ctx.fillStyle = "#38bdf8";
-  ctx.fillText(`${dayData.exercises ? dayData.exercises.length : 5} Ejercicios realizados`, 140, hudY + 635);
+    // Pill de tiempo y series abajo
+    drawCanvasRoundedRect(ctx, stX + 40, stY + 280, stW - 80, 80, 24, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.1)", 1);
+    ctx.font = "800 24px 'JetBrains Mono', sans-serif";
+    ctx.fillStyle = "#34d399";
+    ctx.fillText(`⏱ ${duration}`, stX + 65, stY + 330);
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillText(`🎯 ${completedSetsCount} Series`, stX + 310, stY + 330);
 
-  // 4. SOBRECARGA / LOGROS
-  drawCanvasRoundedRect(ctx, 570, hudY + 440, 400, 240, 32, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.08)", 1.5);
-  ctx.font = "800 22px 'Outfit', sans-serif";
-  ctx.fillStyle = "#94a3b8";
-  ctx.fillText("📈 PROGRESO", 600, hudY + 495);
+  // =========================================================================
+  // ESTILO 3: TARJETA GLASS (COMPACT HUD)
+  // =========================================================================
+  } else {
+    // Header superior compacto
+    drawCanvasRoundedRect(ctx, 60, 60, 960, 110, 32, "rgba(15, 23, 42, 0.7)", "rgba(255, 255, 255, 0.15)", 1.5);
+    ctx.font = "900 38px 'Outfit', sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("VIGOR", 110, 130);
 
-  ctx.font = "900 44px 'Outfit', sans-serif";
-  ctx.fillStyle = "#fbbf24";
-  ctx.fillText("+100 PTS", 600, hudY + 580);
+    ctx.font = "800 22px 'Outfit', sans-serif";
+    ctx.fillStyle = userColor;
+    ctx.textAlign = "right";
+    ctx.fillText(fullDateStr, 970, 128);
+    ctx.textAlign = "left";
 
-  ctx.font = "700 20px 'Outfit', sans-serif";
-  ctx.fillStyle = "#f59e0b";
-  ctx.fillText("Sobrecarga registrada", 600, hudY + 635);
+    // Tarjeta Glass Inferior
+    const cardY = 1360;
+    const cardH = 460;
+    drawCanvasRoundedRect(ctx, 60, cardY, 960, cardH, 44, "rgba(15, 23, 42, 0.84)", "rgba(255, 255, 255, 0.18)", 2);
 
-  // 6. WATERMARK INFERIOR
-  drawCanvasRoundedRect(ctx, 240, 1800, 600, 60, 30, "rgba(0, 0, 0, 0.6)", "rgba(255, 255, 255, 0.1)", 1.5);
-  ctx.font = "800 22px 'Outfit', 'Plus Jakarta Sans', sans-serif";
-  ctx.fillStyle = "#cbd5e1";
-  ctx.textAlign = "center";
-  ctx.fillText("⚡ VIGOR ATHLETE • #VigorGym", 540, 1838);
-  ctx.textAlign = "left";
+    // Título y usuario
+    ctx.font = "900 28px 'Outfit', sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(dayTitle.toUpperCase(), 100, cardY + 60);
+
+    drawCanvasRoundedRect(ctx, 800, cardY + 28, 180, 42, 21, `rgba(${userColor === '#ec4899' ? '236,72,153' : '14,165,233'}, 0.2)`, userColor, 1.5);
+    ctx.font = "800 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText(userLabel, 890, cardY + 55);
+    ctx.textAlign = "left";
+
+    // Grid 2x2 de métricas compactas
+    const wTile = 420;
+    const hTile = 135;
+
+    // Tile 1: Duración
+    drawCanvasRoundedRect(ctx, 100, cardY + 100, wTile, hTile, 24, "rgba(2, 6, 23, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
+    ctx.font = "700 16px 'Outfit', sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("⏱ TIEMPO ACTIVO", 125, cardY + 138);
+    ctx.font = "900 38px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(duration, 125, cardY + 195);
+
+    // Tile 2: Volumen
+    drawCanvasRoundedRect(ctx, 560, cardY + 100, wTile, hTile, 24, "rgba(2, 6, 23, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
+    ctx.font = "700 16px 'Outfit', sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("⚡ TONELAJE TOTAL", 585, cardY + 138);
+    ctx.font = "900 38px 'JetBrains Mono', monospace";
+    ctx.fillStyle = userColor;
+    ctx.fillText(userVol.toLocaleString() + " KG", 585, cardY + 195);
+
+    // Tile 3: Series
+    drawCanvasRoundedRect(ctx, 100, cardY + 255, wTile, hTile, 24, "rgba(2, 6, 23, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
+    ctx.font = "700 16px 'Outfit', sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("🎯 SERIES COMPLETADAS", 125, cardY + 293);
+    ctx.font = "900 38px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(`${completedSetsCount} / ${totalSetsCount}`, 125, cardY + 350);
+
+    // Tile 4: Progreso / Sobrecarga
+    drawCanvasRoundedRect(ctx, 560, cardY + 255, wTile, hTile, 24, "rgba(2, 6, 23, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
+    ctx.font = "700 16px 'Outfit', sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("📈 SOBRECARGA", 585, cardY + 293);
+    ctx.font = "900 34px 'Outfit', sans-serif";
+    ctx.fillStyle = "#fbbf24";
+    ctx.fillText("+100 PTS • REGISTRADO", 585, cardY + 350);
+
+    // Watermark
+    ctx.font = "800 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.textAlign = "center";
+    ctx.fillText("⚡ VIGOR ATHLETE • #VigorGym", 540, 1870);
+    ctx.textAlign = "left";
+  }
 }
 
 async function shareStoryImage() {
@@ -9470,6 +9582,7 @@ function downloadStoryImage() {
 
 window.openStoryPhotoModal = openStoryPhotoModal;
 window.closeStoryPhotoModal = closeStoryPhotoModal;
+window.setStoryStyle = setStoryStyle;
 window.handleStoryPhotoUpload = handleStoryPhotoUpload;
 window.useDefaultStoryBackground = useDefaultStoryBackground;
 window.shareStoryImage = shareStoryImage;

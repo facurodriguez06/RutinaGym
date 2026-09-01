@@ -1351,18 +1351,34 @@
             <!-- Controls & Options -->
             <div class="pt-3 border-t border-slate-800 flex flex-col gap-2.5 shrink-0">
                 
+                <!-- Style Selector -->
+                <div class="flex items-center justify-center gap-1.5 p-1 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <button type="button" onclick="setStoryStyle('clean')" id="story-style-btn-clean"
+                        class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all bg-[var(--accent-vigor)] text-black shadow-sm">
+                        Minimalista
+                    </button>
+                    <button type="button" onclick="setStoryStyle('badge')" id="story-style-btn-badge"
+                        class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
+                        Sello / Sticker
+                    </button>
+                    <button type="button" onclick="setStoryStyle('compact')" id="story-style-btn-compact"
+                        class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
+                        Tarjeta Glass
+                    </button>
+                </div>
+
                 <!-- Photo source buttons -->
                 <div class="grid grid-cols-3 gap-2">
                     <button type="button" onclick="document.getElementById('story-camera-input').click()"
-                        class="py-2.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                        class="py-2 px-2 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95">
                         <i data-lucide="camera" class="w-4 h-4 text-pink-400"></i> Sacar Foto
                     </button>
                     <button type="button" onclick="document.getElementById('story-gallery-input').click()"
-                        class="py-2.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                        class="py-2 px-2 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95">
                         <i data-lucide="image" class="w-4 h-4 text-sky-400"></i> Galería
                     </button>
                     <button type="button" onclick="useDefaultStoryBackground()"
-                        class="py-2.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                        class="py-2 px-2 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95">
                         <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Fondo Gym
                     </button>
                 </div>
