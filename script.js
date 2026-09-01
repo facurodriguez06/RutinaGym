@@ -9157,6 +9157,44 @@ function drawCanvasRoundedRect(ctx, x, y, width, height, radius, fillStyle = nul
   }
 }
 
+function drawOfficialVigorLogo(ctx, cx, cy, size = 50, withText = true, textColor = "#ffffff") {
+  ctx.save();
+  
+  // Gradient signature Vigor (Emerald to Electric Sky Cyan)
+  const grad = ctx.createLinearGradient(cx - size, cy - size, cx + size, cy + size);
+  grad.addColorStop(0, "#34d399");
+  grad.addColorStop(0.35, "#10b981");
+  grad.addColorStop(0.75, "#06b6d4");
+  grad.addColorStop(1, "#0ea5e9");
+
+  const scale = size / 100;
+  const ox = cx;
+  const oy = cy;
+
+  // Central Grip Bar
+  drawCanvasRoundedRect(ctx, ox - 32 * scale, oy - 7 * scale, 64 * scale, 14 * scale, 7 * scale, grad);
+  
+  // Inner Plates
+  drawCanvasRoundedRect(ctx, ox - 44 * scale, oy - 38 * scale, 15 * scale, 76 * scale, 7.5 * scale, grad);
+  drawCanvasRoundedRect(ctx, ox + 29 * scale, oy - 38 * scale, 15 * scale, 76 * scale, 7.5 * scale, grad);
+
+  // Outer Plates
+  drawCanvasRoundedRect(ctx, ox - 64 * scale, oy - 24 * scale, 14 * scale, 48 * scale, 7 * scale, grad);
+  drawCanvasRoundedRect(ctx, ox + 50 * scale, oy - 24 * scale, 14 * scale, 48 * scale, 7 * scale, grad);
+
+  // Tips
+  drawCanvasRoundedRect(ctx, ox - 72 * scale, oy - 5 * scale, 5 * scale, 10 * scale, 2.5 * scale, grad);
+  drawCanvasRoundedRect(ctx, ox + 67 * scale, oy - 5 * scale, 5 * scale, 10 * scale, 2.5 * scale, grad);
+
+  if (withText) {
+    ctx.font = `900 ${Math.round(size * 0.72)}px 'Outfit', 'Plus Jakarta Sans', sans-serif`;
+    ctx.fillStyle = textColor;
+    ctx.fillText("VIGOR", ox + size * 0.85, oy + size * 0.26);
+  }
+
+  ctx.restore();
+}
+
 function renderStoryCanvas() {
   const canvas = document.getElementById("story-canvas");
   if (!canvas) return;
@@ -9190,7 +9228,7 @@ function renderStoryCanvas() {
 
     // Viñeta muy sutil en los bordes para máxima claridad de la foto central
     const topGrad = ctx.createLinearGradient(0, 0, 0, 240);
-    topGrad.addColorStop(0, "rgba(0, 0, 0, 0.5)");
+    topGrad.addColorStop(0, "rgba(0, 0, 0, 0.45)");
     topGrad.addColorStop(1, "transparent");
     ctx.fillStyle = topGrad;
     ctx.fillRect(0, 0, 1080, 240);
@@ -9292,36 +9330,21 @@ function renderStoryCanvas() {
   if (totalSetsCount === 0) totalSetsCount = 15;
   if (completedSetsCount === 0) completedSetsCount = totalSetsCount;
 
-  // Fecha en español
+  // Fecha en español (Sin emojis)
   const now = new Date();
   const dateStr = now.toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
   const fullDateStr = now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
 
-  // Gradiente Vigor Signature
-  const gradVigor = ctx.createLinearGradient(0, 0, 300, 0);
-  gradVigor.addColorStop(0, "#34d399");
-  gradVigor.addColorStop(0.5, "#10b981");
-  gradVigor.addColorStop(1, "#0ea5e9");
-
   // =========================================================================
-  // ESTILO 1: MINIMALISTA (CLEAN - LA FOTO ES LA PROTAGONISTA)
+  // ESTILO 1: MINIMALISTA (CLEAN - SIN EMOJIS, FOTO PROTAGONISTA)
   // =========================================================================
   if (storyStyle === "clean") {
-    // Top Left: Floating Pill Logo
-    drawCanvasRoundedRect(ctx, 60, 60, 240, 64, 32, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.2)", 1.5);
-    
-    // Mini dumbbell icon
-    ctx.fillStyle = gradVigor;
-    drawCanvasRoundedRect(ctx, 84, 88, 30, 8, 4, gradVigor);
-    drawCanvasRoundedRect(ctx, 78, 76, 8, 32, 4, gradVigor);
-    drawCanvasRoundedRect(ctx, 112, 76, 8, 32, 4, gradVigor);
-    
-    ctx.font = "900 28px 'Outfit', 'Plus Jakarta Sans', sans-serif";
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("VIGOR", 135, 102);
+    // Top Left: Floating Pill con Logo Oficial de Vigor
+    drawCanvasRoundedRect(ctx, 60, 60, 240, 64, 32, "rgba(15, 23, 42, 0.7)", "rgba(255, 255, 255, 0.2)", 1.5);
+    drawOfficialVigorLogo(ctx, 100, 92, 38, true, "#ffffff");
 
     // Top Right: Floating Date Pill
-    drawCanvasRoundedRect(ctx, 840, 60, 180, 64, 32, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.2)", 1.5);
+    drawCanvasRoundedRect(ctx, 840, 60, 180, 64, 32, "rgba(15, 23, 42, 0.7)", "rgba(255, 255, 255, 0.2)", 1.5);
     ctx.font = "800 20px 'Outfit', 'Plus Jakarta Sans', sans-serif";
     ctx.fillStyle = "#e2e8f0";
     ctx.textAlign = "center";
@@ -9333,7 +9356,7 @@ function renderStoryCanvas() {
     const capY = 1560;
     const capW = 960;
     const capH = 260;
-    drawCanvasRoundedRect(ctx, capX, capY, capW, capH, 44, "rgba(15, 23, 42, 0.78)", "rgba(255, 255, 255, 0.18)", 2);
+    drawCanvasRoundedRect(ctx, capX, capY, capW, capH, 44, "rgba(15, 23, 42, 0.8)", "rgba(255, 255, 255, 0.18)", 2);
 
     // Header del Capsule
     ctx.beginPath();
@@ -9346,12 +9369,12 @@ function renderStoryCanvas() {
     const routineShort = dayTitle.length > 25 ? dayTitle.substring(0, 23) + "..." : dayTitle;
     ctx.fillText(`${userLabel} • ${routineShort.toUpperCase()}`, capX + 60, capY + 53);
 
-    // Badge 100%
-    drawCanvasRoundedRect(ctx, capX + capW - 220, capY + 24, 180, 42, 21, "rgba(16, 185, 129, 0.2)", "#10b981", 1.5);
+    // Badge Completado (Sin emojis)
+    drawCanvasRoundedRect(ctx, capX + capW - 200, capY + 24, 160, 42, 21, "rgba(16, 185, 129, 0.2)", "#10b981", 1.5);
     ctx.font = "800 18px 'Outfit', sans-serif";
     ctx.fillStyle = "#34d399";
     ctx.textAlign = "center";
-    ctx.fillText("🔥 COMPLETADO", capX + capW - 130, capY + 51);
+    ctx.fillText("COMPLETADO", capX + capW - 120, capY + 51);
     ctx.textAlign = "left";
 
     // Línea separadora
@@ -9362,13 +9385,13 @@ function renderStoryCanvas() {
     ctx.lineTo(capX + capW - 30, capY + 85);
     ctx.stroke();
 
-    // 3 Columnas de Métricas Limpias
+    // 3 Columnas de Métricas Limpias (Sin Emojis)
     const colWidth = (capW - 60) / 3;
 
     // Col 1: Tiempo
     ctx.font = "700 18px 'Outfit', sans-serif";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("⏱ TIEMPO", capX + 40, capY + 125);
+    ctx.fillText("TIEMPO", capX + 40, capY + 125);
     ctx.font = "900 44px 'JetBrains Mono', 'Outfit', monospace";
     ctx.fillStyle = "#ffffff";
     ctx.fillText(duration, capX + 40, capY + 185);
@@ -9376,7 +9399,7 @@ function renderStoryCanvas() {
     // Col 2: Volumen
     ctx.font = "700 18px 'Outfit', sans-serif";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("⚡ VOLUMEN", capX + 40 + colWidth, capY + 125);
+    ctx.fillText("VOLUMEN", capX + 40 + colWidth, capY + 125);
     ctx.font = "900 44px 'JetBrains Mono', 'Outfit', monospace";
     ctx.fillStyle = userColor;
     ctx.fillText(userVol.toLocaleString() + " KG", capX + 40 + colWidth, capY + 185);
@@ -9384,20 +9407,20 @@ function renderStoryCanvas() {
     // Col 3: Series
     ctx.font = "700 18px 'Outfit', sans-serif";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("🎯 SERIES", capX + 40 + colWidth * 2, capY + 125);
+    ctx.fillText("SERIES", capX + 40 + colWidth * 2, capY + 125);
     ctx.font = "900 44px 'JetBrains Mono', 'Outfit', monospace";
     ctx.fillStyle = "#ffffff";
     ctx.fillText(`${completedSetsCount}/${totalSetsCount}`, capX + 40 + colWidth * 2, capY + 185);
 
-    // Watermark muy sutil abajo
+    // Watermark inferior limpio
     ctx.font = "800 18px 'Outfit', sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
     ctx.textAlign = "center";
-    ctx.fillText("⚡ VIGOR ATHLETE", 540, 1870);
+    ctx.fillText("VIGOR ATHLETE • VIGOR APP", 540, 1870);
     ctx.textAlign = "left";
 
   // =========================================================================
-  // ESTILO 2: SELLO / STICKER (CORNER STAMP - ESTILO STRAVA/NIKE)
+  // ESTILO 2: SELLO / STICKER (CORNER STAMP - SIN EMOJIS)
   // =========================================================================
   } else if (storyStyle === "badge") {
     // Watermark en texto simple arriba
@@ -9415,15 +9438,12 @@ function renderStoryCanvas() {
     const stH = 420;
     drawCanvasRoundedRect(ctx, stX, stY, stW, stH, 40, "rgba(15, 23, 42, 0.85)", "rgba(16, 185, 129, 0.4)", 2.5);
 
-    // Logo Dumbbell en sticker
-    ctx.fillStyle = gradVigor;
-    drawCanvasRoundedRect(ctx, stX + 40, stY + 50, 40, 10, 5, gradVigor);
-    drawCanvasRoundedRect(ctx, stX + 32, stY + 36, 10, 38, 5, gradVigor);
-    drawCanvasRoundedRect(ctx, stX + 78, stY + 36, 10, 38, 5, gradVigor);
+    // Logo Oficial en sticker
+    drawOfficialVigorLogo(ctx, stX + 60, stY + 56, 44, false);
 
-    ctx.font = "900 32px 'Outfit', sans-serif";
+    ctx.font = "900 30px 'Outfit', sans-serif";
     ctx.fillStyle = "#ffffff";
-    ctx.fillText("VIGOR ATHLETE", stX + 105, stY + 68);
+    ctx.fillText("VIGOR ATHLETE", stX + 115, stY + 66);
 
     ctx.font = "800 20px 'Outfit', sans-serif";
     ctx.fillStyle = userColor;
@@ -9438,34 +9458,32 @@ function renderStoryCanvas() {
     ctx.fillStyle = "#94a3b8";
     ctx.fillText("VOLUMEN TOTAL LEVANTADO", stX + 40, stY + 245);
 
-    // Pill de tiempo y series abajo
+    // Pill de tiempo y series abajo (Sin emojis)
     drawCanvasRoundedRect(ctx, stX + 40, stY + 280, stW - 80, 80, 24, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.1)", 1);
-    ctx.font = "800 24px 'JetBrains Mono', sans-serif";
+    ctx.font = "800 22px 'JetBrains Mono', sans-serif";
     ctx.fillStyle = "#34d399";
-    ctx.fillText(`⏱ ${duration}`, stX + 65, stY + 330);
+    ctx.fillText(`TIEMPO: ${duration}`, stX + 60, stY + 330);
     ctx.fillStyle = "#e2e8f0";
-    ctx.fillText(`🎯 ${completedSetsCount} Series`, stX + 310, stY + 330);
+    ctx.fillText(`${completedSetsCount} SERIES`, stX + 320, stY + 330);
 
   // =========================================================================
-  // ESTILO 3: TARJETA GLASS (COMPACT HUD)
+  // ESTILO 3: TARJETA GLASS (COMPACT HUD - SIN EMOJIS)
   // =========================================================================
   } else {
-    // Header superior compacto
-    drawCanvasRoundedRect(ctx, 60, 60, 960, 110, 32, "rgba(15, 23, 42, 0.7)", "rgba(255, 255, 255, 0.15)", 1.5);
-    ctx.font = "900 38px 'Outfit', sans-serif";
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("VIGOR", 110, 130);
+    // Header superior compacto con logo oficial
+    drawCanvasRoundedRect(ctx, 60, 60, 960, 110, 32, "rgba(15, 23, 42, 0.75)", "rgba(255, 255, 255, 0.15)", 1.5);
+    drawOfficialVigorLogo(ctx, 110, 115, 46, true, "#ffffff");
 
     ctx.font = "800 22px 'Outfit', sans-serif";
     ctx.fillStyle = userColor;
     ctx.textAlign = "right";
-    ctx.fillText(fullDateStr, 970, 128);
+    ctx.fillText(fullDateStr, 970, 122);
     ctx.textAlign = "left";
 
     // Tarjeta Glass Inferior
     const cardY = 1360;
     const cardH = 460;
-    drawCanvasRoundedRect(ctx, 60, cardY, 960, cardH, 44, "rgba(15, 23, 42, 0.84)", "rgba(255, 255, 255, 0.18)", 2);
+    drawCanvasRoundedRect(ctx, 60, cardY, 960, cardH, 44, "rgba(15, 23, 42, 0.85)", "rgba(255, 255, 255, 0.18)", 2);
 
     // Título y usuario
     ctx.font = "900 28px 'Outfit', sans-serif";
@@ -9479,7 +9497,7 @@ function renderStoryCanvas() {
     ctx.fillText(userLabel, 890, cardY + 55);
     ctx.textAlign = "left";
 
-    // Grid 2x2 de métricas compactas
+    // Grid 2x2 de métricas compactas (Sin Emojis)
     const wTile = 420;
     const hTile = 135;
 
@@ -9487,7 +9505,7 @@ function renderStoryCanvas() {
     drawCanvasRoundedRect(ctx, 100, cardY + 100, wTile, hTile, 24, "rgba(2, 6, 23, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
     ctx.font = "700 16px 'Outfit', sans-serif";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("⏱ TIEMPO ACTIVO", 125, cardY + 138);
+    ctx.fillText("TIEMPO ACTIVO", 125, cardY + 138);
     ctx.font = "900 38px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#ffffff";
     ctx.fillText(duration, 125, cardY + 195);
@@ -9496,7 +9514,7 @@ function renderStoryCanvas() {
     drawCanvasRoundedRect(ctx, 560, cardY + 100, wTile, hTile, 24, "rgba(2, 6, 23, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
     ctx.font = "700 16px 'Outfit', sans-serif";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("⚡ TONELAJE TOTAL", 585, cardY + 138);
+    ctx.fillText("TONELAJE TOTAL", 585, cardY + 138);
     ctx.font = "900 38px 'JetBrains Mono', monospace";
     ctx.fillStyle = userColor;
     ctx.fillText(userVol.toLocaleString() + " KG", 585, cardY + 195);
@@ -9505,7 +9523,7 @@ function renderStoryCanvas() {
     drawCanvasRoundedRect(ctx, 100, cardY + 255, wTile, hTile, 24, "rgba(2, 6, 23, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
     ctx.font = "700 16px 'Outfit', sans-serif";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("🎯 SERIES COMPLETADAS", 125, cardY + 293);
+    ctx.fillText("SERIES COMPLETADAS", 125, cardY + 293);
     ctx.font = "900 38px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#ffffff";
     ctx.fillText(`${completedSetsCount} / ${totalSetsCount}`, 125, cardY + 350);
@@ -9514,16 +9532,16 @@ function renderStoryCanvas() {
     drawCanvasRoundedRect(ctx, 560, cardY + 255, wTile, hTile, 24, "rgba(2, 6, 23, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
     ctx.font = "700 16px 'Outfit', sans-serif";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("📈 SOBRECARGA", 585, cardY + 293);
+    ctx.fillText("SOBRECARGA", 585, cardY + 293);
     ctx.font = "900 34px 'Outfit', sans-serif";
     ctx.fillStyle = "#fbbf24";
     ctx.fillText("+100 PTS • REGISTRADO", 585, cardY + 350);
 
     // Watermark
     ctx.font = "800 18px 'Outfit', sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
     ctx.textAlign = "center";
-    ctx.fillText("⚡ VIGOR ATHLETE • #VigorGym", 540, 1870);
+    ctx.fillText("VIGOR ATHLETE • VIGOR APP", 540, 1870);
     ctx.textAlign = "left";
   }
 }
@@ -9545,7 +9563,7 @@ async function shareStoryImage() {
         try {
           await navigator.share({
             title: "Entrenamiento Vigor",
-            text: "¡Entrenamiento completado con Vigor! 💪🔥",
+            text: "Entrenamiento completado en Vigor",
             files: [file],
           });
         } catch (err) {
@@ -9562,23 +9580,52 @@ async function shareStoryImage() {
   }
 }
 
-function downloadStoryImage() {
+async function downloadStoryImage() {
   const canvas = document.getElementById("story-canvas");
   if (!canvas) return;
 
-  try {
-    const dataUrl = canvas.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.download = `vigor-story-${getDateKey(new Date())}.png`;
-    link.href = dataUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    showToast("check-circle-2", "text-emerald-400", "¡Historia guardada! Ya podés subirla a Instagram");
-  } catch (err) {
-    alert("Error al descargar la imagen.");
-  }
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+    const dateStr = getDateKey(new Date());
+    const fileName = `vigor-story-${dateStr}.png`;
+    const file = new File([blob], fileName, { type: "image/png" });
+
+    // En iOS / Mobile, navigator.share permite guardar directamente en el carrete de Fotos ("Guardar imagen")
+    if (isIOS && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Vigor Workout",
+        });
+        showToast("check-circle-2", "text-emerald-400", "¡Imagen lista para guardar en Fotos!");
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") return;
+      }
+    }
+
+    // Fallback estándar de descarga (Android / PC)
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("check-circle-2", "text-emerald-400", "¡Historia guardada en tu galería!");
+    } catch (e) {
+      const dataUrl = canvas.toDataURL("image/png");
+      const newTab = window.open();
+      if (newTab) {
+        newTab.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;" alt="Vigor Story"/>`);
+      } else {
+        alert("Mantené presionada la imagen para guardarla en tu galería.");
+      }
+    }
+  }, "image/png");
 }
 
 window.openStoryPhotoModal = openStoryPhotoModal;
