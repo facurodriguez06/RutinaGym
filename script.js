@@ -9054,3 +9054,424 @@ window.removeExerciseSet = function(tabId, exerciseIndex) {
     }
   }
 };
+
+// ==========================================================================
+// INSTAGRAM STORY GENERATOR (9:16 HIGH DEFINITION CANVAS)
+// ==========================================================================
+let storyPhotoImg = null;
+
+function openStoryPhotoModal() {
+  const modal = document.getElementById("story-photo-modal");
+  if (!modal) return;
+  
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  
+  // Render canvas
+  renderStoryCanvas();
+  safeCreateIcons();
+}
+
+function closeStoryPhotoModal() {
+  const modal = document.getElementById("story-photo-modal");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+}
+
+function handleStoryPhotoUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const loader = document.getElementById("story-rendering-loader");
+  if (loader) loader.classList.remove("hidden");
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      storyPhotoImg = img;
+      renderStoryCanvas();
+      if (loader) loader.classList.add("hidden");
+    };
+    img.onerror = () => {
+      if (loader) loader.classList.add("hidden");
+      alert("No se pudo cargar la imagen seleccionada.");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function useDefaultStoryBackground() {
+  storyPhotoImg = null;
+  renderStoryCanvas();
+}
+
+function drawCanvasRoundedRect(ctx, x, y, width, height, radius, fillStyle = null, strokeStyle = null, lineWidth = 0) {
+  ctx.beginPath();
+  if (typeof ctx.roundRect === "function") {
+    ctx.roundRect(x, y, width, height, radius);
+  } else {
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+  }
+  ctx.closePath();
+
+  if (fillStyle) {
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+  }
+  if (strokeStyle && lineWidth > 0) {
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = strokeStyle;
+    ctx.stroke();
+  }
+}
+
+function renderStoryCanvas() {
+  const canvas = document.getElementById("story-canvas");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  canvas.width = 1080;
+  canvas.height = 1920;
+
+  // 1. DIBUJAR FONDO (FOTO O GYM AESTHETIC)
+  if (storyPhotoImg) {
+    // Escalar y centrar foto para cubrir 1080x1920 (cover crop)
+    const imgRatio = storyPhotoImg.width / storyPhotoImg.height;
+    const targetRatio = 1080 / 1920;
+    let renderW, renderH, offsetX, offsetY;
+
+    if (imgRatio > targetRatio) {
+      renderH = 1920;
+      renderW = 1920 * imgRatio;
+      offsetX = (1080 - renderW) / 2;
+      offsetY = 0;
+    } else {
+      renderW = 1080;
+      renderH = 1080 / imgRatio;
+      offsetX = 0;
+      offsetY = (1920 - renderH) / 2;
+    }
+
+    ctx.drawImage(storyPhotoImg, offsetX, offsetY, renderW, renderH);
+
+    // Oscurecimiento y viñeta cinematográfica
+    const darkGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+    darkGrad.addColorStop(0, "rgba(0, 0, 0, 0.7)");
+    darkGrad.addColorStop(0.3, "rgba(0, 0, 0, 0.2)");
+    darkGrad.addColorStop(0.65, "rgba(2, 6, 23, 0.65)");
+    darkGrad.addColorStop(1, "rgba(2, 6, 23, 0.95)");
+
+    ctx.fillStyle = darkGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
+  } else {
+    // Fondo base Dark OLED
+    const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
+    bgGrad.addColorStop(0, "#090d16");
+    bgGrad.addColorStop(0.5, "#020617");
+    bgGrad.addColorStop(1, "#0a0f1d");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // Luces de neón ambientales
+    const glow1 = ctx.createRadialGradient(850, 350, 50, 850, 350, 700);
+    glow1.addColorStop(0, "rgba(16, 185, 129, 0.28)");
+    glow1.addColorStop(0.6, "rgba(6, 182, 212, 0.1)");
+    glow1.addColorStop(1, "transparent");
+    ctx.fillStyle = glow1;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    const glow2 = ctx.createRadialGradient(250, 1500, 50, 250, 1500, 800);
+    glow2.addColorStop(0, "rgba(14, 165, 233, 0.25)");
+    glow2.addColorStop(0.7, "rgba(139, 92, 246, 0.08)");
+    glow2.addColorStop(1, "transparent");
+    ctx.fillStyle = glow2;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // Patrón geométrico sutil
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 1080; i += 120) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, 1920);
+      ctx.stroke();
+    }
+    for (let j = 0; j < 1920; j += 120) {
+      ctx.beginPath();
+      ctx.moveTo(0, j);
+      ctx.lineTo(1080, j);
+      ctx.stroke();
+    }
+  }
+
+  // 2. EXTRAER DATOS REALES DE LA SESIÓN
+  const duration = document.getElementById("summary-duration")?.textContent || "00:00:00";
+  const dayData = routineData[activeTab] || { title: "Entrenamiento", day: "Sesión" };
+  const dayTitle = dayData.title || "Entrenamiento";
+  const daySubtitle = dayData.day ? dayData.day.toUpperCase() : "HOY";
+
+  let userLabel = "FACUNDO";
+  let userVol = calculateSessionVolume("facu");
+  let userColor = "#0ea5e9"; // Sky Blue
+
+  if (whoTrainsToday === "alma") {
+    userLabel = "ALMA";
+    userVol = calculateSessionVolume("alma");
+    userColor = "#ec4899"; // Pink
+  } else if (whoTrainsToday === "both") {
+    const volF = calculateSessionVolume("facu");
+    const volA = calculateSessionVolume("alma");
+    if (volF > 0 && volA > 0) {
+      userLabel = "ALMA & FACU";
+      userVol = volF + volA;
+      userColor = "#10b981"; // Emerald Duo
+    } else if (volA > 0) {
+      userLabel = "ALMA";
+      userVol = volA;
+      userColor = "#ec4899";
+    } else {
+      userLabel = "FACUNDO";
+      userVol = volF;
+      userColor = "#0ea5e9";
+    }
+  }
+
+  // Contar series completadas
+  let totalSetsCount = 0;
+  let completedSetsCount = 0;
+  if (dayData.exercises) {
+    dayData.exercises.forEach((exercise, idx) => {
+      const numSets = parseInt(exercise.sets) || 3;
+      totalSetsCount += numSets;
+      for (let s = 0; s < numSets; s++) {
+        const setKey = `${activeTab}-${idx}-${s}`;
+        const setData = completedSets[setKey];
+        if (setData && (setData.facu || setData.alma)) {
+          completedSetsCount++;
+        }
+      }
+    });
+  }
+  if (totalSetsCount === 0) totalSetsCount = 15;
+  if (completedSetsCount === 0) completedSetsCount = totalSetsCount;
+
+  // Fecha en español
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
+
+  // 3. HEADER SUPERIOR: LOGO Y BADGE DE VIGOR
+  // Pill contenedor superior
+  drawCanvasRoundedRect(ctx, 80, 90, 920, 160, 40, "rgba(15, 23, 42, 0.75)", "rgba(255, 255, 255, 0.12)", 2);
+
+  // Logo Dumbbell VIGOR
+  const gradVigor = ctx.createLinearGradient(120, 150, 260, 190);
+  gradVigor.addColorStop(0, "#34d399");
+  gradVigor.addColorStop(0.5, "#10b981");
+  gradVigor.addColorStop(1, "#0ea5e9");
+
+  drawCanvasRoundedRect(ctx, 130, 162, 80, 16, 8, gradVigor);
+  drawCanvasRoundedRect(ctx, 116, 130, 18, 80, 9, gradVigor);
+  drawCanvasRoundedRect(ctx, 206, 130, 18, 80, 9, gradVigor);
+  drawCanvasRoundedRect(ctx, 96, 146, 15, 48, 7, gradVigor);
+  drawCanvasRoundedRect(ctx, 229, 146, 15, 48, 7, gradVigor);
+
+  // Texto VIGOR
+  ctx.font = "900 48px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("VIGOR", 270, 184);
+
+  // Tag "SESSION DONE"
+  drawCanvasRoundedRect(ctx, 700, 140, 260, 60, 20, "rgba(16, 185, 129, 0.15)", "rgba(16, 185, 129, 0.4)", 2);
+  ctx.font = "800 22px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+  ctx.fillStyle = "#34d399";
+  ctx.textAlign = "center";
+  ctx.fillText("SESSION DONE", 830, 178);
+  ctx.textAlign = "left";
+
+  // 4. TARJETA CENTRAL: TÍTULO DEL DÍA Y FECHA
+  drawCanvasRoundedRect(ctx, 80, 280, 920, 200, 36, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.08)", 1.5);
+
+  ctx.font = "800 24px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+  ctx.fillStyle = userColor;
+  ctx.fillText(dateStr, 120, 340);
+
+  ctx.font = "900 46px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+  ctx.fillStyle = "#ffffff";
+  const truncatedTitle = dayTitle.length > 28 ? dayTitle.substring(0, 26) + "..." : dayTitle;
+  ctx.fillText(truncatedTitle, 120, 410);
+
+  // 5. HUD GLASSMORPHISM PRINCIPAL (PARTE INFERIOR)
+  const hudY = 980;
+  const hudH = 750;
+  drawCanvasRoundedRect(ctx, 70, hudY, 940, hudH, 48, "rgba(15, 23, 42, 0.85)", "rgba(255, 255, 255, 0.16)", 2.5);
+
+  // Header del HUD con usuario y badge
+  drawCanvasRoundedRect(ctx, 110, hudY + 40, 300, 64, 32, `rgba(${userColor === '#ec4899' ? '236,72,153' : userColor === '#0ea5e9' ? '14,165,233' : '16,185,129'}, 0.18)`, userColor, 2);
+  
+  // Icono dot de usuario
+  ctx.beginPath();
+  ctx.arc(146, hudY + 72, 10, 0, Math.PI * 2);
+  ctx.fillStyle = userColor;
+  ctx.fill();
+
+  ctx.font = "900 26px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(userLabel, 172, hudY + 81);
+
+  // Badge 100% Completado
+  drawCanvasRoundedRect(ctx, 630, hudY + 40, 340, 64, 32, "rgba(16, 185, 129, 0.18)", "#10b981", 2);
+  ctx.font = "800 24px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+  ctx.fillStyle = "#34d399";
+  ctx.textAlign = "center";
+  ctx.fillText("🔥 100% COMPLETADO", 800, hudY + 81);
+  ctx.textAlign = "left";
+
+  // Línea separadora
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(110, hudY + 140);
+  ctx.lineTo(970, hudY + 140);
+  ctx.stroke();
+
+  // Grid de 4 Estadísticas Principales
+  // 1. DURACIÓN
+  drawCanvasRoundedRect(ctx, 110, hudY + 170, 400, 240, 32, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.08)", 1.5);
+  ctx.font = "800 22px 'Outfit', sans-serif";
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText("⏱ TIEMPO ACTIVO", 140, hudY + 225);
+
+  ctx.font = "900 50px 'JetBrains Mono', 'Outfit', monospace";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(duration, 140, hudY + 310);
+
+  ctx.font = "700 20px 'Outfit', sans-serif";
+  ctx.fillStyle = "#34d399";
+  ctx.fillText("Ritmo sostenido", 140, hudY + 365);
+
+  // 2. TONELAJE / VOLUMEN
+  drawCanvasRoundedRect(ctx, 570, hudY + 170, 400, 240, 32, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.08)", 1.5);
+  ctx.font = "800 22px 'Outfit', sans-serif";
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText("⚡ TONELAJE TOTAL", 600, hudY + 225);
+
+  ctx.font = "900 50px 'JetBrains Mono', 'Outfit', monospace";
+  ctx.fillStyle = userColor;
+  const volFormatted = userVol.toLocaleString() + " KG";
+  ctx.fillText(volFormatted, 600, hudY + 310);
+
+  ctx.font = "700 20px 'Outfit', sans-serif";
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText("Volumen levantado", 600, hudY + 365);
+
+  // 3. SERIES Y EJERCICIOS
+  drawCanvasRoundedRect(ctx, 110, hudY + 440, 400, 240, 32, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.08)", 1.5);
+  ctx.font = "800 22px 'Outfit', sans-serif";
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText("🎯 SERIES TOTALES", 140, hudY + 495);
+
+  ctx.font = "900 50px 'JetBrains Mono', 'Outfit', monospace";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(`${completedSetsCount} / ${totalSetsCount}`, 140, hudY + 580);
+
+  ctx.font = "700 20px 'Outfit', sans-serif";
+  ctx.fillStyle = "#38bdf8";
+  ctx.fillText(`${dayData.exercises ? dayData.exercises.length : 5} Ejercicios realizados`, 140, hudY + 635);
+
+  // 4. SOBRECARGA / LOGROS
+  drawCanvasRoundedRect(ctx, 570, hudY + 440, 400, 240, 32, "rgba(2, 6, 23, 0.7)", "rgba(255, 255, 255, 0.08)", 1.5);
+  ctx.font = "800 22px 'Outfit', sans-serif";
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText("📈 PROGRESO", 600, hudY + 495);
+
+  ctx.font = "900 44px 'Outfit', sans-serif";
+  ctx.fillStyle = "#fbbf24";
+  ctx.fillText("+100 PTS", 600, hudY + 580);
+
+  ctx.font = "700 20px 'Outfit', sans-serif";
+  ctx.fillStyle = "#f59e0b";
+  ctx.fillText("Sobrecarga registrada", 600, hudY + 635);
+
+  // 6. WATERMARK INFERIOR
+  drawCanvasRoundedRect(ctx, 240, 1800, 600, 60, 30, "rgba(0, 0, 0, 0.6)", "rgba(255, 255, 255, 0.1)", 1.5);
+  ctx.font = "800 22px 'Outfit', 'Plus Jakarta Sans', sans-serif";
+  ctx.fillStyle = "#cbd5e1";
+  ctx.textAlign = "center";
+  ctx.fillText("⚡ VIGOR ATHLETE • #VigorGym", 540, 1838);
+  ctx.textAlign = "left";
+}
+
+async function shareStoryImage() {
+  const canvas = document.getElementById("story-canvas");
+  if (!canvas) return;
+
+  try {
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        downloadStoryImage();
+        return;
+      }
+
+      const file = new File([blob], "vigor-workout-story.png", { type: "image/png" });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: "Entrenamiento Vigor",
+            text: "¡Entrenamiento completado con Vigor! 💪🔥",
+            files: [file],
+          });
+        } catch (err) {
+          if (err.name !== "AbortError") {
+            downloadStoryImage();
+          }
+        }
+      } else {
+        downloadStoryImage();
+      }
+    }, "image/png");
+  } catch (e) {
+    downloadStoryImage();
+  }
+}
+
+function downloadStoryImage() {
+  const canvas = document.getElementById("story-canvas");
+  if (!canvas) return;
+
+  try {
+    const dataUrl = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = `vigor-story-${getDateKey(new Date())}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast("check-circle-2", "text-emerald-400", "¡Historia guardada! Ya podés subirla a Instagram");
+  } catch (err) {
+    alert("Error al descargar la imagen.");
+  }
+}
+
+window.openStoryPhotoModal = openStoryPhotoModal;
+window.closeStoryPhotoModal = closeStoryPhotoModal;
+window.handleStoryPhotoUpload = handleStoryPhotoUpload;
+window.useDefaultStoryBackground = useDefaultStoryBackground;
+window.shareStoryImage = shareStoryImage;
+window.downloadStoryImage = downloadStoryImage;
+
