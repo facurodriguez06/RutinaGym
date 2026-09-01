@@ -1071,6 +1071,50 @@ function loadActiveRoutineStateFromHistory(triggerTimers = false) {
       }
     }
     
+    // 3. Merge reps
+    if (todayRecord.reps) {
+      const cloudReps = todayRecord.reps;
+      const mergedReps = { ...setReps };
+      let repsChanged = false;
+      
+      Object.keys(cloudReps).forEach((key) => {
+        if (key.endsWith("_ts")) return; // Skip timestamp keys
+        
+        if (!mergedReps[key]) {
+          mergedReps[key] = { facu: "", alma: "" };
+        }
+        if (!mergedReps[key + "_ts"]) {
+          mergedReps[key + "_ts"] = { facu: 0, alma: 0 };
+        }
+        
+        if (typeof cloudReps[key] === "object" && cloudReps[key] !== null) {
+          ["facu", "alma"].forEach((u) => {
+            const localUpdateKey = `${key}-${u}-reps`;
+            if (Date.now() - (lastLocalUpdates[localUpdateKey] || 0) < 6000) {
+              return; // Skip syncing this rep from cloud
+            }
+            
+            const cloudVal = cloudReps[key][u];
+            const cloudTs = (cloudReps[key + "_ts"] && cloudReps[key + "_ts"][u]) || 0;
+            const localVal = mergedReps[key][u];
+            const localTs = (mergedReps[key + "_ts"] && mergedReps[key + "_ts"][u]) || 0;
+            
+            if (cloudTs > localTs || (cloudTs === localTs && localVal !== cloudVal)) {
+              mergedReps[key][u] = cloudVal;
+              mergedReps[key + "_ts"][u] = cloudTs;
+              repsChanged = true;
+            }
+          });
+        }
+      });
+      
+      if (repsChanged) {
+        setReps = mergedReps;
+        localStorage.setItem("gymRoutineReps_" + activeRoutineId, JSON.stringify(setReps));
+        changed = true;
+      }
+    }
+    
     return changed;
   }
   return false;
@@ -1108,6 +1152,18 @@ function updateDOMInPlace() {
     
     const val = (setWeights[setKey] && setWeights[setKey][user]) || "";
     if (document.activeElement !== input && input.value !== String(val)) {
+      input.value = val;
+    }
+  });
+
+  // 2b. Update reps inputs
+  document.querySelectorAll(".reps-input").forEach((input) => {
+    const setKey = input.dataset.setKey;
+    const user = input.dataset.user;
+    if (!setKey || !user) return;
+    
+    const val = (setReps[setKey] && setReps[setKey][user]) || "";
+    if (document.activeElement !== input && val && input.value !== String(val)) {
       input.value = val;
     }
   });
@@ -1374,6 +1430,10 @@ function applyCloudState(state, triggerTimers = false) {
     trainingHistory[today].weights = {
       ...trainingHistory[today].weights,
       ...setWeights,
+    };
+    trainingHistory[today].reps = {
+      ...(trainingHistory[today].reps || {}),
+      ...setReps,
     };
     
     localStorage.setItem("gymTrainingHistory", JSON.stringify(trainingHistory));
@@ -2048,11 +2108,18 @@ function markDayCompleted(who) {
     trainingHistory[today].weights = {};
   }
 
-  // Snapshot current weights into history for today
+  // Snapshot current weights and reps into history for today
   // We merge to avoid overwriting if they check one person then the other
   trainingHistory[today].weights = {
     ...trainingHistory[today].weights,
     ...setWeights,
+  };
+  if (!trainingHistory[today].reps) {
+    trainingHistory[today].reps = {};
+  }
+  trainingHistory[today].reps = {
+    ...trainingHistory[today].reps,
+    ...setReps,
   };
 
   // AWARD POINTS
@@ -5441,7 +5508,7 @@ function init() {
     }
   });
 
-  // Global Event Listener for Weight Inputs (Delegation)
+  // Global Event Listener for Weight and Reps Inputs (Delegation)
   document.body.addEventListener("input", (e) => {
     if (e.target.classList.contains("weight-input")) {
       const key = e.target.getAttribute("data-set-key");
@@ -5453,6 +5520,21 @@ function init() {
         setWeights[key][user] = value;
         lastLocalUpdates[`${key}-${user}-weight`] = Date.now();
         localStorage.setItem("gymRoutineWeights_" + activeRoutineId, JSON.stringify(setWeights));
+        debouncedSaveToCloud(3000); // Batch cloud sync while typing
+        if (typeof updateLiveVolumeUI === "function") {
+          updateLiveVolumeUI();
+        }
+      }
+    } else if (e.target.classList.contains("reps-input")) {
+      const key = e.target.getAttribute("data-set-key");
+      const user = e.target.getAttribute("data-user");
+      const value = e.target.value;
+
+      if (key && user) {
+        if (!setReps[key]) setReps[key] = {};
+        setReps[key][user] = value;
+        lastLocalUpdates[`${key}-${user}-reps`] = Date.now();
+        localStorage.setItem("gymRoutineReps_" + activeRoutineId, JSON.stringify(setReps));
         debouncedSaveToCloud(3000); // Batch cloud sync while typing
         if (typeof updateLiveVolumeUI === "function") {
           updateLiveVolumeUI();
@@ -6239,17 +6321,64 @@ function renderContent(skipAnimations = false) {
       // Real-time synchronization
       const today = getDateKey(new Date());
       if (!trainingHistory[today]) {
-        trainingHistory[today] = { alma: false, facu: false, weights: {}, completed_sets: {} };
+        trainingHistory[today] = { alma: false, facu: false, weights: {}, reps: {}, completed_sets: {} };
       }
       trainingHistory[today].completed_sets = completedSets;
       trainingHistory[today].weights = {
         ...trainingHistory[today].weights,
         ...setWeights,
       };
+      trainingHistory[today].reps = {
+        ...(trainingHistory[today].reps || {}),
+        ...setReps,
+      };
       
       debouncedSaveToCloud(1000);
       renderContent(true);
     });
+  });
+
+  // Handle Reps Inputs
+  document.querySelectorAll(".reps-input").forEach((input) => {
+    input.addEventListener("change", (e) => {
+      const setKey = e.target.dataset.setKey;
+      const user = e.target.dataset.user;
+      const val = e.target.value;
+
+      if (!setReps[setKey]) {
+        setReps[setKey] = { facu: "", alma: "" };
+      }
+      setReps[setKey][user] = val;
+      const now = Date.now();
+      lastLocalUpdates[`${setKey}-${user}-reps`] = now;
+      if (!setReps[setKey + "_ts"]) {
+        setReps[setKey + "_ts"] = {};
+      }
+      setReps[setKey + "_ts"][user] = now;
+
+      localStorage.setItem("gymRoutineReps_" + activeRoutineId, JSON.stringify(setReps));
+
+      // Real-time synchronization
+      const today = getDateKey(new Date());
+      if (!trainingHistory[today]) {
+        trainingHistory[today] = { alma: false, facu: false, weights: {}, reps: {}, completed_sets: {} };
+      }
+      trainingHistory[today].reps = {
+        ...(trainingHistory[today].reps || {}),
+        ...setReps,
+      };
+      trainingHistory[today].completed_sets = completedSets;
+
+      debouncedSaveToCloud(1500);
+      if (typeof updateLiveVolumeUI === "function") {
+        updateLiveVolumeUI();
+      }
+    });
+
+    // Auto-select on focus
+    input.addEventListener("focus", (e) => e.target.select());
+    // Stop propagation of clicks to prevent triggering exercise completion or other bubbling
+    input.addEventListener("click", (e) => e.stopPropagation());
   });
 
   // Handle Weight Inputs
@@ -6275,11 +6404,15 @@ function renderContent(skipAnimations = false) {
       // Real-time synchronization
       const today = getDateKey(new Date());
       if (!trainingHistory[today]) {
-        trainingHistory[today] = { alma: false, facu: false, weights: {}, completed_sets: {} };
+        trainingHistory[today] = { alma: false, facu: false, weights: {}, reps: {}, completed_sets: {} };
       }
       trainingHistory[today].weights = {
         ...trainingHistory[today].weights,
         ...setWeights,
+      };
+      trainingHistory[today].reps = {
+        ...(trainingHistory[today].reps || {}),
+        ...setReps,
       };
       trainingHistory[today].completed_sets = completedSets;
 
@@ -8055,6 +8188,7 @@ function deleteRoutine(id) {
       // Clean up localstorage sets & weights for that routine
       localStorage.removeItem("gymRoutineSets_" + id);
       localStorage.removeItem("gymRoutineWeights_" + id);
+      localStorage.removeItem("gymRoutineReps_" + id);
 
       scheduleCloudSync();
       
