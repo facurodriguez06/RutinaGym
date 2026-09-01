@@ -9121,6 +9121,7 @@ function handleStoryPhotoUpload(event) {
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+  event.target.value = "";
 }
 
 function useDefaultStoryBackground() {
