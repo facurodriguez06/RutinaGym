@@ -1274,14 +1274,16 @@ function updateDOMInPlace() {
   // 5. Completion message
   const completionMsg = document.getElementById("completion-message");
   if (completionMsg) {
-    const wasHidden = completionMsg.classList.contains("hidden");
     if (progress === 100) {
       completionMsg.classList.remove("hidden");
-      if (wasHidden && typeof openWorkoutSummaryModal === "function") {
-        setTimeout(openWorkoutSummaryModal, 600);
-      }
     } else {
       completionMsg.classList.add("hidden");
+    }
+  }
+
+  if (typeof shouldAutoOpenSummaryModal === "function" && shouldAutoOpenSummaryModal()) {
+    if (typeof openWorkoutSummaryModal === "function") {
+      setTimeout(() => openWorkoutSummaryModal(false), 600);
     }
   }
 
@@ -2126,20 +2128,22 @@ function markDayCompleted(who) {
   const POINTS_PER_WORKOUT = 100;
   let pointsMsg = "";
 
-  if (who === "alma") {
+  const wasAlmaCompleted = !!trainingHistory[today].alma;
+  const wasFacuCompleted = !!trainingHistory[today].facu;
+
+  if (who === "alma" || who === "both") {
     trainingHistory[today].alma = true;
-    gamification.alma.points += POINTS_PER_WORKOUT;
-    pointsMsg = ` (+${POINTS_PER_WORKOUT} pts)`;
-  } else if (who === "facu") {
+    if (!wasAlmaCompleted) {
+      gamification.alma.points += POINTS_PER_WORKOUT;
+      pointsMsg = ` (+${POINTS_PER_WORKOUT} pts)`;
+    }
+  }
+  if (who === "facu" || who === "both") {
     trainingHistory[today].facu = true;
-    gamification.facu.points += POINTS_PER_WORKOUT;
-    pointsMsg = ` (+${POINTS_PER_WORKOUT} pts)`;
-  } else if (who === "both") {
-    trainingHistory[today].alma = true;
-    trainingHistory[today].facu = true;
-    gamification.alma.points += POINTS_PER_WORKOUT;
-    gamification.facu.points += POINTS_PER_WORKOUT;
-    pointsMsg = ` (+${POINTS_PER_WORKOUT} pts c/u)`;
+    if (!wasFacuCompleted) {
+      gamification.facu.points += POINTS_PER_WORKOUT;
+      pointsMsg = who === "both" && !wasAlmaCompleted ? ` (+${POINTS_PER_WORKOUT} pts c/u)` : ` (+${POINTS_PER_WORKOUT} pts)`;
+    }
   }
 
   if (typeof checkAchievements === "function") {
@@ -5963,12 +5967,15 @@ function renderContent(skipAnimations = false) {
   const completionMsg = document.getElementById("completion-message");
   if (progress === 100) {
     completionMsg.classList.remove("hidden");
-    // Auto-open summary modal with a slight delay
-    if (typeof openWorkoutSummaryModal === "function") {
-      setTimeout(openWorkoutSummaryModal, 600);
-    }
   } else {
     completionMsg.classList.add("hidden");
+  }
+
+  // Auto-open summary modal ONLY if a trainee just finished and hasn't registered today
+  if (typeof shouldAutoOpenSummaryModal === "function" && shouldAutoOpenSummaryModal()) {
+    if (typeof openWorkoutSummaryModal === "function") {
+      setTimeout(() => openWorkoutSummaryModal(false), 600);
+    }
   }
 
   // Render Exercises
@@ -8752,9 +8759,52 @@ function calculateSessionVolume(user) {
 // ==========================================================================
 // WORKOUT SUMMARY MODAL & OVERLOAD ANALYSIS
 // ==========================================================================
-function openWorkoutSummaryModal() {
+function shouldAutoOpenSummaryModal() {
+  const today = getDateKey(new Date());
+  const todayRecord = trainingHistory[today] || { facu: false, alma: false };
+  const dayData = routineData[activeTab];
+  if (!dayData) return false;
+
+  let facuTotal = 0, facuDone = 0;
+  let almaTotal = 0, almaDone = 0;
+
+  dayData.exercises.forEach((exercise, idx) => {
+    const numSets = parseInt(exercise.sets) || 3;
+    facuTotal += numSets;
+    almaTotal += numSets;
+    for (let s = 0; s < numSets; s++) {
+      const setKey = `${activeTab}-${idx}-${s}`;
+      const setData = completedSets[setKey] || { facu: false, alma: false };
+      if (setData.facu) facuDone++;
+      if (setData.alma) almaDone++;
+    }
+  });
+
+  const facuFinished = facuTotal > 0 && facuDone === facuTotal;
+  const almaFinished = almaTotal > 0 && almaDone === almaTotal;
+
+  if (whoTrainsToday === "facu") {
+    return facuFinished && !todayRecord.facu;
+  } else if (whoTrainsToday === "alma") {
+    return almaFinished && !todayRecord.alma;
+  } else {
+    // Both mode:
+    const facuNeeds = facuFinished && !todayRecord.facu;
+    const almaNeeds = almaFinished && !todayRecord.alma;
+    return facuNeeds || almaNeeds;
+  }
+}
+
+function openWorkoutSummaryModal(userRequested = false) {
+  if (!userRequested && !shouldAutoOpenSummaryModal()) {
+    return;
+  }
+
   const modal = document.getElementById("workout-summary-modal");
   if (!modal) return;
+  if (!userRequested && modal.classList.contains("flex")) {
+    return; // Already open
+  }
 
   const durationText = document.getElementById("session-stopwatch")?.textContent || "00:00:00";
   document.getElementById("summary-duration").textContent = durationText;
@@ -8871,6 +8921,9 @@ function closeWorkoutSummaryModal() {
 }
 
 function saveSessionAndCloseSummary() {
+  const today = getDateKey(new Date());
+  const todayRecord = trainingHistory[today] || { facu: false, alma: false };
+
   let who = "both";
   if (whoTrainsToday === "facu") {
     who = "facu";
@@ -8893,16 +8946,28 @@ function saveSessionAndCloseSummary() {
         }
       });
     }
-    
-    if (facuTrained && almaTrained) who = "both";
-    else if (facuTrained) who = "facu";
-    else if (almaTrained) who = "alma";
-    else who = "both";
+
+    const facuNeedsReg = facuTrained && !todayRecord.facu;
+    const almaNeedsReg = almaTrained && !todayRecord.alma;
+
+    if (facuNeedsReg && almaNeedsReg) {
+      who = "both";
+    } else if (facuNeedsReg) {
+      who = "facu";
+    } else if (almaNeedsReg) {
+      who = "alma";
+    } else {
+      if (facuTrained && almaTrained) who = "both";
+      else if (facuTrained) who = "facu";
+      else if (almaTrained) who = "alma";
+      else who = "both";
+    }
   }
   
   markDayCompleted(who);
   resetWorkoutSession();
   closeWorkoutSummaryModal();
+  renderContent(true);
 }
 
 // Expose functions globally for HTML onclick event handlers

@@ -237,7 +237,7 @@
                                 class="h-9 px-3 bg-red-950/30 hover:bg-red-950/60 text-red-400 border-2 border-red-900/50 rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg active:translate-y-0.5 active:shadow-none" title="Reiniciar Cronómetro">
                                 <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reiniciar
                             </button>
-                            <button onclick="openWorkoutSummaryModal()" 
+                            <button onclick="openWorkoutSummaryModal(true)" 
                                 class="h-9 px-3 bg-[var(--accent-vigor)] hover:bg-[var(--accent-vigor)]/90 text-black border-2 border-black rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg active:translate-y-0.5 active:shadow-none">
                                 <i data-lucide="trophy" class="w-3.5 h-3.5"></i> Finalizar
                             </button>
@@ -304,7 +304,7 @@
                     <h3 class="text-xl font-bold text-white mb-2">¡Entrenamiento Completado!</h3>
                     <p class="text-slate-400 mb-4">Excelente trabajo hoy. Abre el resumen para registrar tu sobrecarga progresiva y tonelaje.</p>
                     <div class="flex gap-3 justify-center flex-wrap">
-                        <button onclick="openWorkoutSummaryModal()"
+                        <button onclick="openWorkoutSummaryModal(true)"
                             class="px-6 py-3 bg-[var(--accent-vigor)] hover:opacity-90 text-black border-2 border-black rounded-xl font-black transition-all flex items-center gap-2 shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none uppercase tracking-wide">
                             <i data-lucide="trophy" class="w-5 h-5"></i> Ver Resumen y Guardar
                         </button>
