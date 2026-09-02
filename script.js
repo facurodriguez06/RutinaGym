@@ -1487,23 +1487,31 @@ function applyCloudState(state, triggerTimers = false) {
   if (Array.isArray(state.water_state) && state.water_state.length) {
     const facuId = getCloudUserId();
     const almaId = getAlmaUserId();
+    const todayStr = new Date().toDateString();
     
     const facuW = state.water_state.find((r) => r.user_id === facuId || r.user_id === PRIMARY_FACU_ID) ||
                   state.water_state.find(r => !r.user_id.endsWith("a"));
     if (facuW) {
-      waterState.facu = facuW.current_water_ml || 0;
-      waterState.facuGoal = facuW.goal_ml || 2500;
-      waterState.date = facuW.last_updated_date || waterState.date;
+      if (facuW.last_updated_date === todayStr) {
+        waterState.facu = Math.max(waterState.facu || 0, Number(facuW.current_water_ml) || 0);
+      }
+      waterState.facuGoal = facuW.goal_ml || waterState.facuGoal || 2500;
+      waterState.date = todayStr;
     }
     
     const almaW = state.water_state.find((r) => r.user_id === almaId || r.user_id === PRIMARY_ALMA_ID) ||
                   state.water_state.find(r => r.user_id.endsWith("a"));
     if (almaW) {
-      waterState.alma = almaW.current_water_ml || 0;
-      waterState.almaGoal = almaW.goal_ml || 2500;
-      waterState.date = almaW.last_updated_date || waterState.date;
+      if (almaW.last_updated_date === todayStr) {
+        waterState.alma = Math.max(waterState.alma || 0, Number(almaW.current_water_ml) || 0);
+      }
+      waterState.almaGoal = almaW.goal_ml || waterState.almaGoal || 2500;
+      waterState.date = todayStr;
     }
     localStorage.setItem("water_tracker_state", JSON.stringify(waterState));
+    if (typeof renderAquaFlow === "function") {
+      renderAquaFlow();
+    }
   }
 
   return true;
@@ -2450,13 +2458,26 @@ let waterState = JSON.parse(localStorage.getItem("water_tracker_state")) || {
   date: new Date().toDateString(),
 };
 
-// Reset if new day
-if (waterState.date !== new Date().toDateString()) {
+const todayWaterStr = new Date().toDateString();
+const todayWaterKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
+
+// Reset if new day, or recover today's value if available
+if (waterState.date && waterState.date !== todayWaterStr) {
   waterState.facu = 0;
   waterState.alma = 0;
   waterState.history = [];
-  waterState.date = new Date().toDateString();
-  saveWaterState(); // Safe to call if defined, or we define it below
+  waterState.date = todayWaterStr;
+  localStorage.setItem("water_tracker_state", JSON.stringify(waterState));
+} else {
+  waterState.date = todayWaterStr;
+  if (typeof trainingHistory !== "undefined" && trainingHistory && trainingHistory[todayWaterKey] && trainingHistory[todayWaterKey].water) {
+    if (trainingHistory[todayWaterKey].water.facu !== undefined) {
+      waterState.facu = Math.max(waterState.facu || 0, Number(trainingHistory[todayWaterKey].water.facu) || 0);
+    }
+    if (trainingHistory[todayWaterKey].water.alma !== undefined) {
+      waterState.alma = Math.max(waterState.alma || 0, Number(trainingHistory[todayWaterKey].water.alma) || 0);
+    }
+  }
 }
 
 let currentTemp = parseInt(localStorage.getItem("cachedTemp")) || 25; // Load cached or default
@@ -2645,6 +2666,7 @@ function addWater(user, amount) {
 
   // Update State
   waterState[user] = Math.max(0, current + amount);
+  waterState.date = new Date().toDateString();
 
   // Add to History
   if (!waterState.history) waterState.history = [];
@@ -2741,8 +2763,13 @@ function renderWaterHistory() {
 }
 
 function saveWaterState() {
+  waterState.date = new Date().toDateString();
   localStorage.setItem("water_tracker_state", JSON.stringify(waterState));
-  scheduleCloudSync();
+  if (typeof scheduleCloudSync === "function") {
+    scheduleCloudSync();
+  } else if (typeof saveToCloud === "function") {
+    saveToCloud();
+  }
 }
 
 function resetDay(user) {
