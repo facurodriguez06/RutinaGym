@@ -2132,6 +2132,20 @@ function markDayCompleted(who) {
     ...setReps,
   };
 
+  // Freeze and save final workout duration for today
+  if (!trainingHistory[today].durationSeconds || trainingHistory[today].durationSeconds <= 0) {
+    let finalDuration = 0;
+    if (typeof getWorkoutSessionDurationSeconds === "function") {
+      finalDuration = getWorkoutSessionDurationSeconds();
+    } else if (typeof sessionElapsedSeconds !== "undefined" && sessionElapsedSeconds > 0) {
+      finalDuration = sessionElapsedSeconds;
+    }
+    if (finalDuration > 0) {
+      trainingHistory[today].durationSeconds = finalDuration;
+      localStorage.setItem("vigor_last_completed_session_duration_" + today, finalDuration.toString());
+    }
+  }
+
   // AWARD POINTS
   const POINTS_PER_WORKOUT = 100;
   let pointsMsg = "";
@@ -8796,96 +8810,83 @@ function calculateSessionVolume(user) {
 // ==========================================================================
 // WORKOUT SUMMARY MODAL & OVERLOAD ANALYSIS
 // ==========================================================================
-function getWorkoutSessionDuration() {
-  let elapsedSeconds = 0;
+function getWorkoutSessionDurationSeconds() {
+  const todayKeyStr = getDateKey(new Date());
+  const todayRecord = typeof trainingHistory !== "undefined" ? trainingHistory[todayKeyStr] : null;
 
-  // 1. Check timerState["session"]
+  // 1. If today's workout was already finished and recorded, ALWAYS use the frozen snapshot!
+  if (todayRecord && todayRecord.durationSeconds && todayRecord.durationSeconds > 0) {
+    return todayRecord.durationSeconds;
+  }
+  const savedFrozen = parseInt(localStorage.getItem("vigor_last_completed_session_duration_" + todayKeyStr) || "0");
+  if (savedFrozen > 0) {
+    return savedFrozen;
+  }
+
+  // 2. Check if a live session stopwatch is currently running or paused
   if (timerState["session"] && timerState["session"].active) {
     if (timerState["session"].startTime && timerState["session"].startTime > 0) {
-      elapsedSeconds = Math.floor((Date.now() - timerState["session"].startTime) / 1000);
+      return Math.floor((Date.now() - timerState["session"].startTime) / 1000);
     } else if (timerState["session"].currentSeconds > 0) {
-      elapsedSeconds = timerState["session"].currentSeconds;
+      return timerState["session"].currentSeconds;
     }
   }
 
-  // 2. Check sessionStartTime & sessionElapsedSeconds from memory/localStorage
-  if (elapsedSeconds <= 0) {
-    const savedStart = parseInt(sessionStartTime || localStorage.getItem("vigor_sessionStartTime") || "0");
-    const savedElapsed = parseInt(sessionElapsedSeconds || localStorage.getItem("vigor_sessionElapsedSeconds") || "0");
-    const isRunning = isSessionTimerRunning || localStorage.getItem("vigor_sessionTimerRunning") === "true";
+  const isRunning = isSessionTimerRunning || localStorage.getItem("vigor_sessionTimerRunning") === "true";
+  const savedStart = parseInt(sessionStartTime || localStorage.getItem("vigor_sessionStartTime") || "0");
+  const savedElapsed = parseInt(sessionElapsedSeconds || localStorage.getItem("vigor_sessionElapsedSeconds") || "0");
 
-    if (savedStart > 0) {
-      if (isRunning) {
-        elapsedSeconds = savedElapsed + Math.max(0, Math.floor((Date.now() - savedStart) / 1000));
-      } else {
-        elapsedSeconds = savedElapsed > 0 ? savedElapsed : Math.max(0, Math.floor((Date.now() - savedStart) / 1000));
-      }
+  if (isRunning && savedStart > 0) {
+    return savedElapsed + Math.max(0, Math.floor((Date.now() - savedStart) / 1000));
+  }
+  if (savedElapsed > 0) {
+    return savedElapsed;
+  }
+
+  // 3. If no stopwatch is active, calculate duration strictly BETWEEN sets (start to end, NOT until right now)
+  const timestamps = [];
+  Object.keys(completedSets || {}).forEach((key) => {
+    if (key.endsWith("_ts") && typeof completedSets[key] === "object") {
+      if (completedSets[key].facu) timestamps.push(completedSets[key].facu);
+      if (completedSets[key].alma) timestamps.push(completedSets[key].alma);
+    }
+  });
+
+  if (timestamps.length > 0) {
+    const minTs = Math.min(...timestamps);
+    const maxTs = Math.max(...timestamps);
+    const diffBetweenSets = Math.floor((maxTs - minTs) / 1000) + 120; // First set to last set + last rest
+    
+    if (diffBetweenSets >= 120) {
+      return diffBetweenSets;
     }
   }
 
-  // 3. Check first set timestamp or set completion timestamps
-  if (elapsedSeconds <= 0) {
-    const todayKeyStr = getDateKey(new Date());
-    const firstSetTs = parseInt(localStorage.getItem("vigor_first_set_ts_" + todayKeyStr) || "0");
-    if (firstSetTs > 0) {
-      const diff = Math.floor((Date.now() - firstSetTs) / 1000);
-      if (diff > 0 && diff < 18000) { // Under 5 hours
-        elapsedSeconds = diff;
-      }
-    }
-  }
-
-  // 4. Check set completion timestamps in completedSets
-  if (elapsedSeconds <= 0) {
-    const timestamps = [];
-    Object.keys(completedSets).forEach((key) => {
-      if (key.endsWith("_ts") && typeof completedSets[key] === "object") {
-        if (completedSets[key].facu) timestamps.push(completedSets[key].facu);
-        if (completedSets[key].alma) timestamps.push(completedSets[key].alma);
+  // 4. Fallback from completed count (~2.5 minutes per completed set)
+  let completedCount = 0;
+  const dayData = routineData[activeTab];
+  if (dayData && dayData.exercises) {
+    dayData.exercises.forEach((exercise, idx) => {
+      const numSets = parseInt(exercise.sets) || 3;
+      for (let s = 0; s < numSets; s++) {
+        const setKey = `${activeTab}-${idx}-${s}`;
+        const setData = completedSets[setKey];
+        if (setData && (setData.facu || setData.alma)) {
+          completedCount++;
+        }
       }
     });
-
-    if (timestamps.length > 0) {
-      const minTs = Math.min(...timestamps);
-      const maxTs = Math.max(...timestamps);
-      const diffFromNow = Math.floor((Date.now() - minTs) / 1000);
-      const diffBetweenSets = Math.floor((maxTs - minTs) / 1000) + 120;
-      
-      if (diffFromNow > 0 && diffFromNow < 18000) {
-        elapsedSeconds = diffFromNow;
-      } else if (diffBetweenSets > 0 && diffBetweenSets < 18000) {
-        elapsedSeconds = diffBetweenSets;
-      }
-    }
   }
 
-  // 5. Fallback: If sets are completed but no timestamp was captured
-  if (elapsedSeconds <= 0) {
-    let completedCount = 0;
-    const dayData = routineData[activeTab];
-    if (dayData && dayData.exercises) {
-      dayData.exercises.forEach((exercise, idx) => {
-        const numSets = parseInt(exercise.sets) || 3;
-        for (let s = 0; s < numSets; s++) {
-          const setKey = `${activeTab}-${idx}-${s}`;
-          const setData = completedSets[setKey];
-          if (setData && (setData.facu || setData.alma)) {
-            completedCount++;
-          }
-        }
-      });
-    }
-
-    if (completedCount > 0) {
-      // Estimate ~2.5 minutes per completed set
-      elapsedSeconds = completedCount * 150;
-    }
+  if (completedCount > 0) {
+    return completedCount * 150;
   }
 
-  if (elapsedSeconds <= 0) {
-    elapsedSeconds = 0;
-  }
+  return 0;
+}
 
+function getWorkoutSessionDuration() {
+  const elapsedSeconds = getWorkoutSessionDurationSeconds();
   const hrs = Math.floor(elapsedSeconds / 3600);
   const mins = Math.floor((elapsedSeconds % 3600) / 60);
   const secs = elapsedSeconds % 60;
@@ -9058,6 +9059,16 @@ function closeWorkoutSummaryModal() {
 function saveSessionAndCloseSummary() {
   const today = getDateKey(new Date());
   const todayRecord = trainingHistory[today] || { facu: false, alma: false };
+
+  // Freeze duration BEFORE resetting session stopwatch
+  const finalDuration = getWorkoutSessionDurationSeconds();
+  if (finalDuration > 0) {
+    if (!trainingHistory[today]) {
+      trainingHistory[today] = { alma: false, facu: false, weights: {} };
+    }
+    trainingHistory[today].durationSeconds = finalDuration;
+    localStorage.setItem("vigor_last_completed_session_duration_" + today, finalDuration.toString());
+  }
 
   let who = "both";
   if (whoTrainsToday === "facu") {
